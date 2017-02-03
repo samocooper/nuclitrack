@@ -100,15 +100,15 @@ Now you're ready to segment your imaging series. Segmentaiton is based on a wate
 
 On the left hand side pf hte interface you should see a panel of sliders allowing you to segment the image. The best way to find out what they do is to play around, though a more detailed description for each control is below:
 
-#	Clipping threshold: this sets the maximum intensity of the image, anything above this intensity is clipped to this intensity
-#	Background Correction: background intensity variation is corrected by subtracting a really blurred version of the image from the original, this slideer controls how blurred this image is.
-#	Blurring: prior to thresholding pixel noise must be reduced this slider adjusts how blurred the image used for thresholding is.
-#	Theshold level: the slider here controls what level of intensity should be used to define what are nuclei and what is background. Don't worry if nuclei are touching each other at this point.
-#	Filter small objects: if htere are lot's of small objects that have been thresholded but aren't nuclei you can filter them out using this slider
-#	Intensity or Distance: the next step is to identify local maximum wihtin the thresholded regions, ideally local maximum will exist in the center of each nuclei, the maximum intensity often doesn't reflect the center of the nuclei or even worse may lead to multiple local maxima appearing in each cell. This function allows you to choose to what degree local maxima are defined by the intensity or distance from edge.
-#	Peak local maxima: behind this slider is a funciton which identfies local intensity peaks in the image, the slider sets the minimum distance allowed between peaks.
-#	Edge detection: this slider controls how blurry the image is prior to edges being marked, more blurry means edges are smoother though may match the shape less.
-#	Watershed: behind this slider is the watershed funciton which calculates where the local basins of attraction are in the image, like marking valleys in a mountainous terrain. The selected peak local maxima represent the bottom of the valleys, by adjusting the slider the lowest area is made larer or smaller, this like mining into the side of mountains to force the valley to be larger.
+* Clipping threshold: this sets the maximum intensity of the image, anything above this intensity is clipped to this intensity
+*Background Correction: background intensity variation is corrected by subtracting a really blurred version of the image from the original, this slideer controls how blurred this image is.
+* Blurring: prior to thresholding pixel noise must be reduced this slider adjusts how blurred the image used for thresholding is.
+* Theshold level: the slider here controls what level of intensity should be used to define what are nuclei and what is background. Don't worry if nuclei are touching each other at this point.
+* Filter small objects: if htere are lot's of small objects that have been thresholded but aren't nuclei you can filter them out using this slider
+* Intensity or Distance: the next step is to identify local maximum wihtin the thresholded regions, ideally local maximum will exist in the center of each nuclei, the maximum intensity often doesn't reflect the center of the nuclei or even worse may lead to multiple local maxima appearing in each cell. This function allows you to choose to what degree local maxima are defined by the intensity or distance from edge.
+* Peak local maxima: behind this slider is a funciton which identfies local intensity peaks in the image, the slider sets the minimum distance allowed between peaks.
+* Edge detection: this slider controls how blurry the image is prior to edges being marked, more blurry means edges are smoother though may match the shape less.
+* Watershed: behind this slider is the watershed funciton which calculates where the local basins of attraction are in the image, like marking valleys in a mountainous terrain. The selected peak local maxima represent the bottom of the valleys, by adjusting the slider the lowest area is made larer or smaller, this like mining into the side of mountains to force the valley to be larger.
 
 Use the slider in the top left hand corner to navigate around the video and try out your segmentation paramters on other frames. Also other channel data can be visualised though these are not used for segmentation in the current edition.
 
@@ -132,9 +132,9 @@ If allot of semgentation errors have been made consider sleecting examples of th
 
 Three new sliders also exist in the top left hand corner along with text, generally the default value swill work though you may want to adjust these if tracking is particularly slow:
 
-#	The furthest left of these sliders determines how far (in pixels) the algorithm will search in the previous frame, this should roughly correspond to the largest jump that nulei are making between frames, however larger values will also mean tracking will take longer.
-#	The middle of the three sliders determines the largest gap between frames that can occur in a track. Smaller values speed up tracking whilst larger values take longer.
-#	The final slider changes the penalty for movement distance, smaller values mean less penalty than larger values. Reduce this if cells are moving allot whilst increase this value if cells make small movements.
+* The furthest left of these sliders determines how far (in pixels) the algorithm will search in the previous frame, this should roughly correspond to the largest jump that nulei are making between frames, however larger values will also mean tracking will take longer.
+* The middle of the three sliders determines the largest gap between frames that can occur in a track. Smaller values speed up tracking whilst larger values take longer.
+* The final slider changes the penalty for movement distance, smaller values mean less penalty than larger values. Reduce this if cells are moving allot whilst increase this value if cells make small movements.
 
 Once everything is selected, click save training. A button for classifying cells will now appear. Click this to assign probabilities to every cell in the image sequence.
 
@@ -149,26 +149,27 @@ To inspect data on a track click the select track button, or use the hotkey (z).
 
 Automated tracking is likely to make errors. Buttons on the left hand side let you correct these.
 
-#	To add a segment to a track, click add segment (c) then select a segment on the screen.
-#	To remove a segment click remove segment (v) then sleect a labelled segment on the screen.
-#	To swap two tracks over in all proceeding frames, with a track selected, select swap tracks (x) then select another track on the screen.
-#	To add a new track, sleect new track (n) then choose an unlabelled segment on the screen.
+* To add a segment to a track, click add segment (c) then select a segment on the screen.
+* To remove a segment click remove segment (v) then sleect a labelled segment on the screen.
+* To swap two tracks over in all proceeding frames, with a track selected, select swap tracks (x) then select another track on the screen.
+* To add a new track, sleect new track (n) then choose an unlabelled segment on the screen.
 
 If you want to export data on all the track click save all to CSV. Otherwise you can select individual tracks and export oonly these selections. To do this with a track selected click store track. It should now be marked with a balck dot. Once you have selected all the tracks you want, then click export selected to csv.
 
-Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number representing
+Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number between one and 13, representing the features:
 
 Contribute
 ----------
 
-- Issue Tracker: github.com/$project/$project/issues
-- Source Code: github.com/$project/$project
+- Source Code: github.com/samocooper/nuclitrack
 
 Support
 -------
 
-If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
+If you are having issues, please let me know my email is sam^socooper.com sub in the @ for ^.
+Also check out my website `socooper.com <http://socooper.com>`
+
+
 
 License
 -------
