@@ -30,15 +30,15 @@ Launching NucliTrack
 --------------------
 
 To launch nuclitrack start Python3 up in your terminal
-
+.. code-block::
 	> Python3
 
 Python should now be running. Import NucliTrack and this will load up the Pygame window:
-
+.. code-block::
 	>> import nuclitrack
 
 Finally run the nuclitrack application
-
+.. code-block::
 	>> nuclitrack.CellTrackApp().run()
 
 The application should be running now and you're ready to get going.
