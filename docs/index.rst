@@ -16,11 +16,11 @@ Installation
 To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recomend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users.
 
 Once you've got Python3 up and running you will need a package called Cython. This is easily installed using the pip installer, from the terminal (linux/mac users) or anaconda command prompt (windows) type:
-
+.. code-block::
 	> pip install cython
 
 Now you're ready to install NucliTrack:
-
+.. code-block::
 	> pip install nuclitrack
 
 
