@@ -100,15 +100,15 @@ Now you're ready to segment your imaging series. Segmentaiton is based on a wate
 
 On the left hand side pf hte interface you should see a panel of sliders allowing you to segment the image. The best way to find out what they do is to play around, though a more detailed description for each control is below:
 
-* Clipping threshold: this sets the maximum intensity of the image, anything above this intensity is clipped to this intensity
-*Background Correction: background intensity variation is corrected by subtracting a really blurred version of the image from the original, this slideer controls how blurred this image is.
-* Blurring: prior to thresholding pixel noise must be reduced this slider adjusts how blurred the image used for thresholding is.
-* Theshold level: the slider here controls what level of intensity should be used to define what are nuclei and what is background. Don't worry if nuclei are touching each other at this point.
-* Filter small objects: if htere are lot's of small objects that have been thresholded but aren't nuclei you can filter them out using this slider
-* Intensity or Distance: the next step is to identify local maximum wihtin the thresholded regions, ideally local maximum will exist in the center of each nuclei, the maximum intensity often doesn't reflect the center of the nuclei or even worse may lead to multiple local maxima appearing in each cell. This function allows you to choose to what degree local maxima are defined by the intensity or distance from edge.
-* Peak local maxima: behind this slider is a funciton which identfies local intensity peaks in the image, the slider sets the minimum distance allowed between peaks.
-* Edge detection: this slider controls how blurry the image is prior to edges being marked, more blurry means edges are smoother though may match the shape less.
-* Watershed: behind this slider is the watershed funciton which calculates where the local basins of attraction are in the image, like marking valleys in a mountainous terrain. The selected peak local maxima represent the bottom of the valleys, by adjusting the slider the lowest area is made larer or smaller, this like mining into the side of mountains to force the valley to be larger.
+*    Clipping threshold: this sets the maximum intensity of the image, anything above this intensity is clipped to this intensity
+*    Background Correction: background intensity variation is corrected by subtracting a really blurred version of the image from the original, this slideer controls how blurred this image is.
+*    Blurring: prior to thresholding pixel noise must be reduced this slider adjusts how blurred the image used for thresholding is.
+*    Theshold level: the slider here controls what level of intensity should be used to define what are nuclei and what is background. Don't worry if nuclei are touching each other at this point.
+*    Filter small objects: if htere are lot's of small objects that have been thresholded but aren't nuclei you can filter them out using this slider
+*    Intensity or Distance: the next step is to identify local maximum wihtin the thresholded regions, ideally local maximum will exist in the center of each nuclei, the maximum intensity often doesn't reflect the center of the nuclei or even worse may lead to multiple local maxima appearing in each cell. This function allows you to choose to what degree local maxima are defined by the intensity or distance from edge.
+*    Peak local maxima: behind this slider is a funciton which identfies local intensity peaks in the image, the slider sets the minimum distance allowed between peaks.
+*    Edge detection: this slider controls how blurry the image is prior to edges being marked, more blurry means edges are smoother though may match the shape less.
+*    Watershed: behind this slider is the watershed funciton which calculates where the local basins of attraction are in the image, like marking valleys in a mountainous terrain. The selected peak local maxima represent the bottom of the valleys, by adjusting the slider the lowest area is made larer or smaller, this like mining into the side of mountains to force the valley to be larger.
 
 Use the slider in the top left hand corner to navigate around the video and try out your segmentation paramters on other frames. Also other channel data can be visualised though these are not used for segmentation in the current edition.
 
@@ -167,7 +167,7 @@ Support
 -------
 
 If you are having issues, please let me know my email is sam^socooper.com sub in the @ for ^.
-Also check out my website `socooper.com <http://socooper.com>`
+Also check out my website `socooper.com <http://socooper.com>`_
 
 
 
