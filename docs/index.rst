@@ -161,8 +161,7 @@ Finally you can change which features you want to visualise using the text boxes
 Contribute
 ----------
 
-- Source Code: `https://github.com/samocooper/nuclitrack <https://github.com/samocooper/nuclitrack
->`_
+- Source Code: https://github.com/samocooper/nuclitrack
 
 Support
 -------
