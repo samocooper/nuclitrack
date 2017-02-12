@@ -97,7 +97,7 @@ Click load data button again to minimise this window.
    :scale: 80 %
    :alt: Semgentation
 
-   Step 1: File loading, image fo the file loading GUI
+   Step 1: File loading, image of the file loading GUI
    
 Segmentation
 ------------
@@ -122,7 +122,11 @@ Once you have acheived good segmentation it's now time to save the parameters. O
 
 When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and minimise the view segment window.
 
+.. figure:: Nt02.jpg
+   :scale: 80 %
+   :alt: Semgentation
 
+   Step 2: Choosing segmentation parameters, image of the segmentation GUI
 
 Training Data
 -------------
@@ -147,6 +151,12 @@ Once everything is selected, click save training. A button for classifying cells
 
 Everything is now ready for tracking, hit this button to begin tracking. A feed of cell scores will appear in the terminal after a short period of time, giving the total score of tracking. This will increase steadily as tracks are iterativley added.
 
+.. figure:: Nt03.jpg
+   :scale: 80 %
+   :alt: Semgentation
+
+   Step 3: Selecting training data, image of the training data selection GUI
+
 Correcting and Storing tracks
 -----------------------------
 
@@ -164,6 +174,12 @@ Automated tracking is likely to make errors. Buttons on the left hand side let y
 If you want to export data on all the track click save all to CSV. Otherwise you can select individual tracks and export oonly these selections. To do this with a track selected click store track. It should now be marked with a balck dot. Once you have selected all the tracks you want, then click export selected to csv.
 
 Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number between one and 13, representing the features:
+
+.. figure:: Nt04.jpg
+   :scale: 80 %
+   :alt: Semgentation
+
+   Step 4: Visualise and correct and export tacking data, image of the tracking visualisation and correction GUI
 
 Contribute
 ----------
