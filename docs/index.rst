@@ -93,6 +93,12 @@ Finally choose a file name to store your parameters in hit enter, then click loa
 
 Click load data button again to minimise this window.
 
+.. figure:: Nt01.jpg
+   :scale: 80 %
+   :alt: Semgentation
+
+   Step 1: File loading, image fo the file loading GUI
+   
 Segmentation
 ------------
 
@@ -115,6 +121,7 @@ Use the slider in the top left hand corner to navigate around the video and try 
 Once you have acheived good segmentation it's now time to save the parameters. Once this is done, minimise the segmentaiton window and click segment movie to apply your segmentation parameters to the entire image sequence. This may take a while depending on how fast your computer is and how large you movie is.
 
 When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and minimise the view segment window.
+
 
 
 Training Data
