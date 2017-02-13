@@ -3,11 +3,11 @@ from multiprocessing import Pool
 import numpy as np
 
 import tracking_c_tools
-from Segmentation_tools import SegmentationUI, segment_im
-from Tracking_tools import TrackingUI
-from Training_tools import TrainingUI
-from Loading_tools import FileLoader
-from Image_widget import ImDisplay
+from .Segmentation_tools import SegmentationUI, segment_im
+from .Tracking_tools import TrackingUI
+from .Training_tools import TrainingUI
+from .Loading_tools import FileLoader
+from .Image_widget import ImDisplay
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -55,7 +55,6 @@ class UserInterface(Widget):
             self.remove_widget(self.data_widget)
 
     def load_movie(self, flist):
-
         self.frames = len(flist[0])
 
         self.segment_channel = []
@@ -79,7 +78,6 @@ class UserInterface(Widget):
             self.segment_channel.append(im_temp)
 
         if len(flist) > 1:
-
             for i in range(self.frames):
                 im_temp = tifffile.imread(flist[1][i])
                 im_temp = im_temp.astype(float)
@@ -191,6 +189,7 @@ class UserInterface(Widget):
                 features_vector[11] = np.std(im_temp[im_temp > mu])
 
                 if self.channel_2:
+
                     c_temp2 = f_temp2[j - 1]
 
                     mu = c_temp2.mean_intensity
