@@ -105,6 +105,8 @@ class FileLoader(Widget):
 
     def set_file_list(self, instance):
 
+        self.file_list = []
+
         if self.file_names[0] and self.file_names[1]:
             # Determine whether a difference of one exists somewhere in file names
 
@@ -304,7 +306,7 @@ class FileLoader(Widget):
 
         # Load screen parameters for classification tracking and segmentation
 
-        self.text_input_param = TextInput(text='S_p2', multiline=False,
+        self.text_input_param = TextInput(text='Screen_parameter_data_file', multiline=False,
                                           size_hint=(.6, .05), pos_hint={'x': .175, 'y': .24})
 
         self.text_input_param.bind(on_text_validate=self.param_dir)
@@ -408,7 +410,7 @@ class FileLoader(Widget):
 
         # Assign HDF5 file for storing data from the current field of view.
 
-        self.text_input_data = TextInput(text='Fov2', multiline=False, size_hint=(.6, .05),
+        self.text_input_data = TextInput(text='Field_of_view_data_file', multiline=False, size_hint=(.6, .05),
                                          pos_hint={'x': .175, 'y': .3})
 
         self.text_input_data.bind(on_text_validate=self.data_dir)
