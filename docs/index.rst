@@ -173,7 +173,19 @@ Automated tracking is likely to make errors. Buttons on the left hand side let y
 
 If you want to export data on all the track click save all to CSV. Otherwise you can select individual tracks and export oonly these selections. To do this with a track selected click store track. It should now be marked with a balck dot. Once you have selected all the tracks you want, then click export selected to csv.
 
-Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number between one and 13, representing the features:
+Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number between one and 11, representing the features:
+
+* Area,
+* Eccentricity
+* Solidity
+* Perimeter
+* CH1 Mean Intensity
+* CH1 StdDev Intensity
+* CH1 Floored Mean
+* CH2 Mean Intensity
+* CH2 StdDev Intensity
+* CH3 Mean Intensity
+* CH3 StdDev Intensity
 
 .. figure:: Nt04.jpg
    :scale: 80 %
