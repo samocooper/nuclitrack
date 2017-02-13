@@ -604,7 +604,7 @@ class TrackingUI(Widget):
             np.savetxt(f, feat_mat2, delimiter=",")
 
     def feat1(self, instance):
-        num = int(''.join([instance.text]))
+        num = int(''.join([instance.text]))-1
 
         if num >= 0 and num < len(self.feat_inds):
             self.show_feat[0] = self.feat_inds[num]
@@ -612,7 +612,7 @@ class TrackingUI(Widget):
         self.modify_update()
 
     def feat2(self, instance):
-        num = int(''.join([instance.text]))
+        num = int(''.join([instance.text]))-1
 
         if num >= 0 and num < len(self.feat_inds):
             self.show_feat[1] = self.feat_inds[num]
@@ -620,7 +620,7 @@ class TrackingUI(Widget):
         self.modify_update()
 
     def feat3(self, instance):
-        num = int(''.join([instance.text]))
+        num = int(''.join([instance.text]))-1
 
         if num >= 0 and num < len(self.feat_inds):
             self.show_feat[2] = self.feat_inds[num]
