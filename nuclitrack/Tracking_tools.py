@@ -14,8 +14,8 @@ from kivy.uix.textinput import TextInput
 from skimage.external import tifffile
 from scipy.spatial import distance
 
-from Image_widget import ImDisplay, IndexedDisplay
-from Graph import Graph, SmoothLinePlot
+from .Image_widget import ImDisplay, IndexedDisplay
+from .Graph import Graph, SmoothLinePlot
 
 
 class CellMark(Widget):
@@ -167,9 +167,9 @@ class TrackingUI(Widget):
         feats_temp2 = self.features[self.track_ids - 1, self.show_feat[1]]
         feats_temp3 = self.features[self.track_ids - 1, self.show_feat[2]]
 
-        feats_temp1 = feats_temp1/max(feats_temp1)
-        feats_temp2 = feats_temp2/max(feats_temp2)
-        feats_temp3 = feats_temp3/max(feats_temp3)
+        feats_temp1 = feats_temp1 / max(feats_temp1)
+        feats_temp2 = feats_temp2 / max(feats_temp2)
+        feats_temp3 = feats_temp3 / max(feats_temp3)
 
         t_temp = self.features[self.track_ids - 1, 1]
 
@@ -467,7 +467,7 @@ class TrackingUI(Widget):
 
         feat_mat = np.zeros((1, 18))
 
-        for i in range(1, int(max(self.tracks[:, 4]))+1):
+        for i in range(1, int(max(self.tracks[:, 4])) + 1):
             if sum(self.tracks[:, 4] == i) > 0:
 
                 track_temp = self.tracks[self.tracks[:, 4] == i, :]
@@ -476,11 +476,36 @@ class TrackingUI(Widget):
                     mask = self.features[:, 0] == track_temp[j, 0]
                     fv = self.features[mask, :]
                     feat_mat = np.vstack((feat_mat,
-                                          [i, track_temp[j, 5], fv[0,2], fv[0,3], fv[0,5], fv[0,6], fv[0,7], fv[0,8], fv[0,9], fv[0,10],
-                                           fv[0,11], fv[0,20], fv[0,21], fv[0,22], fv[0,23],track_temp[j, 3], track_temp[j, 0], 0]))
+                                          [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
+                                           fv[0, 8], fv[0, 9], fv[0, 10],
+                                           fv[0, 11], fv[0, 20], fv[0, 21], fv[0, 22], fv[0, 23], track_temp[j, 3],
+                                           track_temp[j, 0], 0]))
 
-        feat_mat = np.delete(feat_mat,0,0)
-        np.savetxt("Results.csv", feat_mat, delimiter=",")
+        feat_mat = np.delete(feat_mat, 0, 0)
+
+        for i in range(feat_mat.shape[0]):
+
+            if feat_mat[i, 15] > 0:
+
+                mask = feat_mat[:, 16] == feat_mat[i, 15]
+                ind_change = feat_mat[mask, 0]
+
+                frame_change = feat_mat[mask, 1]
+                mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
+                if sum(mask_change) > 0:
+                    # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+
+                    change_list = np.where(mask_change)
+                    feat_mat[change_list[0][0], 17] = ind_change
+                    feat_mat[i, 17] = ind_change
+
+        with open('Results.csv', 'wb') as f:
+            f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
+                    b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
+                    b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
+
+            feat_mat2 = np.delete(feat_mat, [15, 16], 1)
+            np.savetxt(f, feat_mat2, delimiter=",")
 
         '''
         ### Data formatting for iscb benchmark dataset
@@ -534,7 +559,7 @@ class TrackingUI(Widget):
 
     def save_sel_csv(self, instance):
 
-        feat_mat = np.zeros((1, 15))
+        feat_mat = np.zeros((1, 18))
 
         for i in range(1, int(max(self.tracks[:, 4]))):
             if self.parent.fov['tracks_stored'][i] == 1:
@@ -548,19 +573,43 @@ class TrackingUI(Widget):
                         feat_mat = np.vstack((feat_mat,
                                               [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
                                                fv[0, 8], fv[0, 9], fv[0, 10],
-                                               fv[0, 11], fv[0, 20], fv[0, 21], fv[0, 22], fv[0, 23]]))
-        feat_mat = np.delete(feat_mat,0,0)
-        np.savetxt("Results.csv", feat_mat, delimiter=",")
+                                               fv[0, 11], fv[0, 20], fv[0, 21], fv[0, 22], fv[0, 23], track_temp[j, 3],
+                                               track_temp[j, 0], 0]))
 
+        feat_mat = np.delete(feat_mat, 0, 0)
+
+        for i in range(feat_mat.shape[0]):
+
+            if feat_mat[i, 15] > 0:
+
+                mask = feat_mat[:, 16] == feat_mat[i, 15]
+                ind_change = feat_mat[mask, 0]
+
+                frame_change = feat_mat[mask, 1]
+                mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
+                if sum(mask_change) > 0:
+                    # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+
+                    change_list = np.where(mask_change)
+                    feat_mat[change_list[0][0], 17] = ind_change
+                    feat_mat[i, 17] = ind_change
+
+        with open('Results.csv', 'wb') as f:
+
+            f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
+                    b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
+                    b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
+
+            feat_mat2 = np.delete(feat_mat, [15, 16], 1)
+            np.savetxt(f, feat_mat2, delimiter=",")
 
     def feat1(self, instance):
         num = int(''.join([instance.text]))
 
-        if num >=0 and num < len(self.feat_inds):
+        if num >= 0 and num < len(self.feat_inds):
             self.show_feat[0] = self.feat_inds[num]
 
         self.modify_update()
-
 
     def feat2(self, instance):
         num = int(''.join([instance.text]))
@@ -677,8 +726,8 @@ class TrackingUI(Widget):
 
         self.layout4 = layout4
 
-        self.feat_inds = [5,6,7,8,9,10,11,20,21,22,23]
-        self.show_feat = [self.feat_inds[0],self.feat_inds[4],self.feat_inds[6]]
+        self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23]
+        self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
 
         self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
                            xmax=self.frames, ymin=0,
@@ -703,7 +752,6 @@ class TrackingUI(Widget):
                                      multiline=False, size_hint=(.09, .05), pos_hint={'x': .8, 'y': .12})
         self.text_input3 = TextInput(text='Feat3',
                                      multiline=False, size_hint=(.09, .05), pos_hint={'x': .9, 'y': .12})
-
 
         self.text_input1.bind(on_text_validate=self.feat1)
         self.text_input2.bind(on_text_validate=self.feat2)
