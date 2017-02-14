@@ -27,8 +27,8 @@ Now you're ready to install NucliTrack:
 
 Notes:
 
- *If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
- *Kivy may require the openGL dev library to install properly, e.g. yum install mesa-libGL on RHEL/Fedora linux
+* If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
+* Kivy may require the openGL dev library to install properly, e.g. yum install mesa-libGL on RHEL/Fedora linux
 
 Launching NucliTrack
 --------------------
