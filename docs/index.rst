@@ -9,6 +9,7 @@ Getting started
 
 NucliTrack is designed as an easy to use Python 3 Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
 
+Alternativley check out the `online video guide <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
 
 Installation
 ------------
