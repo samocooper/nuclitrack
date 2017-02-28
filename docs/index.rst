@@ -14,7 +14,7 @@ Alternativley check out the `online video guide <https://www.youtube.com/watch?v
 Installation
 ------------
 
-To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users.
+To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users. On Windows you will also probably need Visual C++ 2014 in order to build backend C code in both kivy and nuclitrack; this is due to the infamous vcvarsall.bat issue, that is currently trying to be resolved.
 
 Once you've got Python3 up and running you will need packages called Cython and numpy. This is easily installed using the pip installer, from the terminal (linux/mac users) or anaconda command prompt (windows) type:
 .. code-block::
