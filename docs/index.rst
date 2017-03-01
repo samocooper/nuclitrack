@@ -14,7 +14,7 @@ Alternativley check out the `online video guide <https://www.youtube.com/watch?v
 Installation
 ------------
 
-To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users. On Windows you will also probably need Visual C++ 2014 in order to build backend C code in both kivy and nuclitrack; this is due to the infamous vcvarsall.bat issue, that is currently trying to be resolved.
+To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users.
 
 Once you've got Python3 up and running you will need packages called Cython and numpy. This is easily installed using the pip installer, from the terminal (linux/mac users) or anaconda command prompt (windows) type:
 .. code-block::
@@ -28,6 +28,13 @@ Now you're ready to install NucliTrack:
 
 Notes:
 
+*  On windows you will likely need to install kivy prior to nuclitrack, a guide for this can be found on the `kivy website <https://kivy.org/docs/installation/installation-windows.html>`_ . From experience download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands, where you substitute in the location of the downloaded .whl file. The dependencies listed on the kivy website guide need to be installed first though: 
+
+.. code-block::
+	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
+	
+
+	
 * If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
 
 On more basic systems some dependencies may cause issues, on RHEL/Fedora linux I have noted a few:
