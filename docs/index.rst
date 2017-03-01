@@ -29,9 +29,9 @@ Now you're ready to install NucliTrack:
 Notes:
 
 *  On windows you will likely need to install kivy prior to nuclitrack, a guide for this can be found on the `kivy website <https://kivy.org/docs/installation/installation-windows.html>`_ . From experience download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands, where you substitute in the location of the downloaded .whl file. The dependencies listed on the kivy website guide need to be installed first though: 
-* > python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
-	
 
+.. code-block::
+	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
 	
 * If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
 
