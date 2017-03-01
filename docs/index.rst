@@ -23,7 +23,7 @@ Once you've got Python3 up and running you will need packages called Cython and 
 
 
 Now you're ready to install NucliTrack:
-
+::
 	> pip install nuclitrack
 
 Notes:
@@ -32,7 +32,7 @@ Notes:
 
 From experience after installing the dependencies download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands:
 
-
+::
 	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
 	
 Here substitute in the location of the downloaded .whl file.
@@ -49,15 +49,15 @@ Launching NucliTrack
 --------------------
 
 To launch nuclitrack start Python3 up in your terminal
-.. code-block::
+::
 	> Python3
 
 Python should now be running. Import NucliTrack and this will load up the Pygame window:
-.. code-block::
+::
 	>> import nuclitrack
 
 Finally run the nuclitrack application
-.. code-block::
+::
 	>> nuclitrack.CellTrackApp().run()
 
 The application should be running now and you're ready to get going.
