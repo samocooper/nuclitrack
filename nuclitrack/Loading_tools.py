@@ -252,7 +252,7 @@ class FileLoader(Widget):
                 if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
                     flist = self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
 
-    def auto_list:
+    def auto_list(self, first_name, last_name):
         pass
 
     def param_dir(self, instance):
@@ -353,6 +353,8 @@ class FileLoader(Widget):
         self.text_input_fov.text = txt[2:-1]
 
     def set_file_list(self, instance):
+
+        self.file_list = []
 
         if self.file_names[0] and self.file_names[1]:
             # Determine whether a difference of one exists somewhere in file names
@@ -537,6 +539,18 @@ class FileLoader(Widget):
         l_btn3.bind(on_press=self.load_from_data)
         self.ld_layout.add_widget(l_btn3)
 
+<<<<<<< HEAD
+=======
+        # Load screen parameters for classification tracking and segmentation
+
+        self.text_input_param = TextInput(text='Screen_parameter_data_file', multiline=False,
+                                          size_hint=(.6, .05), pos_hint={'x': .175, 'y': .24})
+
+        self.text_input_param.bind(on_text_validate=self.param_dir)
+        self.text_input_param.bind(on_double_tap=self.paste_text_param)
+        self.ld_layout.add_widget(self.text_input_param)
+
+>>>>>>> origin/master
         # Text input for image sequence range
 
         self.text_input1 = TextInput(text='Ch1 1st image (double click to paste)',
@@ -579,6 +593,29 @@ class FileLoader(Widget):
         self.ld_layout.add_widget(file_choose)
         self.ld_layout.add_widget(self.text_input1)
         self.ld_layout.add_widget(self.text_input2)
+<<<<<<< HEAD
+=======
+        self.ld_layout.add_widget(self.text_input3)
+        self.ld_layout.add_widget(self.text_input4)
+        self.ld_layout.add_widget(self.text_input5)
+        self.ld_layout.add_widget(self.text_input6)
+
+    def initialize(self):
+
+        self.file_names = ['', '', '', '', '', '']
+
+        self.ld_layout = FloatLayout(size=(Window.width, Window.height))
+        self.add_widget(self.ld_layout)
+
+        # Assign HDF5 file for storing data from the current field of view.
+
+        self.text_input_data = TextInput(text='Field_of_view_data_file', multiline=False, size_hint=(.6, .05),
+                                         pos_hint={'x': .175, 'y': .3})
+
+        self.text_input_data.bind(on_text_validate=self.data_dir)
+        self.text_input_data.bind(on_double_tap=self.paste_text_data)
+        self.ld_layout.add_widget(self.text_input_data)
+>>>>>>> origin/master
 
     def remove(self):
 
