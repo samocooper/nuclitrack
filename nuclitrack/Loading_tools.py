@@ -1,8 +1,11 @@
 import numpy as np
 import h5py
+from functools import partial
 
+from kivy.uix.dropdown import DropDown
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
@@ -11,7 +14,253 @@ from kivy.uix.filechooser import FileChooserListView
 from kivy.core.clipboard import Clipboard
 from kivy.uix.gridlayout import GridLayout
 
+
 class FileLoader(Widget):
+
+    def build(self):
+
+        # Master layout for loading screen
+
+        self.ld_layout = FloatLayout(size=(Window.width, Window.height))
+        self.add_widget(self.ld_layout)
+
+        self.img_layout = FloatLayout(size=(Window.width, Window.height))
+        self.add_widget(self.img_layout)
+
+        # Assign/Load HDF5 file for storing data from the current field of view.
+
+        # Record whether both files are loaded
+        self.file_loaded = [False, False]
+
+        # Label
+        self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
+                               size_hint=(.44, .05), pos_hint={'x': .05, 'y': .95})
+        self.ld_layout.add_widget(self.label_fov)
+
+        # Input
+
+        self.text_input_fov = TextInput(text='example_data.hdf5', multiline=False,
+                                        size_hint=(.44, .05), pos_hint={'x': .05, 'y': .9})
+        self.text_input_fov.bind(on_text_validate=partial(self.dir, self.text_input_fov.text, 'fov'))
+        self.ld_layout.add_widget(self.text_input_fov)
+
+        # Display loaded file
+
+        self.loaded_fov = Label(text='[b][color=000000] [/b][/color]', markup=True,
+                                size_hint=(.44, .05), pos_hint={'x': .05, 'y': .85})
+        self.ld_layout.add_widget(self.loaded_fov)
+
+        # Assign/Load HDF5 file for storing tracking and segmentation parameter data.
+
+        # Label
+        self.label_param = Label(text='[b][color=000000]Parameter Data File[/b][/color]', markup=True,
+                                 size_hint=(.44, .05), pos_hint={'x': .51, 'y': .95})
+        self.ld_layout.add_widget(self.label_param)
+
+        # Input
+        self.text_input_param = TextInput(text='example_params.hdf5', multiline=False,
+                                          size_hint=(.44, .05), pos_hint={'x': .51, 'y': .9})
+        self.text_input_param.bind(on_text_validate=partial(self.dir, self.text_input_param.text, 'param'))
+        self.ld_layout.add_widget(self.text_input_param)
+
+        # Display loaded file
+
+        self.loaded_param = Label(text='[b][color=000000] [/b][/color]', markup=True,
+                                  size_hint=(.44, .05), pos_hint={'x': .51, 'y': .85})
+        self.ld_layout.add_widget(self.loaded_param)
+
+    def dir(self, input_text, input_type, obj):
+
+        if input_type == 'fov':
+
+            self.parent.fov = h5py.File(input_text, "a")
+            self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            self.file_loaded[0] = True
+
+        if input_type == 'param':
+            self.parent.s_param = h5py.File(input_text, "a")
+            self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            self.file_loaded[1] = True
+
+        if self.file_loaded[0] and self.file_loaded[1]:
+
+            # Inform user if data already exists in file
+
+            flag = True
+
+            for g in self.parent.fov:
+                if g == 'file_list':
+                    self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
+                                              markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
+                    self.ld_layout.add_widget(self.message)
+                    flag = False
+
+            # Give user choice of how to load image series
+
+            if flag:
+                self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.9, .05), pos_hint={'x': .05, 'y': .8})
+
+                btn1 = ToggleButton(text='Load from file names', group='load_type')
+                btn1.bind(on_press=partial(self.load_imgs, 'file'))
+                self.load_choice.add_widget(btn1)
+
+                btn2 = ToggleButton(text='Load from text file', group='load_type')
+                btn2.bind(on_press=partial(self.load_imgs, 'text'))
+                self.load_choice.add_widget(btn2)
+
+                btn3 = ToggleButton(text='Load from directory', group='load_type')
+                btn3.bind(on_press=partial(self.load_imgs, 'dir'))
+                self.load_choice.add_widget(btn3)
+
+                self.ld_layout.add_widget(self.load_choice)
+
+            self.parent.progression[0] = 1
+            self.parent.progression_state(2)
+
+    def load_imgs(self, load_type, obj):
+
+        self.img_layout.clear_widgets()
+
+        # Load images from first and last file names
+
+        if load_type == 'file':
+            self.max_channel = 3
+            self.channel = 0
+            self.img_pos = 0
+
+            self.file_names = []
+            for i in range(self.max_channel*2):
+                self.file_names.append('')
+
+            # Layout for file buttons
+
+            self.series_choice = GridLayout(rows=1, padding=2, size_hint=(.9, .05), pos_hint={'x': .05, 'y': .755})
+
+            # Drop down menu for choosing which channel
+
+            self.channel_choice = DropDown()
+
+            for i in range(self.max_channel):
+
+                channel_btn = ToggleButton(text='Channel ' + str(i+1), group='channel', size_hint_y=None, height=25)
+                channel_btn.bind(on_press=partial(self.change_channel, i))
+                self.channel_choice.add_widget(channel_btn)
+
+            self.main_button = Button(text='Select Channel')
+            self.main_button.bind(on_release=self.channel_choice.open)
+            self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+            self.series_choice.add_widget(self.main_button)
+
+            # Determine whether first or last file in file sequence will be selected
+
+            first_image = ToggleButton(text='First Image', group='file_pos')
+            first_image.bind(on_press=partial(self.image_pos, 0))
+            self.series_choice.add_widget(first_image)
+
+            last_image = ToggleButton(text='Last Image', group='file_pos')
+            last_image.bind(on_press=partial(self.image_pos, 1))
+            self.series_choice.add_widget(last_image)
+
+            last_image = Button(text='Load Images')
+            last_image.bind(on_press=self.auto_load)
+            self.series_choice.add_widget(last_image)
+
+            self.img_layout.add_widget(self.series_choice)
+
+            # Labels for informing users which images have been loaded
+
+            self.first_img_name = Label(text='[b][color=000000] [/b][/color]',
+                                 markup=True, size_hint=(.44, .05), pos_hint={'x': .05, 'y': .7})
+            self.last_img_name = Label(text='[b][color=000000] [/b][/color]',
+                                 markup=True, size_hint=(.44, .05), pos_hint={'x': .51, 'y': .7})
+
+            self.img_layout.add_widget(self.first_img_name)
+            self.img_layout.add_widget(self.last_img_name)
+
+            # File browser widget for choosing file
+
+            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose.bind(on_submit=self.record_filename_click)
+            self.img_layout.add_widget(file_choose)
+
+            # Text input for selecting image location
+
+            self.text_input = TextInput(text='File location',
+                                        multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+            self.text_input.bind(on_text_validate=self.record_filename)
+            self.img_layout.add_widget(self.text_input)
+
+            # Info on file loading
+
+            self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
+                                       size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+            self.img_layout.add_widget(self.error_message)
+
+        # Load images from text file in directory
+
+        if load_type == 'text':
+
+            message1 = Label(text='[b][color=000000] text file[/b][/color]',
+                             markup=True, size_hint=(.35, .05), pos_hint={'x': .2, 'y': .55})
+            self.img_layout.add_widget(message1)
+
+        # Load all images within directory
+
+        if load_type == 'dir':
+            message1 = Label(text='[b][color=000000] form dir [/b][/color]',
+                             markup=True, size_hint=(.35, .05), pos_hint={'x': .2, 'y': .55})
+            self.img_layout.add_widget(message1)
+
+    def change_channel(self, channel, obj):
+
+        self.channel = channel
+        self.update_file_labels()
+
+    def image_pos(self, img_pos, obj):
+
+        self.img_pos = img_pos
+
+    def record_filename(self, instance):
+
+        self.file_names[self.channel*2 + self.img_pos] = instance.text
+        self.update_file_labels()
+
+    def record_filename_click(self, val, file_name, touch):
+        self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
+        self.update_file_labels()
+
+    def update_file_labels(self):
+
+        if len(self.file_names[self.channel*2])<30:
+            self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2] + '[/b][/color]'
+        else:
+            self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2][-29:] + '[/b][/color]'
+
+        if len(self.file_names[self.channel * 2]) < 30:
+            self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1] + '[/b][/color]'
+        else:
+            self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1][-29:] + '[/b][/color]'
+
+    def auto_load(self, obj):
+
+        if self.file_names[0] == '' or self.file_names[1] == '':
+            self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
+
+            return
+        else:
+            for i in range(self.max_channel):
+                if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
+                    flist = self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
+
+    def auto_list:
+        pass
+
+    def param_dir(self, instance):
+        l_btn4 = Button(text=' Load Params', size_hint=(.175, .05), pos_hint={'x': .8, 'y': .24})
+        l_btn4.bind(on_press=self.load_parameters)
+        self.ld_layout.add_widget(l_btn4)
+        self.param_text = instance.text
+        # Test contents of parameter file and update options available in parent view
 
     def file_assign(self, val, file_name, touch):
 
@@ -97,11 +346,11 @@ class FileLoader(Widget):
 
     def paste_text_data(self, instance):
         txt = str(Clipboard.get('UTF8_STRING'))
-        self.text_input_data.text = txt[2:-1]
+        self.text_input_fov.text = txt[2:-1]
 
     def paste_text_param(self, instance):
         txt = str(Clipboard.get('UTF8_STRING'))
-        self.text_input_data.text = txt[2:-1]
+        self.text_input_fov.text = txt[2:-1]
 
     def set_file_list(self, instance):
 
@@ -273,24 +522,10 @@ class FileLoader(Widget):
         if flag:
             self.parent.text_display.text = '[b][color=000000]No file list[/b][/color]'
 
-    def load_parameters(self, instance):
 
-        self.parent.s_param = h5py.File(self.param_text, "a")
-        self.parent.progression[0] = 1
-        self.parent.progression_state(2)
-
-    def param_dir(self, instance):
-
-        l_btn4 = Button(text=' Load Params', size_hint=(.175, .05), pos_hint={'x': .8, 'y': .24})
-        l_btn4.bind(on_press=self.load_parameters)
-        self.ld_layout.add_widget(l_btn4)
-        self.param_text = instance.text
-        # Test contents of parameter file and update options available in parent view
 
     def data_dir(self, instance):
 
-        self.file_name_temp = ''
-        self.parent.fov = h5py.File(instance.text, "a")
 
         # Test contents of fov file and update options available in parent view
 
@@ -301,15 +536,6 @@ class FileLoader(Widget):
         l_btn3 = Button(text='Load data', size_hint=(.175, .05), pos_hint={'x': .8, 'y': .3})
         l_btn3.bind(on_press=self.load_from_data)
         self.ld_layout.add_widget(l_btn3)
-
-        # Load screen parameters for classification tracking and segmentation
-
-        self.text_input_param = TextInput(text='S_p2', multiline=False,
-                                          size_hint=(.6, .05), pos_hint={'x': .175, 'y': .24})
-
-        self.text_input_param.bind(on_text_validate=self.param_dir)
-        self.text_input_param.bind(on_double_tap=self.paste_text_param)
-        self.ld_layout.add_widget(self.text_input_param)
 
         # Text input for image sequence range
 
@@ -324,34 +550,6 @@ class FileLoader(Widget):
 
         self.text_input2.bind(on_text_validate=self.file_assign_txt2)
         self.text_input2.bind(on_double_tap=self.paste_text2)
-
-        # Channel 2
-
-        self.text_input3 = TextInput(text='Ch2 1st image (optional)',
-                                     multiline=False, size_hint=(.23, .05), pos_hint={'x': .435, 'y': .18})
-
-        self.text_input3.bind(on_text_validate=self.file_assign_txt3)
-        self.text_input3.bind(on_double_tap=self.paste_text3)
-
-        self.text_input4 = TextInput(text='Ch2 last image',
-                                     multiline=False, size_hint=(.23, .05), pos_hint={'x': .435, 'y': .12})
-
-        self.text_input4.bind(on_text_validate=self.file_assign_txt4)
-        self.text_input4.bind(on_double_tap=self.paste_text4)
-
-        # Channel 3
-
-        self.text_input5 = TextInput(text='Ch3 1st image (optional)',
-                                     multiline=False, size_hint=(.23, .05), pos_hint={'x': .695, 'y': .18})
-
-        self.text_input5.bind(on_text_validate=self.file_assign_txt5)
-        self.text_input5.bind(on_double_tap=self.paste_text5)
-
-        self.text_input6 = TextInput(text='Ch3 last image',
-                                     multiline=False, size_hint=(.23, .05), pos_hint={'x': .695, 'y': .12})
-
-        self.text_input6.bind(on_text_validate=self.file_assign_txt6)
-        self.text_input6.bind(on_double_tap=self.paste_text6)
 
         # Graphical File selection
 
@@ -369,57 +567,28 @@ class FileLoader(Widget):
 
         ch1a = Button(text='Ch1 1st')
         ch1b = Button(text='Ch1 last')
-        ch2a = Button(text='Ch2 1st')
-        ch2b = Button(text='Ch2 last')
-        ch3a = Button(text='Ch2 1st')
-        ch3b = Button(text='Ch2 last')
 
         ch1a.bind(on_press=self.set1a)
         ch1b.bind(on_press=self.set1b)
-        ch2a.bind(on_press=self.set2a)
-        ch2b.bind(on_press=self.set2b)
-        ch3a.bind(on_press=self.set3a)
-        ch3b.bind(on_press=self.set3b)
 
         layout_btn.add_widget(ch1a)
         layout_btn.add_widget(ch1b)
-        layout_btn.add_widget(ch2a)
-        layout_btn.add_widget(ch2b)
-        layout_btn.add_widget(ch3a)
-        layout_btn.add_widget(ch3b)
-
         layout_btn.add_widget(l_btn1)
 
         self.ld_layout.add_widget(layout_btn)
         self.ld_layout.add_widget(file_choose)
         self.ld_layout.add_widget(self.text_input1)
         self.ld_layout.add_widget(self.text_input2)
-        self.ld_layout.add_widget(self.text_input3)
-        self.ld_layout.add_widget(self.text_input4)
-        self.ld_layout.add_widget(self.text_input5)
-        self.ld_layout.add_widget(self.text_input6)
-
-    def initialize(self):
-
-        self.file_names = ['', '', '', '', '', '']
-
-        self.ld_layout = FloatLayout(size=(Window.width, Window.height))
-        self.add_widget(self.ld_layout)
-
-        # Assign HDF5 file for storing data from the current field of view.
-
-        self.text_input_data = TextInput(text='Fov2', multiline=False, size_hint=(.6, .05),
-                                         pos_hint={'x': .175, 'y': .3})
-
-        self.text_input_data.bind(on_text_validate=self.data_dir)
-        self.text_input_data.bind(on_double_tap=self.paste_text_data)
-        self.ld_layout.add_widget(self.text_input_data)
 
     def remove(self):
 
         self.ld_layout.clear_widgets()
         self.remove_widget(self.ld_layout)
+        self.img_layout.clear_widgets()
+        self.remove_widget(self.img_layout)
 
     def update_size(self, window, width, height):
         self.ld_layout.width = width
         self.ld_layout.height = height
+        self.img_layout.width = width
+        self.img_layout.height = height
