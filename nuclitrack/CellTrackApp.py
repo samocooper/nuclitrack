@@ -3,11 +3,11 @@ from multiprocessing import Pool
 import numpy as np
 
 import tracking_c_tools
-from Segmentation_tools import SegmentationUI, segment_im
-from Tracking_tools import TrackingUI
-from Training_tools import TrainingUI
-from Loading_tools import FileLoader
-from Image_widget import ImDisplay
+from .Segmentation_tools import SegmentationUI, segment_im
+from .Tracking_tools import TrackingUI
+from .Training_tools import TrainingUI
+from .Loading_tools import FileLoader
+from .Image_widget import ImDisplay
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -581,6 +581,3 @@ class CellTrackApp(App):
         Window.bind(on_resize=ui.update_size)
 
         return ui
-
-if __name__ == '__main__':
-    CellTrackApp().run()

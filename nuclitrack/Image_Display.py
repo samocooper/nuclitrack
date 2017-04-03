@@ -4,7 +4,7 @@ from kivy.graphics.texture import Texture
 from kivy.graphics import Rectangle
 from kivy.uix.widget import Widget
 
-import cmaps
+import .cmaps
 import image_plot
 
 class ImDisplay(Widget):
