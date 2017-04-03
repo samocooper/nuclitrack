@@ -1,5 +1,6 @@
 import numpy as np
 import h5py
+import os
 from functools import partial
 
 from kivy.uix.dropdown import DropDown
@@ -13,7 +14,6 @@ from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
 from kivy.core.clipboard import Clipboard
 from kivy.uix.gridlayout import GridLayout
-
 
 class FileLoader(Widget):
 
@@ -98,6 +98,7 @@ class FileLoader(Widget):
             # Give user choice of how to load image series
 
             if flag:
+
                 self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.9, .05), pos_hint={'x': .05, 'y': .8})
 
                 btn1 = ToggleButton(text='Load from file names', group='load_type')
@@ -113,6 +114,10 @@ class FileLoader(Widget):
                 self.load_choice.add_widget(btn3)
 
                 self.ld_layout.add_widget(self.load_choice)
+
+                # Create master container for storing file_names
+
+                self.all_files = []
 
             self.parent.progression[0] = 1
             self.parent.progression_state(2)
@@ -214,7 +219,7 @@ class FileLoader(Widget):
     def change_channel(self, channel, obj):
 
         self.channel = channel
-        self.update_file_labels()
+        self.update_file_labels(self.text_input.text)
 
     def image_pos(self, img_pos, obj):
 
@@ -223,15 +228,17 @@ class FileLoader(Widget):
     def record_filename(self, instance):
 
         self.file_names[self.channel*2 + self.img_pos] = instance.text
-        self.update_file_labels()
+        self.update_file_labels(instance.text)
 
     def record_filename_click(self, val, file_name, touch):
         self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
-        self.update_file_labels()
+        self.update_file_labels(file_name[0])
 
-    def update_file_labels(self):
+    def update_file_labels(self, most_recent_text):
 
-        if len(self.file_names[self.channel*2])<30:
+        self.text_input.text = most_recent_text
+
+        if len(self.file_names[self.channel*2]) < 30:
             self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2] + '[/b][/color]'
         else:
             self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2][-29:] + '[/b][/color]'
@@ -243,17 +250,92 @@ class FileLoader(Widget):
 
     def auto_load(self, obj):
 
+        # Autoload all channels where both file names are given output file names to all_file list
+
         if self.file_names[0] == '' or self.file_names[1] == '':
             self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
-
             return
         else:
             for i in range(self.max_channel):
                 if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
                     flist = self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
 
+    def generate_list_test(self, first_name, dif_loc2):
+
+        if (dif_loc2 + 1) < len(first_name):
+
+            test_digit = first_name[dif_loc2+1]
+            flag = True
+
+            if test_digit.isdigit():
+                for j in np.arange(int(test_digit) + 1, int(test_digit) + 10):
+                    if j < 10:
+
+                        test_digit_temp = str(j)
+                        test_name = list(first_name)
+                        test_name[dif_loc2+1] = test_digit_temp[0]
+                    else:
+                        test_digit_temp = str(j)
+                        test_name = list(first_name)
+                        test_name[dif_loc2] = test_digit_temp[0]
+                        test_name[dif_loc2+1] = test_digit_temp[1]
+
+                    if not os.path.isfile(''.join(test_name)):
+                        flag = False
+            else:
+                flag = False
+
+            if flag:
+
+                dif_loc2 += 1
+                dif_loc2 = self.generate_list_test(first_name, dif_loc2)
+
+        return dif_loc2
+
     def auto_list(self, first_name, last_name):
-        pass
+
+        # Determine whether a difference of one exists somewhere in file names
+
+        fnm = list(first_name)
+
+        l1 = np.asarray([ord(i) for i in list(first_name)])
+        l2 = np.asarray([ord(i) for i in list(last_name)])
+
+        dif = l2 - l1
+
+        dif_loc = np.where(dif)[0][0]
+        dif_loc2 = np.where(dif)[0][-1]
+
+        # Use recursion to test if last digit is in fact last digit
+
+        dif_loc2 = self.generate_list_test(first_name, dif_loc2)
+
+        nm = dif[dif_loc:dif_loc2 + 1]
+        mul = 10 ** len(nm)
+        tot = 0
+        for x in nm:
+            mul //= 10
+            tot += x * mul
+
+        pad = len(str(tot))
+
+        start_num = ''
+        for i in range(dif_loc, dif_loc + pad):
+            start_num += fnm[i]
+
+        start_num = int(start_num)
+
+        file_list = []
+
+        for i in range(tot + 1):
+            s = str(start_num + i).zfill(pad)
+
+            for j in range(pad):
+                fnm[dif_loc + j] = s[j]
+
+            file_list.append(''.join(fnm))
+
+        self.all_files.append(file_list)
 
     def param_dir(self, instance):
         l_btn4 = Button(text=' Load Params', size_hint=(.175, .05), pos_hint={'x': .8, 'y': .24})
@@ -356,46 +438,6 @@ class FileLoader(Widget):
 
         self.file_list = []
 
-        if self.file_names[0] and self.file_names[1]:
-            # Determine whether a difference of one exists somewhere in file names
-
-            fnm = list(self.file_names[0][0])
-
-            l1 = np.asarray([ord(i) for i in list(self.file_names[0][0])])
-            l2 = np.asarray([ord(i) for i in list(self.file_names[1][0])])
-
-            dif = l2 - l1
-
-            dif_loc = np.where(dif)[0][0]
-            dif_loc2 = np.where(dif)[0][-1]
-
-            nm = dif[dif_loc:dif_loc2 + 1]
-
-            mul = 10 ** len(nm)
-            tot = 0
-            for x in nm:
-                mul //= 10
-                tot += x * mul
-
-            pad = len(str(tot))
-
-            start_num = ''
-            for i in range(dif_loc, dif_loc + pad):
-                start_num += fnm[i]
-
-            start_num = int(start_num)
-
-            file_list = []
-
-            for i in range(tot + 1):
-                s = str(start_num + i).zfill(pad)
-
-                for j in range(pad):
-                    fnm[dif_loc + j] = s[j]
-
-                file_list.append(''.join(fnm))
-
-            self.file_list.append(file_list)
 
         if self.file_names[2] and self.file_names[3]:
             # Determine whether a difference of one exists somewhere in file names
