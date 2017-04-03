@@ -4,7 +4,7 @@ import numpy
 
 setup(
     name='nuclitrack',
-    version='1.0.7',
+    version='1.0.8',
     description='Nuclei tracking program',
     author='Sam Cooper',
     author_email='sam@socooper.com',
