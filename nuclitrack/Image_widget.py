@@ -3,7 +3,7 @@ from kivy.graphics import Rectangle
 from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
-from .cmaps import color_map
+from cmaps import color_map
 import numpy_to_image
 
 class ImDisplay(Widget):

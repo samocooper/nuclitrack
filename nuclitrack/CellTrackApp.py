@@ -3,11 +3,11 @@ from multiprocessing import Pool
 import numpy as np
 
 import tracking_c_tools
-from .Segmentation_tools import SegmentationUI, segment_im
-from .Tracking_tools import TrackingUI
-from .Training_tools import TrainingUI
-from .Loading_tools import FileLoader
-from .Image_widget import ImDisplay
+from Segmentation_tools import SegmentationUI, segment_im
+from Tracking_tools import TrackingUI
+from Training_tools import TrainingUI
+from Loading_tools import FileLoader
+from Image_widget import ImDisplay
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -46,7 +46,7 @@ class UserInterface(Widget):
             self.data_widget = FileLoader(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.data_widget)
 
-            self.data_widget.initialize()
+            self.data_widget.build()
             Window.bind(on_resize=self.data_widget.update_size)
 
         else:
@@ -93,14 +93,12 @@ class UserInterface(Widget):
 
         self.dims = self.segment_channel[0].shape
 
-        self.text_display.text = '[b][color=000000]Load screen \nparameters[/b][/color]'
         self.progression[1] = 1
         self.progression_state(2)
 
     def segment_movie(self, instance):
 
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
-        self.text_display.text = '[b][color=000000]Segmenting \nmovie[/b][/color]'
         self.canvas.ask_update()
 
         p = Pool()
@@ -111,7 +109,6 @@ class UserInterface(Widget):
         for i in range(len(labels)):
             self.labels[i, :, :] = labels[i]
 
-        self.text_display.text = '[b][color=000000]Done[/b][/color]'
         self.progression_state(4)
         self.progression_state(5)
 
@@ -140,7 +137,6 @@ class UserInterface(Widget):
             self.m_layout.remove_widget(self.sframe)
 
     def extract_features(self, instance):
-        self.text_display.text = '[b][color=000000]Extracting \nFeatures[/b][/color]'
 
         features = np.zeros([1, 24])
         c = 0
@@ -227,7 +223,6 @@ class UserInterface(Widget):
                 del self.fov['feats']
 
         self.feats = self.fov.create_dataset("feats", data=features)
-        self.text_display.text = '[b][color=000000]Done[/b][/color]'
         self.progression_state(6)
 
     def training_ui(self, instance):
@@ -560,11 +555,9 @@ class UserInterface(Widget):
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        self.text_display = Label(text='[b][color=000000]Text Display[/b][/color]', markup=True, size_hint=(.1, .1),
-                             pos_hint={'x': .02, 'y': .01})
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
-        self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.8, .1), pos_hint={'x': .175, 'y': .01})
+        self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .01})
 
         btn1 = ToggleButton(text=' Load \nData')
         btn1.bind(on_press=self.data_ui)
@@ -573,7 +566,6 @@ class UserInterface(Widget):
         with self.canvas:
             self.add_widget(self.m_layout)
             self.m_layout.add_widget(self.layout1)
-            self.m_layout.add_widget(self.text_display)
 
     def update_size(self, window, width, height):
 

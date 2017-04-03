@@ -14,7 +14,7 @@ from skimage import morphology
 from skimage.feature import peak_local_max
 from scipy import ndimage
 
-from .Image_widget import ImDisplay
+from Image_widget import ImDisplay
 from numpy_to_image import scale_im
 
 # Standardize images using scale_im function

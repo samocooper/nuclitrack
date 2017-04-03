@@ -539,8 +539,6 @@ class FileLoader(Widget):
         l_btn3.bind(on_press=self.load_from_data)
         self.ld_layout.add_widget(l_btn3)
 
-<<<<<<< HEAD
-=======
         # Load screen parameters for classification tracking and segmentation
 
         self.text_input_param = TextInput(text='Screen_parameter_data_file', multiline=False,
@@ -550,7 +548,6 @@ class FileLoader(Widget):
         self.text_input_param.bind(on_double_tap=self.paste_text_param)
         self.ld_layout.add_widget(self.text_input_param)
 
->>>>>>> origin/master
         # Text input for image sequence range
 
         self.text_input1 = TextInput(text='Ch1 1st image (double click to paste)',
@@ -593,8 +590,7 @@ class FileLoader(Widget):
         self.ld_layout.add_widget(file_choose)
         self.ld_layout.add_widget(self.text_input1)
         self.ld_layout.add_widget(self.text_input2)
-<<<<<<< HEAD
-=======
+
         self.ld_layout.add_widget(self.text_input3)
         self.ld_layout.add_widget(self.text_input4)
         self.ld_layout.add_widget(self.text_input5)
@@ -615,7 +611,6 @@ class FileLoader(Widget):
         self.text_input_data.bind(on_text_validate=self.data_dir)
         self.text_input_data.bind(on_double_tap=self.paste_text_data)
         self.ld_layout.add_widget(self.text_input_data)
->>>>>>> origin/master
 
     def remove(self):
 

@@ -12,7 +12,7 @@ from kivy.uix.label import Label
 from kivy.core.window import Window
 
 from scipy.spatial import distance
-from .Image_widget import IndexedDisplay
+from Image_widget import IndexedDisplay
 
 class TrainingData(Widget):
     cell_type = 0

@@ -14,8 +14,8 @@ from kivy.uix.textinput import TextInput
 from skimage.external import tifffile
 from scipy.spatial import distance
 
-from .Image_widget import ImDisplay, IndexedDisplay
-from .Graph import Graph, SmoothLinePlot
+from Image_widget import ImDisplay, IndexedDisplay
+from Graph import Graph, SmoothLinePlot
 
 
 class CellMark(Widget):
