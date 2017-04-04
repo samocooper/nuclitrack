@@ -126,7 +126,15 @@ class FileLoader(Widget):
 
         self.img_layout.clear_widgets()
 
-        # Load images from first and last file names
+        # Info on file loading
+
+        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
+                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+        self.img_layout.add_widget(self.error_message)
+
+        #########################################
+        # LOAD IMAGES FROM FIRST AND LAST NAMES #
+        #########################################
 
         if load_type == 'file':
             self.max_channel = 3
@@ -195,26 +203,124 @@ class FileLoader(Widget):
             self.text_input.bind(on_text_validate=self.record_filename)
             self.img_layout.add_widget(self.text_input)
 
-            # Info on file loading
 
-            self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
-                                       size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
-            self.img_layout.add_widget(self.error_message)
-
-        # Load images from text file in directory
+        ####################################
+        # LOAD IMAGES FROM TXT FILE IN DIR #
+        ####################################
 
         if load_type == 'text':
 
-            message1 = Label(text='[b][color=000000] text file[/b][/color]',
-                             markup=True, size_hint=(.35, .05), pos_hint={'x': .2, 'y': .55})
-            self.img_layout.add_widget(message1)
+            # File browser widget for choosing file
 
-        # Load all images within directory
+            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose.bind(on_submit=self.record_text_file_click)
+            self.img_layout.add_widget(file_choose)
+
+            # Text input for selecting image location
+
+            self.text_file_input = TextInput(text='File location',
+                                        multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+            self.text_file_input.bind(on_text_validate=self.record_text_file)
+            self.img_layout.add_widget(self.text_file_input)
+
+        ##############################
+        # LOAD IMAGES FROM DIRECTORY #
+        ##############################
 
         if load_type == 'dir':
-            message1 = Label(text='[b][color=000000] form dir [/b][/color]',
-                             markup=True, size_hint=(.35, .05), pos_hint={'x': .2, 'y': .55})
-            self.img_layout.add_widget(message1)
+
+            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose.bind(on_submit=self.record_dir_click)
+            self.img_layout.add_widget(file_choose)
+
+            # Text input for selecting image location
+
+            self.dir_input = TextInput(text='File location',
+                                             multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+            self.dir_input.bind(on_text_validate=self.record_dir)
+            self.img_layout.add_widget(self.dir_input)
+
+    ############################
+    # TEXT FILE LOAD FUNCTIONS #
+    ############################
+
+    def record_dir_click(self, val, file_name, touch):
+        self.load_from_dir(file_name[0])
+
+    def record_dir(self, instance):
+        self.load_from_dir(instance.text)
+
+    def load_from_dir(self, file_name):
+
+        try:
+            file_name_split = file_name.split('/')
+            file_name_split = [s + '/' for s in file_name_split]
+            dir_name = ''.join(file_name_split[:-1])
+
+            file_list = os.listdir(dir_name)
+            file_name_split2 = file_name.split('.')
+            file_type = file_name_split2[1]
+
+            # Filter out files of a different file type
+
+            file_list_filtered = []
+            for f in file_list:
+                if not (f.find(file_type) == -1):
+                    file_list_filtered.append(dir_name + f)
+            file_list = file_list_filtered
+
+            for f in file_list:
+                if not os.path.isfile(f):
+                    self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+                    return
+
+            self.all_files.append(file_list)
+
+        except:
+            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
+
+
+    ############################
+    # TEXT FILE LOAD FUNCTIONS #
+    ############################
+
+    def record_text_file_click(self, val, file_name, touch):
+        self.load_from_textfile(file_name[0])
+
+    def record_text_file(self, instance):
+        self.load_from_textfile(instance.text)
+
+    def load_from_textfile(self, file_name):
+
+        try:
+
+            if os.path.isfile(file_name):
+                file_name_split = file_name.split('/')
+                file_name_split = [s + '/' for s in file_name_split]
+                dir_name = ''.join(file_name_split[:-1])
+                file_list = []
+                with open(file_name) as f:
+                    for line in f:
+                        if line[-1] == '\n':
+                            line = line[:-1]
+                        file_list.append(dir_name + line)
+
+                for f in file_list:
+                    if not os.path.isfile(f):
+                        self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+                        return
+
+                self.all_files.append(file_list)
+
+            else:
+                self.error_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
+                return
+        except:
+            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
+
+    #######################
+    # AUTO LOAD FUNCTIONS #
+    #######################
 
     def change_channel(self, channel, obj):
 
@@ -251,14 +357,26 @@ class FileLoader(Widget):
     def auto_load(self, obj):
 
         # Autoload all channels where both file names are given output file names to all_file list
+        # Handle errors in file loading
+        try:
+            if self.file_names[0] == '' or self.file_names[1] == '':
+                self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
+                return
 
-        if self.file_names[0] == '' or self.file_names[1] == '':
-            self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
-            return
-        else:
+            if self.file_names[0] == self.file_names[1]:
+                self.error_message.text = '[b][color=000000]Select two different files [/b][/color]'
+                return
+
+            if not(len(self.file_names[0]) == len(self.file_names[1])):
+                self.error_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
+                return
+
             for i in range(self.max_channel):
                 if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
-                    flist = self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
+                    if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
+                        self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
+        except:
+            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
 
     def generate_list_test(self, first_name, dif_loc2):
 
@@ -334,6 +452,11 @@ class FileLoader(Widget):
                 fnm[dif_loc + j] = s[j]
 
             file_list.append(''.join(fnm))
+
+        for f in file_list:
+            if not os.path.isfile(f):
+                self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+                return
 
         self.all_files.append(file_list)
 
