@@ -12,7 +12,6 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
-from kivy.core.clipboard import Clipboard
 from kivy.uix.gridlayout import GridLayout
 
 class FileLoader(Widget):
