@@ -2,6 +2,7 @@ import numpy as np
 import h5py
 import os
 from functools import partial
+from skimage.external import tifffile
 
 from kivy.uix.dropdown import DropDown
 from kivy.uix.widget import Widget
@@ -70,6 +71,8 @@ class FileLoader(Widget):
 
     def dir(self, input_text, input_type, obj):
 
+        # Display loaded files
+
         if input_type == 'fov':
 
             self.parent.fov = h5py.File(input_text, "a")
@@ -80,6 +83,10 @@ class FileLoader(Widget):
             self.parent.s_param = h5py.File(input_text, "a")
             self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
             self.file_loaded[1] = True
+
+        ########################
+        # FILE LOADING OPTIONS #
+        ########################
 
         if self.file_loaded[0] and self.file_loaded[1]:
 
@@ -202,7 +209,6 @@ class FileLoader(Widget):
             self.text_input.bind(on_text_validate=self.record_filename)
             self.img_layout.add_widget(self.text_input)
 
-
         ####################################
         # LOAD IMAGES FROM TXT FILE IN DIR #
         ####################################
@@ -240,7 +246,7 @@ class FileLoader(Widget):
             self.img_layout.add_widget(self.dir_input)
 
     ############################
-    # TEXT FILE LOAD FUNCTIONS #
+    # DIRECTORY LOAD FUNCTIONS #
     ############################
 
     def record_dir_click(self, val, file_name, touch):
@@ -251,34 +257,27 @@ class FileLoader(Widget):
 
     def load_from_dir(self, file_name):
 
-        try:
-            file_name_split = file_name.split('/')
-            file_name_split = [s + '/' for s in file_name_split]
-            dir_name = ''.join(file_name_split[:-1])
+        #try:
 
-            file_list = os.listdir(dir_name)
-            file_name_split2 = file_name.split('.')
-            file_type = file_name_split2[1]
+        file_name_split = file_name.split('/')
+        file_name_split = [s + '/' for s in file_name_split]
+        dir_name = ''.join(file_name_split[:-1])
 
-            # Filter out files of a different file type
+        file_list = os.listdir(dir_name)
+        file_name_split2 = file_name.split('.')
+        file_type = file_name_split2[1]
 
-            file_list_filtered = []
-            for f in file_list:
-                if not (f.find(file_type) == -1):
-                    file_list_filtered.append(dir_name + f)
-            file_list = file_list_filtered
+        # Filter out files of a different file type
 
-            for f in file_list:
-                if not os.path.isfile(f):
-                    self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
-                    return
+        file_list_filtered = []
+        for f in file_list:
+            if not (f.find(file_type) == -1):
+                file_list_filtered.append(dir_name + f)
 
-            self.all_files = []
-            self.all_files.append(file_list)
+        self.load_movie([file_list_filtered])
 
-        except:
-            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
-
+        #except:
+        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
 
     ############################
     # TEXT FILE LOAD FUNCTIONS #
@@ -292,32 +291,26 @@ class FileLoader(Widget):
 
     def load_from_textfile(self, file_name):
 
-        try:
+        #try:
 
-            if os.path.isfile(file_name):
-                file_name_split = file_name.split('/')
-                file_name_split = [s + '/' for s in file_name_split]
-                dir_name = ''.join(file_name_split[:-1])
-                file_list = []
-                with open(file_name) as f:
-                    for line in f:
-                        if line[-1] == '\n':
-                            line = line[:-1]
-                        file_list.append(dir_name + line)
+        if os.path.isfile(file_name):
+            file_name_split = file_name.split('/')
+            file_name_split = [s + '/' for s in file_name_split]
+            dir_name = ''.join(file_name_split[:-1])
+            file_list = []
+            with open(file_name) as f:
+                for line in f:
+                    if line[-1] == '\n':
+                        line = line[:-1]
+                    file_list.append(dir_name + line)
 
-                for f in file_list:
-                    if not os.path.isfile(f):
-                        self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
-                        return
+            self.load_movie([file_list])
 
-                self.all_files = []
-                self.all_files.append(file_list)
-
-            else:
-                self.error_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
-                return
-        except:
-            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
+        else:
+            self.error_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
+            return
+        #except:
+        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -359,27 +352,32 @@ class FileLoader(Widget):
 
         # Autoload all channels where both file names are given output file names to all_file list
         # Handle errors in file loading
-        try:
-            if self.file_names[0] == '' or self.file_names[1] == '':
-                self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
-                return
 
-            if self.file_names[0] == self.file_names[1]:
-                self.error_message.text = '[b][color=000000]Select two different files [/b][/color]'
-                return
+        #try:
 
-            if not(len(self.file_names[0]) == len(self.file_names[1])):
-                self.error_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
-                return
+        if self.file_names[0] == '' or self.file_names[1] == '':
+            self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
+            return
 
-            self.all_files = []
+        if self.file_names[0] == self.file_names[1]:
+            self.error_message.text = '[b][color=000000]Select two different files [/b][/color]'
+            return
 
-            for i in range(self.max_channel):
-                if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
-                    if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
-                        self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1])
-        except:
-            self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
+        if not(len(self.file_names[0]) == len(self.file_names[1])):
+            self.error_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
+            return
+
+        all_channels = []
+
+        for i in range(self.max_channel):
+            if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
+                if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
+                    all_channels.append(self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
+
+        self.load_movie(all_channels)
+
+        #except:
+        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
 
     def generate_list_test(self, first_name, dif_loc2):
 
@@ -456,12 +454,63 @@ class FileLoader(Widget):
 
             file_list.append(''.join(fnm))
 
-        for f in file_list:
-            if not os.path.isfile(f):
-                self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+        return file_list
+
+    ##############################
+    # LOAD IMAGES FROM FILE LIST #
+    ##############################
+
+    def load_movie(self, all_channel_files):
+
+        # Check channels are same length and all files are present
+
+        frames = len(all_channel_files[0])
+
+        for all_image_files in all_channel_files:
+
+            if not (frames == len(all_image_files)):
+                self.error_message.text = '[b][color=000000] Channels not same length [/b][/color]'
                 return
 
-        self.all_files.append(file_list)
+            for f in all_image_files:
+                if not os.path.isfile(f):
+                    self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+                    return
+
+        # Load images from first channel
+
+        frames = len(all_channel_files[0])
+        im_test = tifffile.imread(all_channel_files[0][0])
+        dims = im_test.shape
+
+        all_channels = []
+        all_channel_files_np = []
+
+        for all_image_files in all_channel_files:
+
+            all_images = np.zeros((frames, dims[0], dims[1]))
+
+            for i in range(len(all_image_files)):
+                im_temp = tifffile.imread(all_image_files[i])
+                im_temp = im_temp.astype(float)
+                all_images[i, :, :] = im_temp
+
+            all_channels.append(all_images)
+            all_channel_files_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
+
+            # Transform file names to bytes for storing in hdf5 file
+        print(all_channel_files_np)
+        all_channel_files_np = np.asarray(all_channel_files_np)
+        print(all_channel_files_np.shape)
+
+        # Overwrite previous file lists
+
+        for g in self.parent.fov:
+            if g == 'all_channels':
+                del self.parent.fov['all_channels']
+        self.parent.fov.create_dataset('all_channels', data=all_channel_files_np)
+
+        self.error_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
 
     def remove(self):
 
@@ -471,6 +520,7 @@ class FileLoader(Widget):
         self.remove_widget(self.img_layout)
 
     def update_size(self, window, width, height):
+        print('hello')
         self.ld_layout.width = width
         self.ld_layout.height = height
         self.img_layout.width = width

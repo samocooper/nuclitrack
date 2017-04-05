@@ -18,7 +18,6 @@ from kivy.uix.label import Label
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
-from skimage.external import tifffile
 from skimage.measure import regionprops
 from sklearn.ensemble import RandomForestClassifier
 
@@ -53,48 +52,6 @@ class UserInterface(Widget):
 
             self.data_widget.remove()
             self.remove_widget(self.data_widget)
-
-    def load_movie(self, flist):
-        self.frames = len(flist[0])
-
-        self.segment_channel = []
-        self.channel_2 = []
-        self.channel_3 = []
-
-        for i in range(self.frames):
-            im_temp = tifffile.imread(flist[0][i])
-            im_temp = im_temp.astype(float)
-
-            if i == 0:
-                self.ch1_max = max(im_temp.flatten())
-                self.ch1_min = min(im_temp.flatten())
-
-            else:
-                if self.ch1_max < max(im_temp.flatten()):
-                    self.ch1_max = max(im_temp.flatten())
-                if self.ch1_min > min(im_temp.flatten()):
-                    self.ch1_min = min(im_temp.flatten())
-
-            self.segment_channel.append(im_temp)
-
-        if len(flist) > 1:
-            for i in range(self.frames):
-                im_temp = tifffile.imread(flist[1][i])
-                im_temp = im_temp.astype(float)
-
-                self.channel_2.append(im_temp)
-
-        if len(flist) > 2:
-            for i in range(self.frames):
-                im_temp = tifffile.imread(flist[2][i])
-                im_temp = im_temp.astype(float)
-
-                self.channel_3.append(im_temp)
-
-        self.dims = self.segment_channel[0].shape
-
-        self.progression[1] = 1
-        self.progression_state(2)
 
     def segment_movie(self, instance):
 
@@ -569,14 +526,17 @@ class UserInterface(Widget):
 
     def update_size(self, window, width, height):
 
+        print('hello')
         self.m_layout.width = width
         self.m_layout.height = height
 
 
 class CellTrackApp(App):
     def build(self):
+
         ui = UserInterface()
         ui.initialize()
+
         Window.clearcolor = (.8, .8, .8, 1)
         Window.bind(on_resize=ui.update_size)
 
