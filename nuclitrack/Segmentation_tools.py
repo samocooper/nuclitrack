@@ -31,17 +31,55 @@ def im_standard(m):
 
 # Batch Segmentation
 
-def segment_im(param,im):
 
-    im1 = clipping(im, param[0])  # perform image analysis operation
-    im2 = background(im1, param[1])
-    im3 = blur(im2, param[2])
-    im_bin_uf = threshold(im3, param[3])
-    im_b = object_filter(im_bin_uf, param[4])
-    cell_center = cell_centers(im3, im_b, param[5])
-    markers = fg_markers(cell_center, im_b, param[6])
-    im_edge = sobel_edges(im1, param[7])
-    labels = watershed(markers, im_b, im_edge, param[8])
+def segment_im(param, image, frames):
+
+    labels = np.zeros(image.shape)
+    k1 = morphology.octagon(2, 2)
+    k2 = morphology.octagon(10, 10)
+
+    if param[0] != 0:
+        image[image > param[0]] = param[0]
+
+    for i in range(frames):
+
+        img = image[i, :, :]
+
+        if param[7] != 0:
+            img_edge = filters.gaussian(img.copy(), int(param[7]))
+        else:
+            img_edge = img.copy()
+
+        img_edge = filters.sobel(img_edge) + 1
+        img_edge = im_standard(img_edge)
+
+        if param[1] != 0:
+            img = img - filters.gaussian(img, int(param[1]))
+
+        if param[2] != 0:
+            img = filters.gaussian(img, int(param[2]))
+
+        img_bin = img > param[3]
+        img_bin = morphology.remove_small_objects(img_bin, int(param[4]))
+
+        img_dist = ndimage.distance_transform_edt(img_bin)
+        img_dist = im_standard(img_dist)
+
+        im_cent = (1 - param[5]) * img + param[5] * img_dist
+        im_cent[np.invert(img_bin)] = 0
+
+        local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(param[6]), labels=img_bin, exclude_border=False)
+        local_maxi[0, 0] = True
+        markers = ndimage.label(local_maxi)[0]
+        markers = morphology.dilation(markers, selem=k1)
+
+        bgm = morphology.binary_dilation(img_bin, selem=k2)
+        bgm[0, 0] = True
+
+        markers_temp = markers + np.invert(bgm)
+        shed_im = (1 - param[8]) * img_edge - param[8] * img_dist
+
+        labels[i, :, :] = morphology.watershed(shed_im, markers_temp) - 1
 
     return labels
 
@@ -75,10 +113,10 @@ def blur(im, val):
     if val != 0:
         im_temp = filters.gaussian(im_temp, int(val))
 
-
     im_temp = im_standard(im_temp)
 
     return im_temp
+
 
 def threshold(im, val):
 
@@ -105,7 +143,7 @@ def cell_centers(im, im_bin, val):
     return im_cent
 
 
-def fg_markers(im_cent,im_bin,val):
+def fg_markers(im_cent, im_bin, val):
 
     local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=False)
     local_maxi[0, 0] = True
@@ -116,8 +154,7 @@ def fg_markers(im_cent,im_bin,val):
 
     return markers
 
-
-def sobel_edges(im,val):
+def sobel_edges(im, val):
 
     if val != 0:
 
@@ -129,7 +166,7 @@ def sobel_edges(im,val):
     return im
 
 
-def watershed(markers,im_bin,im_edge,val):
+def watershed(markers, im_bin, im_edge, val):
 
     k = morphology.octagon(10, 10)
     bgm = morphology.binary_dilation(im_bin, selem=k)
@@ -150,7 +187,7 @@ class SegmentationUI(Widget):
 
     def frame_select(self, instance, val):
 
-        self.im = self.channel_im[int(val)].copy()
+        self.im = self.seg_channel[int(val), :, :].copy()
         self.im_disp.update_im(self.im)
 
     def segment_script(self, instance, val, **kwargs):
@@ -252,40 +289,24 @@ class SegmentationUI(Widget):
 
         self.parent.s_param['seg_param'][:] = self.params[:]
 
-    def chan_select1(self,instance):
-        self.channel_im = self.channel_1
-
-    def chan_select2(self, instance):
-        self.channel_im = self.channel_2
-
-    def chan_select3(self, instance):
-        self.channel_im = self.channel_3
-
-    def initialize(self, channel_1, channel_2, channel_3, frames):
-
-        self.parent.progression_state(3)
-
-        self.state = 0
-
-        self.channel_im = channel_1
-        self.channel_1 = channel_1
-
-        if channel_2:
-            self.channel_2 = channel_2
-        if channel_3:
-            self.channel_3 = channel_3
+    def initialize(self, frames, max_channels):
 
         self.frames = frames
+        self.seg_channel = self.parent.all_channels[0]
+        self.ch_max = np.max(self.seg_channel.flatten())
+        self.ch_min = np.min(self.seg_channel.flatten())
+
+        self.parent.progression_state(3)
+        self.state = 0
 
         self.parent.s_param.require_dataset('seg_param', (9,), dtype='f')
         self.params = self.parent.s_param['seg_param'][:]
-
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
 
         self.im_disp = ImDisplay(size_hint=(.75, .7), pos_hint={'x': .2, 'y': .2})
         self.s_layout.add_widget(self.im_disp)
 
-        self.im = self.channel_im[0]
+        self.im = self.seg_channel[0, :, :].copy()
         self.im_disp.create_im(self.im, 'PastelHeat')
 
         # Frame slider
@@ -293,25 +314,12 @@ class SegmentationUI(Widget):
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .2, 'y': .9})
         self.frame_slider.bind(value=self.frame_select)
 
-        if channel_2:
-
-            self.ch1 = Button(text='Ch 1', size_hint=(.1, .05), pos_hint={'x': .55, 'y': .9})
-            self.ch1.bind(on_press=self.chan_select1)
-
-            self.ch2 = Button(text='Ch 2', size_hint=(.1, .05), pos_hint={'x': .7, 'y': .9})
-            self.ch2.bind(on_press=self.chan_select2)
-
-        if channel_3:
-
-            self.ch3 = Button(text='Ch 1', size_hint=(.1, .05), pos_hint={'x': .55, 'y': .9})
-            self.ch3.bind(on_press=self.chan_select3)
-
         # Sliders for updating parameters
 
         layout2 = GridLayout(cols=1, padding=2, size_hint=(.12, .8), pos_hint={'x': .01, 'y': .18})
 
-        s0 = Slider(min=float(self.parent.ch1_min), max=float(self.parent.ch1_max),
-                    step=float((self.parent.ch1_max-self.parent.ch1_min)/100), value=float(self.params[0]))
+        s0 = Slider(min=float(self.ch_min), max=float(self.ch_max),
+                    step=float((self.ch_max-self.ch_min)/100), value=float(self.params[0]))
         s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]))
         s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]))
         s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]))
@@ -349,13 +357,6 @@ class SegmentationUI(Widget):
         with self.canvas:
 
             self.add_widget(self.s_layout)
-
-            if channel_2:
-                self.s_layout.add_widget(self.ch1)
-                self.s_layout.add_widget(self.ch2)
-
-            if channel_3:
-                self.s_layout.add_widget(self.ch3)
 
             self.s_layout.add_widget(self.frame_slider)
             self.s_layout.add_widget(self.layout2)

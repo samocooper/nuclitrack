@@ -69,6 +69,12 @@ class FileLoader(Widget):
                                   size_hint=(.44, .05), pos_hint={'x': .51, 'y': .85})
         self.ld_layout.add_widget(self.loaded_param)
 
+        # Info on file loading
+
+        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
+                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+        self.ld_layout.add_widget(self.error_message)
+
     def dir(self, input_text, input_type, obj):
 
         # Display loaded files
@@ -95,11 +101,19 @@ class FileLoader(Widget):
             flag = True
 
             for g in self.parent.fov:
-                if g == 'file_list':
+                if g == 'all_channels':
                     self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
                                               markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
                     self.ld_layout.add_widget(self.message)
                     flag = False
+
+                    all_channels = []
+
+                    all_channels_np = self.parent.fov['all_channels'][...]
+                    for i in range(all_channels_np.shape[0]):
+                        all_channels.append([str(fname, encoding='utf8') for fname in all_channels_np[i, :]])
+
+                    self.load_movie(all_channels)
 
             # Give user choice of how to load image series
 
@@ -121,10 +135,6 @@ class FileLoader(Widget):
 
                 self.ld_layout.add_widget(self.load_choice)
 
-                # Create master container for storing file_names
-
-                self.all_files = []
-
             self.parent.progression[0] = 1
             self.parent.progression_state(2)
 
@@ -132,17 +142,12 @@ class FileLoader(Widget):
 
         self.img_layout.clear_widgets()
 
-        # Info on file loading
-
-        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
-                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
-        self.img_layout.add_widget(self.error_message)
-
         #########################################
         # LOAD IMAGES FROM FIRST AND LAST NAMES #
         #########################################
 
         if load_type == 'file':
+
             self.max_channel = 3
             self.channel = 0
             self.img_pos = 0
@@ -496,19 +501,26 @@ class FileLoader(Widget):
                 all_images[i, :, :] = im_temp
 
             all_channels.append(all_images)
-            all_channel_files_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
 
             # Transform file names to bytes for storing in hdf5 file
-        print(all_channel_files_np)
+            all_channel_files_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
+
         all_channel_files_np = np.asarray(all_channel_files_np)
-        print(all_channel_files_np.shape)
 
         # Overwrite previous file lists
 
         for g in self.parent.fov:
             if g == 'all_channels':
                 del self.parent.fov['all_channels']
+
+        self.parent.all_channels = all_channels
+        self.parent.frames = frames
+        self.parent.dims = dims
+
         self.parent.fov.create_dataset('all_channels', data=all_channel_files_np)
+        self.parent.progression[0] = 1
+        self.parent.progression[1] = 1
+        self.parent.progression_state(2)
 
         self.error_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
 

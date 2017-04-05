@@ -30,7 +30,7 @@ class UserInterface(Widget):
             self.segment_p = SegmentationUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.segment_p)
 
-            self.segment_p.initialize(self.segment_channel, self.channel_2, self.channel_3, self.frames)
+            self.segment_p.initialize(self.frames, len(self.all_channels))
             Window.bind(on_resize=self.segment_p.update_size)
 
         else:
@@ -58,14 +58,9 @@ class UserInterface(Widget):
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
         self.canvas.ask_update()
 
-        p = Pool()
         params = self.s_param['seg_param'][:]
 
-        labels = p.map(functools.partial(segment_im, params), self.segment_channel)
-
-        for i in range(len(labels)):
-            self.labels[i, :, :] = labels[i]
-
+        self.labels = segment_im(params, self.all_channels[0], self.frames)
         self.progression_state(4)
         self.progression_state(5)
 
