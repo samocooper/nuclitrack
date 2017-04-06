@@ -19,85 +19,58 @@ import segmentation_c_tools
 
 # Batch Segmentation
 
-def segment_im(param, image, frames):
+def segment_im(param, image):
 
-    start = time.time()
     k1 = morphology.octagon(2, 2)
     k2 = morphology.octagon(10, 10)
 
     if param[0] != 0:
         image[image > param[0]] = param[0]
-
     img_edge = image.copy()
 
-    for i in range(frames):
+    if param[7] != 0:
+        if param[7] < 8:
+            img_edge = filters.gaussian(image, param[7])
+        else:
+            img_edge = segmentation_c_tools.fast_blur(image, param[7] - 1)
 
-        if param[7] != 0:
-            if param[7] < 8:
-                img_edge[i, :, :] = filters.gaussian(image[i, :, :], param[7])
-            else:
-                img_edge[i, :, :] = segmentation_c_tools.fast_blur(image[i, :, :], param[7] - 1)
-
-        img_edge[i, :, :] = filters.sobel(img_edge[i, :, :]) + 1
+        img_edge = filters.sobel(img_edge) + 1
 
     img_edge = img_edge/(np.max(img_edge.flatten()))
 
-    print(time.time()-start)
-
     if param[1] != 0:
-        image = image - segmentation_c_tools.fast_blur_stack(image, param[1] - 1)
-
-    print(time.time()-start)
+        image = image - segmentation_c_tools.fast_blur(image, param[1] - 1)
 
     if param[2] != 0:
 
         if param[2] < 8:
-            for i in range(frames):
-                image[i, :, :] = filters.gaussian(image[i, :, :], param[2])
+            image = filters.gaussian(image, param[2])
         else:
-            image = segmentation_c_tools.fast_blur_stack(image, param[2] - 1)
-
-    print(time.time() - start)
+            image = segmentation_c_tools.fast_blur(image, param[2] - 1)
 
     img_bin = image > param[3]
-    img_dist = np.zeros(image.shape)
-    markers = np.zeros(image.shape)
-    bgm = np.zeros(image.shape)
-
-    for i in range(frames):
-        img_bin[i, :, :] = morphology.remove_small_objects(img_bin[i, :, :], int(param[4]))
-        img_dist[i, :, :] = ndimage.distance_transform_edt(img_bin[i, :, :])
-
-    print(time.time() - start)
+    img_bin = morphology.remove_small_objects(img_bin, int(param[4]))
+    img_dist = ndimage.distance_transform_edt(img_bin)
 
     img_dist = img_dist / (np.max(img_dist.flatten()))
     img_cent = (1 - param[5]) * image + param[5] * img_dist
     img_cent[np.logical_not(img_bin)] = 0
 
-    for i in range(frames):
+    local_maxi = peak_local_max(img_cent, indices=False, min_distance=int(param[6]), labels=img_bin, exclude_border=False)
+    local_maxi[0, 0] = True
+    markers = ndimage.label(local_maxi)[0]
+    markers = morphology.dilation(markers, selem=k1)
+    bgm = morphology.binary_dilation(img_bin, selem=k2)
 
-        local_maxi = peak_local_max(img_cent[i, :, :], indices=False, min_distance=int(param[6]), labels=img_bin[i, :, :], exclude_border=False)
-        local_maxi[0, 0] = True
-        markers[i, :, :] = ndimage.label(local_maxi)[0]
-        markers[i, :, :] = morphology.dilation(markers[i, :, :], selem=k1)
-        bgm[i, :, :] = morphology.binary_dilation(img_bin[i, :, :], selem=k2)
-
-    print(time.time() - start)
-
-    bgm[:, 0, 0] = True
+    bgm[0, 0] = True
     markers = markers + np.logical_not(bgm)
     img_shed = (1 - param[8]) * img_edge - param[8] * img_dist
-    labels = np.zeros(image.shape)
+    labels = morphology.watershed(img_shed, markers)
 
-    for i in range(frames):
-        labels[i, :, :] = morphology.watershed(img_shed[i, :, :], markers[i, :, :])
-
-    print(time.time() - start)
 
     return labels
 
 # Functions for segmentation
-
 
 def clipping(im, val):
 

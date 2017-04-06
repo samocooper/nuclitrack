@@ -18,8 +18,13 @@ from kivy.uix.label import Label
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
+from kivy.uix.progressbar import ProgressBar
+from kivy.event import EventDispatcher
 from skimage.measure import regionprops
 from sklearn.ensemble import RandomForestClassifier
+from kivy.clock import Clock
+
+from threading import Thread
 
 class UserInterface(Widget):
 
@@ -53,16 +58,37 @@ class UserInterface(Widget):
             self.data_widget.remove()
             self.remove_widget(self.data_widget)
 
+    def update_bar(self, dt):
+        self.pb.value += 1000/self.frames
+        print(self.pb.value)
+
+    def segment_im(self, dt):
+        print('occur')
+        self.label_np[self.i, :, :] = segment_im(self.params, self.all_channels[0][self.i, :, :])
+
+
+    def load_bar(self, instance):
+
+        self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
+                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+        self.m_layout.add_widget(self.seg_message)
+        self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
+        self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=0)
+        self.pb.value += 1000 / self.frames
+        self.m_layout.add_widget(self.layout2)
+        self.layout2.add_widget(self.pb)
+
     def segment_movie(self, instance):
 
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
-        self.canvas.ask_update()
-
-        params = self.s_param['seg_param'][:]
-
-        self.labels = segment_im(params, self.all_channels[0], self.frames)
+        self.params = self.s_param['seg_param'][:]
+        self.frames = self.all_channels[0].shape[0]
+        self.label_np = np.zeros(self.all_channels[0].shape)
+        self.i = 0
+        self.flag = True
         self.progression_state(4)
         self.progression_state(5)
+
 
     def segment_frame(self, instance, val):
 
@@ -423,7 +449,8 @@ class UserInterface(Widget):
         if state == 3 and self.progression[3] == 0:
 
             btn3 = Button(text='Segment\n  Movie')
-            btn3.bind(on_press=self.segment_movie)
+            btn3.bind(on_press=self.load_bar)
+            btn3.bind(on_release=self.segment_movie)
             self.layout1.add_widget(btn3)
 
             self.progression[3] = 1
@@ -503,10 +530,24 @@ class UserInterface(Widget):
 
             self.progression[9] = 1
 
+    def do_work(self, dt):
+        self.canvas.ask_update()
+        if self.flag:
+
+            self.i += 1
+
+            Clock.schedule_once(self.update_bar, 0)
+            Clock.schedule_once(self.segment_im, 0)
+
+            if self.i == self.frames-1:
+                self.flag = False
+                self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
+
+
     def initialize(self):
+
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
         self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .01})
@@ -515,9 +556,13 @@ class UserInterface(Widget):
         btn1.bind(on_press=self.data_ui)
         self.layout1.add_widget(btn1)
 
+        self.flag = False
+        Clock.schedule_interval(self.do_work, 0)
+
         with self.canvas:
             self.add_widget(self.m_layout)
             self.m_layout.add_widget(self.layout1)
+
 
     def update_size(self, window, width, height):
 
