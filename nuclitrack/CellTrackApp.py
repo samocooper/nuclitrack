@@ -155,9 +155,9 @@ class UserInterface(Widget):
         self.counter += len(features_temp[0])
         feature_mat = np.zeros((len(features_temp[0]), self.feature_num))
 
-        for j in range(len(features_temp[0]), 1, -1):
+        for j in range(len(features_temp[0])-1, 0, -1):
 
-            cell_temp = features_temp[0][j - 1]
+            cell_temp = features_temp[0][j]
 
             features_vector = np.zeros(self.feature_num)
 
@@ -185,7 +185,7 @@ class UserInterface(Widget):
             features_vector[11] = np.std(im_temp[im_temp > mu])
 
             for k in range(1, self.channel_num):
-                cell_temp = features_temp[k][j - 1]
+                cell_temp = features_temp[k][j]
 
                 mu = cell_temp.mean_intensity
                 im_temp = cell_temp.intensity_image.flatten()
@@ -196,7 +196,7 @@ class UserInterface(Widget):
                 features_vector[20 + (k - 1) * 3 + 1] = np.std(im_temp)
                 features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
 
-            feature_mat[j-1, :] = features_vector
+            feature_mat[j, :] = features_vector
             img_label[img_label == cell_temp.label] = self.counter
 
             self.counter -= 1
@@ -577,8 +577,7 @@ class UserInterface(Widget):
 
                 self.feature_flag = False
 
-                self.features = np.delete(self.features, 0, 0)
-                self.features[:, 17:19] = 1
+                self.features[1:, 17:19] = 1
                 self.features = self.features[np.argsort(self.features[:, 0]), :]
 
                 # Delete if features already exists otherwise store extracted features as number of segments may change
