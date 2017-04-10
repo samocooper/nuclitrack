@@ -3,7 +3,7 @@ from multiprocessing import Pool
 import numpy as np
 
 import tracking_c_tools
-from .Segmentation_tools import SegmentationUI, segment_im
+from .Segmentation_tools import SegmentationUI, ViewSegmentation, segment_im
 from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI
 from .Loading_tools import FileLoader
@@ -19,6 +19,7 @@ from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.uix.progressbar import ProgressBar
+
 from skimage.measure import regionprops
 from sklearn.ensemble import RandomForestClassifier
 from kivy.clock import Clock
@@ -48,8 +49,8 @@ class UserInterface(Widget):
 
         if self.current_ui == 4:
 
-            self.m_layout.remove_widget(self.im_disp)
-            self.m_layout.remove_widget(self.sframe)
+            self.view_segmentation.remove()
+            self.remove_widget(self.view_segmentation)
 
         if self.current_ui == 5:
 
@@ -131,16 +132,11 @@ class UserInterface(Widget):
             self.clear_ui()
             self.current_ui = 4
 
-            im_temp = self.labels[0, :, :]
+            self.view_segmentation = ViewSegmentation(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
+            self.add_widget(self.view_segmentation)
 
-            self.im_disp = ImDisplay(size_hint=(.75, .7), pos_hint={'x': .2, 'y': .2})
-            self.im_disp.create_im(im_temp, 'Random')
-            self.m_layout.add_widget(self.im_disp)
+            self.view_segmentation.initialize(self.labels, self.frames)
 
-            self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
-                                 pos_hint={'x': .2, 'y': .9})
-            self.sframe.bind(value=self.segment_frame)
-            self.m_layout.add_widget(self.sframe)
 
     def update_bar(self, dt):
         self.pb.value += 1000/self.frames
@@ -149,10 +145,6 @@ class UserInterface(Widget):
 
         self.labels[frame, :, :] = segment_im(self.params, self.all_channels[0][frame, :, :])
 
-    def segment_frame(self, instance, val):
-
-        im_temp = self.labels[int(val), :, :]
-        self.im_disp.update_im(im_temp)
 
     def frame_features(self, frame, dt):
 
@@ -207,7 +199,8 @@ class UserInterface(Widget):
                 features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
 
             feature_mat[j-1, :] = features_vector
-            img_label[img_label == cell_temp.label] = self.counter + 1
+            img_label[img_label == cell_temp.label] = self.counter
+            print(cell_temp.label, self.counter)
             self.counter -= 1
 
         img_label = img_label - 1
@@ -381,6 +374,7 @@ class UserInterface(Widget):
             self.progression[3] = 1
 
             for g in self.fov:
+                print(g)
                 if g == 'labels':
 
                     # Load labels
@@ -544,8 +538,6 @@ class UserInterface(Widget):
                 Clock.schedule_once(partial(self.update_message, -1), 0)
                 self.tracking_flag = False
 
-
-
     def update_count(self, instance, dt):
         if instance == 1:
             self.track_counter.text = '[b][color=000000]' + str(self.tracking_instance.get_count()) + '[/b][/color]'
@@ -590,7 +582,6 @@ class UserInterface(Widget):
         with self.canvas:
             self.add_widget(self.m_layout)
             self.m_layout.add_widget(self.layout1)
-
 
     def update_size(self, window, width, height):
 

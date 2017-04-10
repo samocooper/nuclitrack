@@ -70,7 +70,7 @@ class TrainingUI(Widget):
         self.current_frame = int(val)
         im_temp = self.labels[int(val), :, :]
 
-        mapping = np.hstack((0, self.features[:, 17].astype(int)))
+        mapping = self.features[:, 17].astype(int)
         self.im_disp.update_im(im_temp, mapping)
 
         inds = self.features[:, 1]
@@ -103,7 +103,7 @@ class TrainingUI(Widget):
                 self.features[int(sel[0]) - 1, 17] = 1.0 + val
 
         im_temp = self.labels[self.current_frame, :, :]
-        mapping = np.hstack((0, self.features[:, 17].astype(int)))
+        mapping = self.features[:, 17].astype(int)
         self.im_disp.update_im(im_temp, mapping)
         self.canvas.ask_update()
 
@@ -150,7 +150,7 @@ class TrainingUI(Widget):
         self.t_layout.add_widget(self.im_disp)
 
         im_temp = self.labels[0, :, :].astype(float)
-        mapping = np.hstack((0, self.features[:, 17].astype(int)))
+        mapping = self.features[:, 17].astype(int)
         self.im_disp.create_im(im_temp, 'Random', mapping)
 
         inds = self.features[:, 1]

@@ -153,7 +153,7 @@ class FileLoader(Widget):
             self.img_pos = 0
 
             self.file_names = []
-            for i in range(self.max_channel*2):
+            for i in range((self.max_channel + 1)*2):
                 self.file_names.append('')
 
             # Layout for file buttons
@@ -169,6 +169,10 @@ class FileLoader(Widget):
                 channel_btn = ToggleButton(text='Channel ' + str(i+1), group='channel', size_hint_y=None, height=25)
                 channel_btn.bind(on_press=partial(self.change_channel, i))
                 self.channel_choice.add_widget(channel_btn)
+
+            channel_btn = ToggleButton(text='Labels', group='channel', size_hint_y=None, height=25)
+            channel_btn.bind(on_press=partial(self.change_channel, self.max_channel))
+            self.channel_choice.add_widget(channel_btn)
 
             self.main_button = Button(text='Select Channel')
             self.main_button.bind(on_release=self.channel_choice.open)
@@ -262,8 +266,6 @@ class FileLoader(Widget):
 
     def load_from_dir(self, file_name):
 
-        #try:
-
         file_name_split = file_name.split('/')
         file_name_split = [s + '/' for s in file_name_split]
         dir_name = ''.join(file_name_split[:-1])
@@ -281,9 +283,6 @@ class FileLoader(Widget):
 
         self.load_movie([file_list_filtered])
 
-        #except:
-        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
-
     ############################
     # TEXT FILE LOAD FUNCTIONS #
     ############################
@@ -295,8 +294,6 @@ class FileLoader(Widget):
         self.load_from_textfile(instance.text)
 
     def load_from_textfile(self, file_name):
-
-        #try:
 
         if os.path.isfile(file_name):
             file_name_split = file_name.split('/')
@@ -314,8 +311,6 @@ class FileLoader(Widget):
         else:
             self.error_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
             return
-        #except:
-        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -348,7 +343,7 @@ class FileLoader(Widget):
         else:
             self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2][-29:] + '[/b][/color]'
 
-        if len(self.file_names[self.channel * 2]) < 30:
+        if len(self.file_names[self.channel*2+1]) < 30:
             self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1] + '[/b][/color]'
         else:
             self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1][-29:] + '[/b][/color]'
@@ -357,8 +352,6 @@ class FileLoader(Widget):
 
         # Autoload all channels where both file names are given output file names to all_file list
         # Handle errors in file loading
-
-        #try:
 
         if self.file_names[0] == '' or self.file_names[1] == '':
             self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
@@ -379,10 +372,17 @@ class FileLoader(Widget):
                 if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
                     all_channels.append(self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
 
-        self.load_movie(all_channels)
+        flag = self.load_movie(all_channels)
 
-        #except:
-        #    self.error_message.text = '[b][color=000000] Unknown error loading files [/b][/color]'
+        if flag:
+
+            mx = self.max_channel
+
+            if (not self.file_names[mx * 2 + 0] == '') and (not self.file_names[mx * 2 + 1] == ''):
+                if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
+                    labels = self.auto_list(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
+                    self.load_labels(labels)
+
 
     def generate_list_test(self, first_name, dif_loc2):
 
@@ -523,6 +523,51 @@ class FileLoader(Widget):
         self.parent.progression_state(2)
 
         self.error_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
+        return True
+
+    def load_labels(self, label_files):
+
+            # Check channels are same length and all files are present
+            frames = self.parent.frames
+            dims = self.parent.dims
+
+            if not (frames == len(label_files)):
+                self.error_message.text = '[b][color=000000] Labels not same length [/b][/color]'
+                return
+
+            if not (frames == len(label_files)):
+                self.error_message.text = '[b][color=000000] Labels not same length [/b][/color]'
+                return
+
+            for f in label_files:
+                if not os.path.isfile(f):
+                    self.error_message.text = '[b][color=000000]Missing label file: ' + f + '[/b][/color]'
+                    return
+
+            im_test = tifffile.imread(label_files[0])
+            if not(im_test.shape[0] == dims[0] and im_test.shape[1] == dims[1]):
+                self.error_message.text = '[b][color=000000]Label file dimensions different [/b][/color]'
+                return
+
+            labels = np.zeros((frames, dims[0], dims[1]))
+
+            for i in range(frames):
+                im_temp = tifffile.imread(label_files[i])
+                im_temp = im_temp
+                labels[i, :, :] = im_temp
+
+            labels = labels.astype(int)
+            for g in self.parent.fov:
+                if g == 'labels':
+                    del self.parent.fov['labels']
+
+            self.parent.s_param.require_dataset('seg_param', (9,), dtype='f')
+            self.parent.fov.create_dataset("labels", data=labels)
+
+            self.parent.progression[2] = 1
+            self.parent.progression_state(3)
+
+            self.error_message.text = '[b][color=000000]Movie and Labels Loaded[/b][/color]'
 
     def remove(self):
 

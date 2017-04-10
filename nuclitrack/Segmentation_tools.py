@@ -7,12 +7,20 @@ from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.core.window import Window
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.textinput import TextInput
+from kivy.uix.label import Label
+
 from functools import partial
 
 from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
+from skimage.external import tifffile
+
 from scipy import ndimage
+import os
 
 from .Image_widget import ImDisplay
 import segmentation_c_tools
@@ -21,54 +29,17 @@ import segmentation_c_tools
 
 def segment_im(param, image):
 
-    k1 = morphology.octagon(2, 2)
-    k2 = morphology.octagon(10, 10)
+    image = clipping(image, param[0])
+    image2 = background(image, param[1])
+    image3 = blur(image2, param[2])
+    im_bin = threshold(image3, param[3])
+    im_bin = object_filter(im_bin, param[4])
+    cell_center = cell_centers(image3, im_bin, param[5])
+    markers = fg_markers(cell_center, im_bin, param[6])
+    im_edge = sobel_edges(image, param[7])
 
-    if param[0] != 0:
-        image[image > param[0]] = param[0]
-    img_edge = image.copy()
+    return watershed(markers, im_bin, im_edge, param[8])
 
-    if param[7] != 0:
-        if param[7] < 8:
-            img_edge = filters.gaussian(image, param[7])
-        else:
-            img_edge = segmentation_c_tools.fast_blur(image, param[7] - 1)
-
-        img_edge = filters.sobel(img_edge) + 1
-
-    img_edge = img_edge/(np.max(img_edge.flatten()))
-
-    if param[1] != 0:
-        image = image - segmentation_c_tools.fast_blur(image, param[1] - 1)
-
-    if param[2] != 0:
-
-        if param[2] < 8:
-            image = filters.gaussian(image, param[2])
-        else:
-            image = segmentation_c_tools.fast_blur(image, param[2] - 1)
-
-    img_bin = image > param[3]
-    img_bin = morphology.remove_small_objects(img_bin, int(param[4]))
-    img_dist = ndimage.distance_transform_edt(img_bin)
-
-    img_dist = img_dist / (np.max(img_dist.flatten()))
-    img_cent = (1 - param[5]) * image + param[5] * img_dist
-    img_cent[np.logical_not(img_bin)] = 0
-
-    local_maxi = peak_local_max(img_cent, indices=False, min_distance=int(param[6]), labels=img_bin, exclude_border=False)
-    local_maxi[0, 0] = True
-    markers = ndimage.label(local_maxi)[0]
-    markers = morphology.dilation(markers, selem=k1)
-    bgm = morphology.binary_dilation(img_bin, selem=k2)
-
-    bgm[0, 0] = True
-    markers = markers + np.logical_not(bgm)
-    img_shed = (1 - param[8]) * img_edge - param[8] * img_dist
-    labels = morphology.watershed(img_shed, markers)
-
-
-    return labels
 
 # Functions for segmentation
 
@@ -127,7 +98,7 @@ def cell_centers(im, im_bin, val):
     d_mat = d_mat / np.max(d_mat.flatten())
 
     im_cent = (1 - val) * im + val * d_mat
-    im_cent[np.invert(im_bin)] = 0
+    im_cent[np.logical_not(im_bin)] = 0
 
     return im_cent
 
@@ -135,7 +106,6 @@ def cell_centers(im, im_bin, val):
 def fg_markers(im_cent, im_bin, val):
 
     local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=False)
-    local_maxi[0, 0] = True
     markers = ndimage.label(local_maxi)[0]
 
     k = morphology.octagon(2, 2)
@@ -166,13 +136,12 @@ def watershed(markers, im_bin, im_edge, val):
     d_mat = ndimage.distance_transform_edt(im_bin)
     d_mat = d_mat / np.max(d_mat.flatten())
 
-    markers_temp = markers + np.invert(bgm)
+    markers_temp = markers + np.logical_not(bgm)
     shed_im = (1 - val) * im_edge - val * d_mat
 
     labels = morphology.watershed(shed_im, markers_temp) - 1
 
     return labels
-
 
 class SegmentationUI(Widget):
 
@@ -364,3 +333,120 @@ class SegmentationUI(Widget):
 
         self.s_layout.width = width
         self.s_layout.height = height
+
+class ViewSegmentation(Widget):
+
+    def make_folder(self, instance):
+        os.makedirs(self.file_choose.path + '\\' + instance.text)
+        self.folder_input.text = 'Directory made, re-enter present dir to view it'
+
+    def export_files(self, instance):
+
+        temp_path = self.file_choose.path
+        digits = len(str(self.frames))
+
+        for i in range(self.frames):
+            num = str(i)
+            num = num.zfill(digits)
+            tifffile.imsave(temp_path + '\\' + instance.text + '_' + num + '.tif', self.labels[i, :, :])
+
+        self.text_file_input.text = 'Images written, re-enter present dir to view them'
+
+    def export_data(self, instance):
+
+        if self.view == 'seg_view':
+
+            self.s_layout.remove_widget(self.im_disp)
+            self.s_layout.remove_widget(self.sframe)
+
+            self.s_layout.add_widget(self.file_choose)
+            self.s_layout.add_widget(self.text_file_input)
+            self.s_layout.add_widget(self.file_label)
+            self.s_layout.add_widget(self.folder_input)
+            self.s_layout.add_widget(self.folder_label)
+
+        self.view = 'file_view'
+
+    def view_segment(self, instance):
+
+        if self.view == 'file_view':
+
+            self.s_layout.remove_widget(self.file_choose)
+            self.s_layout.remove_widget(self.text_file_input)
+            self.s_layout.remove_widget(self.file_label)
+            self.s_layout.remove_widget(self.folder_input)
+            self.s_layout.remove_widget(self.folder_label)
+
+            self.s_layout.add_widget(self.im_disp)
+            self.s_layout.add_widget(self.sframe)
+
+        self.view = 'seg_view'
+
+
+    def initialize(self, labels, frames):
+
+        self.view = 'seg_view'
+
+        self.view_button = ToggleButton(text='View Labels', size_hint=(.2, .05), pos_hint={'x': .53, 'y': .925},
+                                        group='view')
+        self.export_button = ToggleButton(text='Export Labels', size_hint=(.2, .05), pos_hint={'x': .74, 'y': .925},
+                                          group='view')
+        self.view_button.bind(on_press=self.view_segment)
+        self.export_button.bind(on_press=self.export_data)
+
+        self.s_layout = FloatLayout(size=(Window.width, Window.height))
+
+        self.s_layout.add_widget(self.view_button)
+        self.s_layout.add_widget(self.export_button)
+
+        self.labels = labels
+        self.frames = frames
+
+        im_temp = self.labels[0, :, :]
+
+        #### SEG WIDGETS ####
+
+        self.im_disp = ImDisplay(size_hint=(.75, .7), pos_hint={'x': .2, 'y': .2})
+        self.im_disp.create_im(im_temp, 'Random')
+        self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
+                             pos_hint={'x': .2, 'y': .9})
+        self.sframe.bind(value=self.segment_frame)
+
+        #### FILE WIDGETS ####
+
+        self.file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+
+        # Crate dir
+        self.folder_input = TextInput(text='Directory Name',
+                                         multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .85})
+        self.folder_input.bind(on_text_validate=self.make_folder)
+        self.folder_label = Label(text='[b][color=000000]Create directory name: [/b][/color]', markup=True, size_hint=(.25, .05), pos_hint={'x': .05, 'y': .85})
+
+        # Export labels to tif files
+
+        self.text_file_input = TextInput(text='File Name',
+                                         multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .79})
+        self.text_file_input.bind(on_text_validate=self.export_files)
+        self.file_label = Label(text='[b][color=000000]Choose file name: [/b][/color]', markup=True, size_hint=(.25, .05), pos_hint={'x': .05, 'y': .79})
+
+        self.s_layout.add_widget(self.im_disp)
+        self.s_layout.add_widget(self.sframe)
+
+
+        with self.canvas:
+            self.add_widget(self.s_layout)
+
+    def segment_frame(self, instance, val):
+
+        im_temp = self.labels[int(val), :, :]
+        self.im_disp.update_im(im_temp)
+
+    def update_size(self, window, width, height):
+
+        self.s_layout.width = width
+        self.s_layout.height = height
+
+    def remove(self):
+
+        self.s_layout.clear_widgets()
+        self.remove_widget(self.s_layout)
