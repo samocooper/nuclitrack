@@ -16,6 +16,142 @@ from scipy.spatial import distance
 
 from .Image_widget import ImDisplay, IndexedDisplay
 from .Graph import Graph, SmoothLinePlot
+import tracking_c_tools
+
+class RunTracking(object):
+
+    ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
+    
+        Col3 = mitosis; Col4 = Track_id; Col5 = frame.
+    
+        Tracking parameters are; 0) distance penalty (smaller means
+        less penalty); 1) max distance searched in previous frame; 2 & 3) weighting for adding segments based
+        on probability of segments, p2*(s+1) - p3*(s); 4) mitosis penalty reduce the likelihood of mitosis,
+        negative values increase the likelihood; 5) weighting for gaps in tracking; 6) max gap'''
+
+    def __init__(self, tracking_mat, frames, track_param):
+
+        self.frames = int(frames)
+        self.tracking_mat = np.vstack((np.zeros((1, tracking_mat.shape[1])), tracking_mat))
+        self. track_param = track_param
+
+        self.states = np.zeros(self.tracking_mat.shape[0], dtype=int)
+        self.tracks = np.zeros([1, 8])
+
+        self.d_mat = tracking_c_tools.distance_mat(self.tracking_mat, self.frames, track_param)
+        self.d_mat = self.d_mat[self.d_mat[:, 2].argsort(), :]
+        self.d_mat = np.vstack((self.d_mat, np.zeros((1, self.d_mat.shape[1]))))
+        self.s_mat = tracking_c_tools.swaps_mat(self.d_mat, self.frames)
+
+        self.cum_score = 0.
+        self.count = 1
+
+    def add_cell(self, min_score):
+
+        score_mat = tracking_c_tools.forward_pass(self.tracking_mat, self.d_mat, self.s_mat, self.states, self.track_param)
+        max_score = max(score_mat[:, 3])
+
+        if max_score > min_score:
+            self.cum_score += max_score
+            track_temp, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
+            track_temp[:, 4] = self.count
+
+            self.tracks, track_temp = tracking_c_tools.swap_test(self.tracks, track_temp, self.d_mat, self.count)
+
+            self.tracks = np.vstack((self.tracks, track_temp))
+            self.count += 1
+
+        return max_score
+
+    def finish_adding(self):
+
+        self.tracks = np.delete(self.tracks, 0, 0)
+
+    def optimise(self, i):
+
+            replace_mask = self.tracks[:, 4] == i
+            track_store = self.tracks[replace_mask, :]
+
+            self.tracks = self.tracks[np.logical_not(replace_mask), :]
+            for j in range(track_store.shape[0]):  # Remove track
+
+                self.states[int(track_store[j, 0])] -= 1
+
+                if j > 0:
+                    ind1 = track_store[j - 1, 0]
+                    ind2 = track_store[j, 0]
+
+                    m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
+                    m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
+                    m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
+                    m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
+
+                    if any(m1):
+                        self.s_mat[m1, 5] = 0
+                        self.s_mat[m1, 7] = 0
+                    if any(m2):
+                        self.s_mat[m2, 6] = 0
+                        self.s_mat[m2, 7] = 0
+                    if any(m3):
+                        self.s_mat[m3, 5] = 0
+                        self.s_mat[m3, 8] = 0
+                    if any(m4):
+                        self.s_mat[m4, 6] = 0
+                        self.s_mat[m4, 8] = 0
+
+            score_mat = tracking_c_tools.forward_pass(self.tracking_mat, self.d_mat, self.s_mat, self.states, self.track_param)
+            max_score = max(score_mat[:, 3])
+            flag = False
+
+            if max_score > track_store[-1, 2]:
+
+                self.cum_score = self.cum_score + max_score - track_store[-1, 2]
+                track_replace, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
+                track_replace[:, 4] = i
+
+                self.tracks, track_replace = tracking_c_tools.swap_test(self.tracks, track_replace, self.d_mat, i)
+                self.tracks = np.vstack((self.tracks, track_replace))
+
+            else:
+                self.tracks = np.vstack((self.tracks, track_store))
+
+                for j in range(track_store.shape[0]):
+
+                    self.states[int(track_store[j, 0])] += 1
+
+                    if j > 0:
+
+                        ind1 = track_store[j - 1, 0]
+                        ind2 = track_store[j - 1, 0]
+
+                        m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
+                        m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
+                        m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
+                        m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
+
+                        if any(m1):
+                            self.s_mat[m1, 5] = 1
+                            self.s_mat[m1, 7] = 1
+                        if any(m2):
+                            self.s_mat[m2, 6] = 1
+                            self.s_mat[m2, 7] = 1
+                        if any(m3):
+                            self.s_mat[m3, 5] = 1
+                            self.s_mat[m3, 8] = 1
+                        if any(m4):
+                            self.s_mat[m4, 6] = 1
+                            self.s_mat[m4, 8] = 1
+
+    def finish_optimising(self):
+
+        self.tracks[:, 0] = self.tracks[:, 0] - 1
+        return self.tracks
+
+    def get_count(self):
+        return self.count
+
+    def get_max(self):
+        return np.max(self.tracks[:, 4])
 
 
 class CellMark(Widget):
@@ -429,16 +565,16 @@ class TrackingUI(Widget):
         for g in self.parent.fov:
             if g == 'saved_tracks':
                 del self.parent.fov['saved_tracks']
-            if g == 'saved_feats':
-                del self.parent.fov['saved_feats']
+            if g == 'saved_features':
+                del self.parent.fov['saved_features']
 
         self.parent.fov.create_dataset("saved_tracks", data=self.tracks)
-        self.parent.fov.create_dataset("saved_feats", data=self.features)
+        self.parent.fov.create_dataset("saved_features", data=self.features)
 
     def load_tracks(self, instance):
 
         self.tracks = self.parent.fov['saved_tracks'][:, :]
-        self.features = self.parent.fov['saved_feats'][:, :]
+        self.features = self.parent.fov['saved_features'][:, :]
 
         im_temp = self.labels[self.current_frame, :, :]
 
@@ -627,16 +763,16 @@ class TrackingUI(Widget):
 
         self.modify_update()
 
-    def initialize(self, channel_im, labels, frames):
+    def initialize(self, all_channels, labels, frames):
 
         self.tracks = self.parent.fov['tracks'][:, :]
-        self.features = self.parent.fov['feats'][:, :]
+        self.features = self.parent.fov['features'][:, :]
 
         self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
         self.keyboard.bind(on_key_down=self.key_print)
 
         self.labels = labels
-        self.channel_im = channel_im
+        self.channel_im = all_channels[0]
         self.frames = frames
 
         self.dims = self.channel_im[0].shape

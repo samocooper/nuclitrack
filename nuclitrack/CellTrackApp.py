@@ -4,7 +4,7 @@ import numpy as np
 
 import tracking_c_tools
 from .Segmentation_tools import SegmentationUI, segment_im
-from .Tracking_tools import TrackingUI
+from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI
 from .Loading_tools import FileLoader
 from .Image_widget import ImDisplay
@@ -61,6 +61,14 @@ class UserInterface(Widget):
 
             self.training_p.remove()
             self.remove_widget(self.training_p)
+
+        if self.current_ui == 7:
+            self.m_layout.remove_widget(self.track_message)
+
+        if self.current_ui == 8:
+
+            self.tracking_p.remove()
+            self.remove_widget(self.tracking_p)
 
 
     def data_ui(self, instance):
@@ -142,18 +150,18 @@ class UserInterface(Widget):
     def segment_frame(self, instance, val):
 
         im_temp = self.labels[int(val), :, :]
-        print(im_temp[1:50,1:10])
         self.im_disp.update_im(im_temp)
 
     def frame_features(self, frame, dt):
 
         img_label = self.labels[frame, :, :].copy()
         features_temp = []
+
         for j in range(self.channel_num):
             features_temp.append(regionprops(img_label, self.all_channels[j][frame, :, :]))
 
-        self.counter += len(features_temp[0])
-        feature_mat = np.zeros((len(features_temp[0]), self.feature_num))
+        self.counter += (len(features_temp[0])-1)
+        feature_mat = np.zeros((len(features_temp[0])-1, self.feature_num))
 
         for j in range(len(features_temp[0])-1, 0, -1):
 
@@ -196,12 +204,12 @@ class UserInterface(Widget):
                 features_vector[20 + (k - 1) * 3 + 1] = np.std(im_temp)
                 features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
 
-            feature_mat[j, :] = features_vector
-            img_label[img_label == cell_temp.label] = self.counter
-
+            feature_mat[j-1, :] = features_vector
+            img_label[img_label == cell_temp.label] = self.counter + 1
             self.counter -= 1
 
-        self.counter += len(features_temp[0])
+        img_label = img_label - 1
+        self.counter += (len(features_temp[0]) - 1)
         self.features = np.vstack((self.features, feature_mat))
         self.labels[frame, :, :] = img_label
 
@@ -212,6 +220,7 @@ class UserInterface(Widget):
 
         self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+
         self.m_layout.add_widget(self.feat_message)
 
         self.channel_num = len(self.all_channels)
@@ -242,7 +251,6 @@ class UserInterface(Widget):
             self.add_widget(self.training_p)
 
             self.training_p.initialize(self.labels, self.features, self.frames)
-            print(self.labels)
             Window.bind(on_resize=self.training_p.update_size)
 
 
@@ -256,7 +264,7 @@ class UserInterface(Widget):
         mask = np.sum(self.training_data[:, 12:17], axis=0) > 0
         inds = np.where(mask)[0]
         clf = clf.fit(self.training_data[:, 5:10], self.training_data[:, 12+inds].astype(bool))
-        probs = clf.predict_proba(self.fov['feats'][:, 5:10])
+        probs = clf.predict_proba(self.features[:, 5:10])
 
         i = 0
         for p in probs:
@@ -265,144 +273,15 @@ class UserInterface(Widget):
             else:
                 p = np.asarray(p)
 
-            self.fov['feats'][:, 12 + inds[i]] = p[:, 1]
+            self.features[:, 12 + inds[i]] = p[:, 1]
             i += 1
 
+        self.fov['features'][...] = self.features
         self.progression_state(8)
 
-    def run_tracking(self, instance):
+    def finish_tracking(self, instance):
 
-        ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
-        Col3 = mitosis; Col4 = Track_id; Col5 = frame.
-
-        Tracking parameters are; 0) distance penalty (smaller means
-        less penalty); 1) max distance searched in previous frame; 2 & 3) weighting for adding segments based
-        on probability of segments, p2*(s+1) - p3*(s); 4) mitosis penalty reduce the likelihood of mitosis,
-        negative values increase the likelihood; 5) weighting for gaps in tracking; 6) max gap'''
-
-        tracking_mat = self.fov['feats'][:, :]
-        tracking_mat = np.vstack((np.zeros((1,tracking_mat.shape[1])),tracking_mat))
-
-        states = np.zeros(tracking_mat.shape[0])
-        states = states.astype(int)
-
-        tracks = np.zeros([1, 8])
-        self.fov['feats'][:, 18] = 1
-
-        d_mat = tracking_c_tools.distance_mat(tracking_mat, int(self.frames), self.track_param)
-        d_mat = d_mat[d_mat[:, 2].argsort(), :]
-
-        d_mat= np.vstack((d_mat, np.zeros((1, d_mat.shape[1]))))
-
-        s_mat = tracking_c_tools.swaps_mat(d_mat, self.frames)
-
-        max_score = 1000.
-        cum_score = 0.
-        count = 1
-
-        while max_score > 5.:
-
-            print(0, count, max_score)
-
-            score_mat = tracking_c_tools.forward_pass(tracking_mat, d_mat, s_mat, states, self.track_param)
-            max_score = max(score_mat[:, 3])
-
-            if max_score > 5.:
-
-                cum_score += max_score
-                track_temp, s_mat, states = tracking_c_tools.track_back(score_mat, states, s_mat)
-                track_temp[:, 4] = count
-
-                tracks, track_temp = tracking_c_tools.swap_test(tracks, track_temp, d_mat, count)
-
-                tracks = np.vstack((tracks, track_temp))
-                count += 1
-
-        tracks = np.delete(tracks, 0, 0)
-
-        iters = 3
-
-        # Optimise tracks by iterating through removing and adding again
-
-        for h in range(iters):
-            for i in range(1, int(max(tracks[:, 4]))):
-
-                replace_mask = tracks[:, 4] == i
-                track_store = tracks[replace_mask, :]
-
-                tracks = tracks[np.logical_not(replace_mask), :]
-                for j in range(track_store.shape[0]):  # Remove track
-
-                    states[int(track_store[j, 0])] -= 1
-
-                    if j > 0:
-                        ind1 = track_store[j - 1, 0]
-                        ind2 = track_store[j, 0]
-
-                        m1 = np.logical_and(s_mat[:, 1] == ind1, s_mat[:, 3] == ind2)
-                        m2 = np.logical_and(s_mat[:, 2] == ind1, s_mat[:, 3] == ind2)
-                        m3 = np.logical_and(s_mat[:, 1] == ind1, s_mat[:, 4] == ind2)
-                        m4 = np.logical_and(s_mat[:, 2] == ind1, s_mat[:, 4] == ind2)
-
-                        if any(m1):
-                            s_mat[m1, 5] = 0
-                            s_mat[m1, 7] = 0
-                        if any(m2):
-                            s_mat[m2, 6] = 0
-                            s_mat[m2, 7] = 0
-                        if any(m3):
-                            s_mat[m3, 5] = 0
-                            s_mat[m3, 8] = 0
-                        if any(m4):
-                            s_mat[m4, 6] = 0
-                            s_mat[m4, 8] = 0
-
-                score_mat = tracking_c_tools.forward_pass(tracking_mat, d_mat, s_mat, states, self.track_param)
-                max_score = max(score_mat[:, 3])
-                flag = False
-
-                if max_score > track_store[-1, 2]:
-
-                    cum_score = cum_score + max_score - track_store[-1, 2]
-                    track_replace, s_mat, states = tracking_c_tools.track_back(score_mat, states, s_mat)
-                    track_replace[:, 4] = i
-
-                    tracks, track_replace = tracking_c_tools.swap_test(tracks, track_replace, d_mat, i)
-                    tracks = np.vstack((tracks, track_replace))
-
-                else:
-                    tracks = np.vstack((tracks, track_store))
-
-                    for j in range(track_store.shape[0]):
-
-                        states[int(track_store[j, 0])] += 1
-
-                        if j > 0:
-
-                            ind1 = track_store[j - 1, 0]
-                            ind2 = track_store[j - 1, 0]
-
-                            m1 = np.logical_and(s_mat[:, 1] == ind1, s_mat[:, 3] == ind2)
-                            m2 = np.logical_and(s_mat[:, 2] == ind1, s_mat[:, 3] == ind2)
-                            m3 = np.logical_and(s_mat[:, 1] == ind1, s_mat[:, 4] == ind2)
-                            m4 = np.logical_and(s_mat[:, 2] == ind1, s_mat[:, 4] == ind2)
-
-                            if any(m1):
-                                s_mat[m1, 5] = 1
-                                s_mat[m1, 7] = 1
-                            if any(m2):
-                                s_mat[m2, 6] = 1
-                                s_mat[m2, 7] = 1
-                            if any(m3):
-                                s_mat[m3, 5] = 1
-                                s_mat[m3, 8] = 1
-                            if any(m4):
-                                s_mat[m4, 6] = 1
-                                s_mat[m4, 8] = 1
-
-                print(h, i, cum_score)
-        print(states[1:200].astype(int))
-        tracks[:, 0] = tracks[:, 0]-1
+        tracks = self.tracking_instance.finish_optimising()
 
         # Color labels
 
@@ -415,11 +294,12 @@ class UserInterface(Widget):
                 ind = tracks[j, 4]
                 r = int(252 * np.random.rand()) + 3
 
-            self.fov['feats'][tracks[j, 0], 18] = r
+            self.features[int(tracks[j, 0]), 18] = r
 
             if tracks[j, 3] > 0:
-                self.fov['feats'][tracks[j, 0], 18] = 5
+                self.features[int(tracks[j, 0]), 18] = 5
 
+        self.fov['features'][...] = self.features
         tracks[:, 0] = tracks[:, 0] + 1
 
         # Delete if tracks already exists otherwise store extracted features
@@ -439,20 +319,42 @@ class UserInterface(Widget):
 
         self.progression_state(9)
 
+    def run_tracking(self, instance):
+
+        self.clear_ui()
+        self.current_ui = 7
+
+        self.track_message = Label(text='[b][color=000000] Tracking cells [/b][/color]', markup=True,
+                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+        self.track_counter = Label(text='[b][color=000000] [/b][/color]', markup=True,
+                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .6})
+        self.m_layout.add_widget(self.track_counter)
+        self.m_layout.add_widget(self.track_message)
+
+        self.features[:, 18] = 1
+        self.tracking_instance = RunTracking(self.features, self.frames, self.track_param)
+
+        self.tracking_state = 0
+        self.min_score = 5
+        self.score = self.min_score + 1
+
+        self.optimise_count = 0
+
+        self.tracking_flag = True
+        self.add_cell_flag = True
+
     def tracking_ui(self, instance):
 
         if instance.state == 'down':
 
+            self.clear_ui()
+            self.current_ui = 8
+
             self.tracking_p = TrackingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.tracking_p)
 
-            self.tracking_p.initialize(self.segment_channel, self.labels, self.frames)
+            self.tracking_p.initialize(self.all_channels, self.labels, self.frames)
             Window.bind(on_resize=self.tracking_p.update_size)
-
-        else:
-
-            self.tracking_p.remove()
-            self.remove_widget(self.tracking_p)
 
     def progression_state(self, state):
 
@@ -552,6 +454,47 @@ class UserInterface(Widget):
 
             self.progression[9] = 1
 
+    def save_features(self, instance):
+
+        self.features[1:, 17:19] = 1
+        self.features = self.features[np.argsort(self.features[:, 0]), :]
+
+        # Delete if features already exists otherwise store extracted features as number of segments may change
+
+        for g in self.fov:
+            if g == 'features':
+                del self.fov['features']
+
+        self.fov.create_dataset("features", data=self.features)
+        self.progression_state(6)
+
+    def add_tracks(self, instance):
+
+        if self.score > self.min_score:
+
+            self.score = self.tracking_instance.add_cell(self.min_score)
+            self.add_cell_flag = True
+
+        else:
+            self.tracking_state = 1
+            Clock.schedule_once(partial(self.update_message, 1), 0)
+            self.add_cell_flag = True
+
+    def optimise_tracks(self, dt):
+
+        if self.optimise_count < self.tracking_instance.get_max():
+
+            self.tracking_instance.optimise(self.optimise_count)
+            self.optimise_count += 1
+            self.add_cell_flag = True
+
+        else:
+            self.optimise_count = 0
+            Clock.schedule_once(partial(self.update_message, self.tracking_state + 1), 0)
+            self.add_cell_flag = True
+            self.tracking_flag = False
+
+
     def do_work(self, dt):
         self.canvas.ask_update()
 
@@ -562,6 +505,7 @@ class UserInterface(Widget):
             self.count_scheduled += 1
 
             if self.count_scheduled == self.frames:
+
                 self.segment_flag = False
                 self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
 
@@ -574,20 +518,48 @@ class UserInterface(Widget):
             if self.count_scheduled == self.frames:
 
                 self.feat_message.text = '[b][color=000000]Features Extracted[/b][/color]'
-
                 self.feature_flag = False
 
-                self.features[1:, 17:19] = 1
-                self.features = self.features[np.argsort(self.features[:, 0]), :]
+                Clock.schedule_once(self.save_features, 0)
 
-                # Delete if features already exists otherwise store extracted features as number of segments may change
+        if self.tracking_flag:
 
-                for g in self.fov:
-                    if g == 'features':
-                        del self.fov['features']
+            if self.tracking_state == 0:
 
-                self.fov.create_dataset("features", data=self.features)
-                self.progression_state(6)
+                if self.add_cell_flag:
+                    self.add_cell_flag = False
+                    Clock.schedule_once(self.add_tracks, 0)
+                    Clock.schedule_once(partial(self.update_count, 1), 0)
+
+            if 0 < self.tracking_state <= self.iterations:
+                if self.add_cell_flag:
+                    self.add_cell_flag = False
+                    Clock.schedule_once(partial(self.optimise_tracks), 0)
+                    Clock.schedule_once(partial(self.update_count, 2), 0)
+
+            if self.tracking_state > self.iterations:
+                Clock.schedule_once(self.finish_tracking, 0)
+                Clock.schedule_once(partial(self.update_message, -1), 0)
+                self.tracking_flag = False
+
+
+
+    def update_count(self, instance, dt):
+        if instance == 1:
+            self.track_counter.text = '[b][color=000000]' + str(self.tracking_instance.get_count()) + '[/b][/color]'
+        if instance == 2:
+            self.track_counter.text = '[b][color=000000]' + str(self.optimise_count) + '[/b][/color]'
+
+
+    def update_message(self, instance, dt):
+        if instance >= 0:
+            self.track_message.text = '[b][color=000000]Optimising Tracks Sweep ' + str(instance) + ' [/b][/color]'
+            self.tracking_state = instance
+            print(self.tracking_state)
+            self.tracking_flag = True
+
+        else:
+            self.track_message.text = '[b][color=000000]Tracking Completed [/b][/color]'
 
     def initialize(self):
 
@@ -609,6 +581,8 @@ class UserInterface(Widget):
 
         self.segment_flag = False
         self.feature_flag = False
+        self.tracking_flag = False
+        self.iterations = 2
         Clock.schedule_interval(self.do_work, 0)
 
         with self.canvas:

@@ -63,12 +63,13 @@ class TrainingData(Widget):
             ypos = (touch.pos[1]-self.pos[1])/self.size[1]
             self.parent.parent.update_training(np.asarray([xpos, ypos]), self.cell_type)
 
-
 class TrainingUI(Widget):
 
     def training_frame(self, instance, val):
+
         self.current_frame = int(val)
         im_temp = self.labels[int(val), :, :]
+
         mapping = np.hstack((0, self.features[:, 17].astype(int)))
         self.im_disp.update_im(im_temp, mapping)
 
@@ -92,14 +93,14 @@ class TrainingUI(Widget):
 
                 ind = np.nonzero(self.training_data[:, 0] == sel[0])
                 self.training_data = np.delete(self.training_data, ind, 0)
-                self.features[sel[0] - 1, 17] = 1.
+                self.features[int(sel[0]) - 1, 17] = 1.
 
             else:
 
                 sel[12:17] = 0
                 sel[11 + val] = 1
                 self.training_data = np.vstack((self.training_data, sel))
-                self.features[sel[0] - 1, 17] = 1.0 + val
+                self.features[int(sel[0]) - 1, 17] = 1.0 + val
 
         im_temp = self.labels[self.current_frame, :, :]
         mapping = np.hstack((0, self.features[:, 17].astype(int)))

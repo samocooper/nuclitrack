@@ -71,12 +71,10 @@ class IndexedDisplay(Widget):
         dims = np.shape(mat)  # Dimensions of the Image to show
         self.texture = Texture.create(size=(dims[1], dims[0]), colorfmt='rgb')  # Create texture sized to image
 
-
         self.cmap = color_map(c_map)
-
         m = mat.flatten()
-        im = numpy_to_image.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
 
+        im = numpy_to_image.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
         arr = np.asarray(im, dtype=np.uint8)
         self.texture.blit_buffer(arr.tostring(), colorfmt='rgb', bufferfmt='ubyte')
 
