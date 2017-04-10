@@ -162,6 +162,7 @@ class SegmentationUI(Widget):
                 if state == 2:  # if state is equal to stage of segmentation modify parameter
 
                     self.params[0] = val
+                    self.s1_label.text = '[color=000000]Clipping Limit ' + str(val) + '[/color]'
 
                 self.im1 = clipping(self.im, self.params[0])  # perform image analysis operation
 
@@ -172,6 +173,7 @@ class SegmentationUI(Widget):
 
                 if state == 3:
                     self.params[1] = val
+                    self.s2_label.text = '[color=000000]Background blur: ' + str(val) + '[/color]'
 
                 self.im2 = background(self.im1, self.params[1])
 
@@ -182,6 +184,7 @@ class SegmentationUI(Widget):
 
                 if state == 4:
                     self.params[2] = val
+                    self.s3_label.text = '[color=000000]Image blur: ' + str(val) + '[/color]'
 
                 self.im3 = blur(self.im2, self.params[2])
 
@@ -192,6 +195,7 @@ class SegmentationUI(Widget):
 
                 if state == 5:
                     self.params[3] = val
+                    self.s4_label.text = '[color=000000]Threshold: ' + str(val) + '[/color]'
 
                 self.im_bin_uf = threshold(self.im3, self.params[3])
 
@@ -202,6 +206,7 @@ class SegmentationUI(Widget):
 
                 if state == 6:
                     self.params[4] = val
+                    self.s5_label.text = '[color=000000]Smallest Object: ' + str(val) + '[/color]'
 
                 self.im_bin = object_filter(self.im_bin_uf, self.params[4])
 
@@ -212,6 +217,7 @@ class SegmentationUI(Widget):
 
                 if state == 7:
                     self.params[5] = val
+                    self.s6_label.text = '[color=000000]Distance to Intensity: ' + str(val) + '[/color]'
 
                 self.cell_center = cell_centers(self.im3, self.im_bin, self.params[5])
 
@@ -222,6 +228,7 @@ class SegmentationUI(Widget):
 
                 if state == 8:
                     self.params[6] = val
+                    self.s7_label.text = '[color=000000]Separation Distance: ' + str(val) + '[/color]'
 
                 self.markers = fg_markers(self.cell_center, self.im_bin, self.params[6])
 
@@ -232,6 +239,7 @@ class SegmentationUI(Widget):
 
                 if state == 1:
                     self.params[7] = val
+                    self.s8_label.text = '[color=000000]Edge Blur: ' + str(val) + '[/color]'
 
                 self.im_edge = sobel_edges(self.im1, self.params[7])
 
@@ -241,6 +249,8 @@ class SegmentationUI(Widget):
             if state == 9:
 
                 self.params[8] = val
+                self.s9_label.text = '[color=000000]Watershed Ratio: ' + str(val) + '[/color]'
+
                 self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.params[8])
                 self.im_disp.update_im(self.labels.astype(float))
 
@@ -262,12 +272,12 @@ class SegmentationUI(Widget):
         self.params = self.parent.s_param['seg_param'][:]
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
 
-        self.im_disp = ImDisplay(size_hint=(.75, .7), pos_hint={'x': .2, 'y': .2})
+        self.im_disp = ImDisplay(size_hint=(.75, .75), pos_hint={'x': .23, 'y': .15})
         self.s_layout.add_widget(self.im_disp)
 
         self.im = self.seg_channel[0, :, :].copy()
         self.im_disp.create_im(self.im, 'PastelHeat')
-
+        self.params[0] = self.ch_max
         # Frame slider
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .2, 'y': .9})
@@ -275,18 +285,18 @@ class SegmentationUI(Widget):
 
         # Sliders for updating parameters
 
-        layout2 = GridLayout(cols=1, padding=2, size_hint=(.12, .8), pos_hint={'x': .01, 'y': .18})
+        layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
 
         s0 = Slider(min=float(self.ch_min), max=float(self.ch_max),
-                    step=float((self.ch_max-self.ch_min)/100), value=float(self.params[0]))
-        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]))
-        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]))
-        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]))
-        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]))
-        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]))
-        s6 = Slider(min=5, max=50, step=2, value=float(self.params[6]))
-        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]))
-        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]))
+                    step=float((self.ch_max-self.ch_min)/100), value=float(self.params[0]), cursor_size=(25, 25))
+        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]), cursor_size=(25, 25))
+        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]), cursor_size=(25, 25))
+        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]), cursor_size=(25, 25))
+        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]), cursor_size=(25, 25))
+        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]), cursor_size=(25, 25))
+        s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]), cursor_size=(25, 25))
+        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]), cursor_size=(25, 25))
+        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]), cursor_size=(25, 25))
         b2 = Button(text='save params')
 
         s0.bind(value=partial(self.segment_script, state=2))
@@ -300,15 +310,34 @@ class SegmentationUI(Widget):
         s8.bind(value=partial(self.segment_script, state=9))
         b2.bind(on_press=self.save_params)
 
+        self.s1_label = Label(text='[color=000000]Clipping Limit: ' + str(self.params[0]) + '[/color]', markup=True)
+        self.s2_label = Label(text='[color=000000]Background blur: ' + str(self.params[1]) + '[/color]', markup=True)
+        self.s3_label = Label(text='[color=000000]Image blur: ' + str(self.params[2]) + '[/color]', markup=True)
+        self.s4_label = Label(text='[color=000000]Threshold: ' + str(self.params[3]) + '[/color]', markup=True)
+        self.s5_label = Label(text='[color=000000]Smallest Object: ' + str(self.params[4]) + '[/color]', markup=True)
+        self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]', markup=True)
+        self.s7_label = Label(text='[color=000000]Separation Distance: ' + str(self.params[6]) + '[/color]', markup=True)
+        self.s8_label = Label(text='[color=000000]Edge Blur: ' + str(self.params[7]) + '[/color]', markup=True)
+        self.s9_label = Label(text='[color=000000]Watershed Ratio: ' + str(self.params[8]) + '[/color]', markup=True)
+
         layout2.add_widget(s0)
+        layout2.add_widget(self.s1_label)
         layout2.add_widget(s1)
+        layout2.add_widget(self.s2_label)
         layout2.add_widget(s2)
+        layout2.add_widget(self.s3_label)
         layout2.add_widget(s3)
+        layout2.add_widget(self.s4_label)
         layout2.add_widget(s4)
+        layout2.add_widget(self.s5_label)
         layout2.add_widget(s5)
+        layout2.add_widget(self.s6_label)
         layout2.add_widget(s6)
+        layout2.add_widget(self.s7_label)
         layout2.add_widget(s7)
+        layout2.add_widget(self.s8_label)
         layout2.add_widget(s8)
+        layout2.add_widget(self.s9_label)
         layout2.add_widget(b2)
 
         self.layout2 = layout2
