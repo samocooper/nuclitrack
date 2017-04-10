@@ -131,7 +131,6 @@ def watershed(markers, im_bin, im_edge, val):
 
     k = morphology.octagon(10, 10)
     bgm = morphology.binary_dilation(im_bin, selem=k)
-    bgm[0, 0] = True
 
     d_mat = ndimage.distance_transform_edt(im_bin)
     d_mat = d_mat / np.max(d_mat.flatten())

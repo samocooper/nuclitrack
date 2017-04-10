@@ -89,18 +89,20 @@ class TrainingUI(Widget):
         if min(d) < 50:
 
             mask = self.training_data[:, 0] == sel[0]
+
             if np.any(mask):
 
                 ind = np.nonzero(self.training_data[:, 0] == sel[0])
                 self.training_data = np.delete(self.training_data, ind, 0)
-                self.features[int(sel[0]) - 1, 17] = 1.
+                print(sel[0])
+                self.features[int(sel[0]), 17] = 1.
 
             else:
 
                 sel[12:17] = 0
                 sel[11 + val] = 1
                 self.training_data = np.vstack((self.training_data, sel))
-                self.features[int(sel[0]) - 1, 17] = 1.0 + val
+                self.features[int(sel[0]), 17] = 1.0 + val
 
         im_temp = self.labels[self.current_frame, :, :]
         mapping = self.features[:, 17].astype(int)

@@ -154,10 +154,10 @@ class UserInterface(Widget):
         for j in range(self.channel_num):
             features_temp.append(regionprops(img_label, self.all_channels[j][frame, :, :]))
 
-        self.counter += (len(features_temp[0])-1)
-        feature_mat = np.zeros((len(features_temp[0])-1, self.feature_num))
+        feature_mat = np.zeros((len(features_temp[0]), self.feature_num))
+        img_new = np.zeros(img_label.shape)
 
-        for j in range(len(features_temp[0])-1, 0, -1):
+        for j in range(len(features_temp[0])):
 
             cell_temp = features_temp[0][j]
 
@@ -198,15 +198,13 @@ class UserInterface(Widget):
                 features_vector[20 + (k - 1) * 3 + 1] = np.std(im_temp)
                 features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
 
-            feature_mat[j-1, :] = features_vector
-            img_label[img_label == cell_temp.label] = self.counter
-            print(cell_temp.label, self.counter)
-            self.counter -= 1
+            feature_mat[j, :] = features_vector
+            img_new[img_label == cell_temp.label] = self.counter
 
-        img_label = img_label - 1
-        self.counter += (len(features_temp[0]) - 1)
+            self.counter += 1
+
         self.features = np.vstack((self.features, feature_mat))
-        self.labels[frame, :, :] = img_label
+        self.labels[frame, :, :] = img_new
 
     def extract_features(self, instance):
 
@@ -221,7 +219,7 @@ class UserInterface(Widget):
         self.channel_num = len(self.all_channels)
         self.feature_num = 20 + 3*(self.channel_num-1)
         self.features = np.zeros([1, self.feature_num])
-        self.counter = 0
+        self.counter = 1
 
         self.pb.value = 1000 / self.frames
         self.m_layout.add_widget(self.layout2)
@@ -257,19 +255,28 @@ class UserInterface(Widget):
         clf = RandomForestClassifier(n_estimators=100)
 
         mask = np.sum(self.training_data[:, 12:17], axis=0) > 0
-        inds = np.where(mask)[0]
-        clf = clf.fit(self.training_data[:, 5:10], self.training_data[:, 12+inds].astype(bool))
-        probs = clf.predict_proba(self.features[:, 5:10])
 
-        i = 0
-        for p in probs:
-            if len(p[0]) == 1:
-                p = np.hstack([np.asarray(p), np.zeros((len(p), 1))])
-            else:
-                p = np.asarray(p)
+        if sum(mask) > 1:
+            inds = np.where(mask)[0]
+            clf = clf.fit(self.training_data[:, 5:10], self.training_data[:, 12+inds].astype(bool))
+            probs = clf.predict_proba(self.features[:, 5:10])
 
-            self.features[:, 12 + inds[i]] = p[:, 1]
-            i += 1
+            i = 0
+            for p in probs:
+                if len(p[0]) == 1:
+                    p = np.hstack([np.asarray(p), np.zeros((len(p), 1))])
+                else:
+                    p = np.asarray(p)
+
+                self.features[:, 12 + inds[i]] = p[:, 1]
+                i += 1
+
+        if sum(mask) == 1:
+            ind = np.where(mask)[0]
+            self.features[:, 12 + ind] = 1
+
+        if sum(mask) == 0:
+            return
 
         self.fov['features'][...] = self.features
         self.progression_state(8)
@@ -379,8 +386,7 @@ class UserInterface(Widget):
 
                     # Load labels
 
-                    labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
-                    self.labels = labels[...]
+                    self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
 
                     state = 4
 
@@ -501,7 +507,6 @@ class UserInterface(Widget):
             self.count_scheduled += 1
 
             if self.count_scheduled == self.frames:
-
                 self.segment_flag = False
                 self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
 
@@ -549,7 +554,6 @@ class UserInterface(Widget):
         if instance >= 0:
             self.track_message.text = '[b][color=000000]Optimising Tracks Sweep ' + str(instance) + ' [/b][/color]'
             self.tracking_state = instance
-            print(self.tracking_state)
             self.tracking_flag = True
 
         else:
