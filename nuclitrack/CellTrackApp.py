@@ -63,7 +63,9 @@ class UserInterface(Widget):
             self.remove_widget(self.training_p)
 
         if self.current_ui == 7:
+
             self.m_layout.remove_widget(self.track_message)
+            self.m_layout.remove_widget(self.track_counter)
 
         if self.current_ui == 8:
 
