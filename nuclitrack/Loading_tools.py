@@ -161,7 +161,6 @@ class FileLoader(Widget):
             self.series_choice = GridLayout(rows=1, padding=2, size_hint=(.98, .05), pos_hint={'x': .01, 'y': .755})
 
             # Drop down menu for choosing which channel
-
             self.channel_choice = DropDown()
 
             for i in range(self.max_channel):

@@ -8,11 +8,12 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
+from kivy.uix.dropdown import DropDown
 
 from kivy.core.window import Window
 
 from scipy.spatial import distance
-from .Image_widget import IndexedDisplay
+from .Image_widget import IndexedDisplay, ImDisplay
 
 class TrainingData(Widget):
     cell_type = 0
@@ -60,7 +61,7 @@ class TrainingData(Widget):
     def on_touch_down(self, touch):
         if self.cell_type != 0:
             xpos = (touch.pos[0]-self.pos[0])/self.size[0]
-            ypos = (touch.pos[1]-self.pos[1])/self.size[1]
+            ypos = 1 - (touch.pos[1]-self.pos[1])/self.size[1]
             self.parent.parent.update_training(np.asarray([xpos, ypos]), self.cell_type)
 
 class TrainingUI(Widget):
@@ -72,12 +73,17 @@ class TrainingUI(Widget):
 
         mapping = self.features[:, 17].astype(int)
         self.im_disp.update_im(im_temp, mapping)
+        self.label_disp.update_im(np.mod(im_temp, 64))
 
+        mov_temp = self.seg_channel[int(val), :, :]
+        self.mov_disp.update_im(mov_temp)
         inds = self.features[:, 1]
         mask = inds == self.current_frame
 
         if sum(mask.astype(int)) > 0:
             self.frame_feats = self.features[mask, :]
+
+        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
 
     def update_training(self, pos, val):
 
@@ -123,20 +129,21 @@ class TrainingUI(Widget):
     def tracking_distance(self,instance, val):
 
         self.parent.track_param[1] = val
-        self.txt_dist.text = str(val)
+        self.txt_dist.text = '[color=000000][size=14]Search distance: ' + str(val) + '[/size][/color]'
 
     def max_gap_change(self, instance, val):
 
         self.parent.track_param[6] = val
-        self.txt_gap.text = str(val)
+        self.txt_gap.text = '[color=000000][size=14]Max time gap: ' + str(val) + '[/size][/color]'
 
     def mig_cost_change(self, instance, val):
 
         self.parent.track_param[0] = val
-        self.txt_mig.text = str(val)
+        self.txt_mig.text = '[color=000000][size=14]Migration cost: ' + str(val) + '[/size][/color]'
 
-    def initialize(self, labels, features, frames):
+    def initialize(self, labels, seg_channel, features, frames):
 
+        self.seg_channel = seg_channel
         self.labels = labels
         self.features = features
         self.frames = frames
@@ -148,12 +155,22 @@ class TrainingUI(Widget):
 
         self.t_layout = FloatLayout(size=(Window.width, Window.height))
 
-        self.im_disp = IndexedDisplay(size_hint=(.75, .7), pos_hint={'x': .2, 'y': .2})
-        self.t_layout.add_widget(self.im_disp)
-
         im_temp = self.labels[0, :, :].astype(float)
         mapping = self.features[:, 17].astype(int)
+
+        self.im_disp = IndexedDisplay(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
+        self.t_layout.add_widget(self.im_disp)
+
+        self.label_disp = ImDisplay(size_hint=(.32, .3225), pos_hint={'x': .67, 'y': .15})
+        self.t_layout.add_widget(self.label_disp)
+
+        self.mov_disp = ImDisplay(size_hint=(.32, .3225), pos_hint={'x': .67, 'y': .4775})
+        self.t_layout.add_widget(self.mov_disp)
+
+        self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
+        mov_temp = self.seg_channel[0, :, :]
+        self.mov_disp.create_im(mov_temp, 'PastelHeat')
 
         inds = self.features[:, 1]
         mask = inds == 0
@@ -161,32 +178,34 @@ class TrainingUI(Widget):
         if sum(mask.astype(int)) > 0:
             self.frame_feats = self.features[mask, :]
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .2, 'y': .9})
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, cursor_size=(30, 30))
         self.frame_slider.bind(value=self.training_frame)
+        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]', markup=True)
 
-        self.track_dist = Slider(min=0, max=100, value=50, step=1, size_hint=(.13, .1), pos_hint={'x': .52, 'y': .9})
+        self.track_dist = Slider(min=0, max=100, value=50, step=1, cursor_size=(25, 25))
         self.track_dist.bind(value=self.tracking_distance)
-        self.txt_dist = Label(text='50', markup=True, size_hint=(.1, .05),
-                                  pos_hint={'x': .5, 'y': .9})
+        self.txt_dist = Label(text='[color=000000][size=14]Search distance: ' + str(50) + '[/size][/color]', markup=True)
 
-        self.max_gap = Slider(min=0, max=6, value=3, step=1, size_hint=(.13, .1), pos_hint={'x': .67, 'y': .9})
+        self.max_gap = Slider(min=0, max=6, value=3, step=1, cursor_size=(25, 25))
         self.max_gap.bind(value=self.max_gap_change)
-        self.txt_gap = Label(text='3', markup=True, size_hint=(.1, .05),
-                              pos_hint={'x': .65, 'y': .9})
+        self.txt_gap = Label(text='[color=000000][size=14]Max time gap: ' + str(3) + '[/size][/color]', markup=True)
 
-        self.mig_cost = Slider(min=0, max=0.1, value=0.05, step=0.001, size_hint=(.13, .1), pos_hint={'x': .82, 'y': .9})
+        self.mig_cost = Slider(min=0, max=0.1, value=0.05, step=0.001, cursor_size=(25, 25))
         self.mig_cost.bind(value=self.mig_cost_change)
-        self.txt_mig = Label(text='0.05', markup=True, size_hint=(.1, .05),
-                             pos_hint={'x': .8, 'y': .9})
+        self.txt_mig = Label(text='[color=000000][size=14]Migration cost: ' + str(0.05) + '[/size][/color]', markup=True)
 
-        self.training_window = TrainingData(size_hint=(.75, .7), pos_hint={'x':.2, 'y':.2})
-        layout3 = GridLayout(cols=1, padding=2, size_hint=(.12, .8), pos_hint={'x': .01, 'y': .1})
+        self.training_window = TrainingData(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
+        self.layout3 = GridLayout(rows=2, cols=5, padding=2, size_hint=(.98, .12), pos_hint={'x': .01, 'y': .87})
 
-        btn1 = ToggleButton(text='0 Cell', group='type')
-        btn2 = ToggleButton(text='1 Cell', group='type')
-        btn3 = ToggleButton(text='2 Cell', group='type')
-        btn4 = ToggleButton(text='Mit Cell', group='type')
-        btn5 = ToggleButton(text='Mitex Cell', group='type')
+        # Drop down menu for choosing which type of segment
+
+        self.channel_choice = DropDown()
+
+        btn1 = ToggleButton(text='0 Cell', group='type', size_hint_y=None, height=25)
+        btn2 = ToggleButton(text='1 Cell', group='type', size_hint_y=None, height=25)
+        btn3 = ToggleButton(text='2 Cell', group='type', size_hint_y=None, height=25)
+        btn4 = ToggleButton(text='Mit Cell', group='type', size_hint_y=None, height=25)
+        btn5 = ToggleButton(text='Mitex Cell', group='type', size_hint_y=None, height=25)
 
         btn6 = Button(text='Save Training')
 
@@ -197,27 +216,32 @@ class TrainingUI(Widget):
         btn5.bind(on_press=self.training_window.assign_mitex_cell)
         btn6.bind(on_press=self.save_training)
 
-        layout3.add_widget(btn1)
-        layout3.add_widget(btn2)
-        layout3.add_widget(btn3)
-        layout3.add_widget(btn4)
-        layout3.add_widget(btn5)
-        layout3.add_widget(btn6)
+        self.channel_choice.add_widget(btn1)
+        self.channel_choice.add_widget(btn2)
+        self.channel_choice.add_widget(btn3)
+        self.channel_choice.add_widget(btn4)
+        self.channel_choice.add_widget(btn5)
 
-        self.layout3 = layout3
+        self.main_button = Button(text='Training Class')
+        self.main_button.bind(on_release=self.channel_choice.open)
+        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+
+        self.layout3.add_widget(self.main_button)
+        self.layout3.add_widget(self.frame_slider)
+        self.layout3.add_widget(self.track_dist)
+        self.layout3.add_widget(self.max_gap)
+        self.layout3.add_widget(self.mig_cost)
+        self.layout3.add_widget(btn6)
+        self.layout3.add_widget(self.frame_text)
+        self.layout3.add_widget(self.txt_dist)
+        self.layout3.add_widget(self.txt_gap)
+        self.layout3.add_widget(self.txt_mig)
+
 
         with self.canvas:
 
             self.add_widget(self.t_layout)
             self.t_layout.add_widget(self.training_window)
-            self.t_layout.add_widget(self.frame_slider)
-            self.t_layout.add_widget(self.track_dist)
-            self.t_layout.add_widget(self.txt_dist)
-            self.t_layout.add_widget(self.max_gap)
-            self.t_layout.add_widget(self.txt_gap)
-            self.t_layout.add_widget(self.mig_cost)
-            self.t_layout.add_widget(self.txt_mig)
-
             self.t_layout.add_widget(self.layout3)
 
     def remove(self):

@@ -243,7 +243,7 @@ class UserInterface(Widget):
             self.training_p = TrainingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.training_p)
 
-            self.training_p.initialize(self.labels, self.features, self.frames)
+            self.training_p.initialize(self.labels, self.all_channels[0], self.features, self.frames)
             Window.bind(on_resize=self.training_p.update_size)
 
 
