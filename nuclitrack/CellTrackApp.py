@@ -566,7 +566,7 @@ class UserInterface(Widget):
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
-        self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .01})
+        self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.98, .1), pos_hint={'x': .01, 'y': .01})
 
         btn1 = ToggleButton(text=' Load \nData', group='ui_choice')
         btn1.bind(on_press=self.data_ui)

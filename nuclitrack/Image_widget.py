@@ -13,7 +13,7 @@ class ImDisplay(Widget):
     code.'''
 
     def create_im(self, mat, c_map,  scale=True):
-
+        mat = np.flipud(mat)
         dims = np.shape(mat)  # Dimensions of the Image to show
         self.texture = Texture.create(size=(dims[1], dims[0]), colorfmt='rgb')  # Create texture sized to image
 
@@ -40,7 +40,7 @@ class ImDisplay(Widget):
         self.bind(pos=self.update_size, size=self.update_size)  # Maintain image size on scaling of parent layout
 
     def update_im(self, mat):
-
+        mat = np.flipud(mat)
         m = mat.flatten()
         m = m.astype(float)
 
@@ -67,7 +67,7 @@ class IndexedDisplay(Widget):
     matrix must point to the same colour '''
 
     def create_im(self, mat, c_map, mapping):
-
+        mat = np.flipud(mat)
         dims = np.shape(mat)  # Dimensions of the Image to show
         self.texture = Texture.create(size=(dims[1], dims[0]), colorfmt='rgb')  # Create texture sized to image
 
@@ -84,7 +84,7 @@ class IndexedDisplay(Widget):
         self.bind(pos=self.update_size, size=self.update_size)
 
     def update_im(self, mat, mapping):
-
+        mat = np.flipud(mat)
         m = mat.flatten()
         im = numpy_to_image.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
 

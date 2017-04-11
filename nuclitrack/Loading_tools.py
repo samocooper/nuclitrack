@@ -34,39 +34,39 @@ class FileLoader(Widget):
 
         # Label
         self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
-                               size_hint=(.44, .05), pos_hint={'x': .05, 'y': .95})
+                               size_hint=(.48, .05), pos_hint={'x': .01, 'y': .95})
         self.ld_layout.add_widget(self.label_fov)
 
         # Input
 
         self.text_input_fov = TextInput(text='example_data.hdf5', multiline=False,
-                                        size_hint=(.44, .05), pos_hint={'x': .05, 'y': .9})
+                                        size_hint=(.48, .05), pos_hint={'x': .01, 'y': .9})
         self.text_input_fov.bind(on_text_validate=partial(self.dir, self.text_input_fov.text, 'fov'))
         self.ld_layout.add_widget(self.text_input_fov)
 
         # Display loaded file
 
         self.loaded_fov = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                size_hint=(.44, .05), pos_hint={'x': .05, 'y': .85})
+                                size_hint=(.49, .05), pos_hint={'x': .01, 'y': .85})
         self.ld_layout.add_widget(self.loaded_fov)
 
         # Assign/Load HDF5 file for storing tracking and segmentation parameter data.
 
         # Label
         self.label_param = Label(text='[b][color=000000]Parameter Data File[/b][/color]', markup=True,
-                                 size_hint=(.44, .05), pos_hint={'x': .51, 'y': .95})
+                                 size_hint=(.48, .05), pos_hint={'x': .51, 'y': .95})
         self.ld_layout.add_widget(self.label_param)
 
         # Input
         self.text_input_param = TextInput(text='example_params.hdf5', multiline=False,
-                                          size_hint=(.44, .05), pos_hint={'x': .51, 'y': .9})
+                                          size_hint=(.48, .05), pos_hint={'x': .51, 'y': .9})
         self.text_input_param.bind(on_text_validate=partial(self.dir, self.text_input_param.text, 'param'))
         self.ld_layout.add_widget(self.text_input_param)
 
         # Display loaded file
 
         self.loaded_param = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                  size_hint=(.44, .05), pos_hint={'x': .51, 'y': .85})
+                                  size_hint=(.48, .05), pos_hint={'x': .51, 'y': .85})
         self.ld_layout.add_widget(self.loaded_param)
 
         # Info on file loading
@@ -119,7 +119,7 @@ class FileLoader(Widget):
 
             if flag:
 
-                self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.9, .05), pos_hint={'x': .05, 'y': .8})
+                self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.98, .05), pos_hint={'x': .01, 'y': .8})
 
                 btn1 = ToggleButton(text='Load from file names', group='load_type')
                 btn1.bind(on_press=partial(self.load_imgs, 'file'))
@@ -158,7 +158,7 @@ class FileLoader(Widget):
 
             # Layout for file buttons
 
-            self.series_choice = GridLayout(rows=1, padding=2, size_hint=(.9, .05), pos_hint={'x': .05, 'y': .755})
+            self.series_choice = GridLayout(rows=1, padding=2, size_hint=(.98, .05), pos_hint={'x': .01, 'y': .755})
 
             # Drop down menu for choosing which channel
 
@@ -207,14 +207,14 @@ class FileLoader(Widget):
 
             # File browser widget for choosing file
 
-            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
             file_choose.bind(on_submit=self.record_filename_click)
             self.img_layout.add_widget(file_choose)
 
             # Text input for selecting image location
 
             self.text_input = TextInput(text='File location',
-                                        multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+                                        multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.text_input.bind(on_text_validate=self.record_filename)
             self.img_layout.add_widget(self.text_input)
 
@@ -226,14 +226,14 @@ class FileLoader(Widget):
 
             # File browser widget for choosing file
 
-            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
             file_choose.bind(on_submit=self.record_text_file_click)
             self.img_layout.add_widget(file_choose)
 
             # Text input for selecting image location
 
             self.text_file_input = TextInput(text='File location',
-                                        multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+                                        multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.text_file_input.bind(on_text_validate=self.record_text_file)
             self.img_layout.add_widget(self.text_file_input)
 
@@ -243,14 +243,14 @@ class FileLoader(Widget):
 
         if load_type == 'dir':
 
-            file_choose = FileChooserListView(size_hint=(.9, .5), pos_hint={'x': .05, 'y': .22})
+            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
             file_choose.bind(on_submit=self.record_dir_click)
             self.img_layout.add_widget(file_choose)
 
             # Text input for selecting image location
 
             self.dir_input = TextInput(text='File location',
-                                             multiline=False, size_hint=(.65, .05), pos_hint={'x': .05, 'y': .14})
+                                             multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.dir_input.bind(on_text_validate=self.record_dir)
             self.img_layout.add_widget(self.dir_input)
 
