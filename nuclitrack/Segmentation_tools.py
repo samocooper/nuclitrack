@@ -284,7 +284,9 @@ class SegmentationUI(Widget):
         self.im_disp.create_im(self.im, 'PastelHeat')
         self.mov_disp.create_im(self.im, 'PastelHeat')
 
-        self.params[0] = self.ch_max
+        if self.params[0] == 0:
+            self.params[0] = self.ch_max
+
         # Frame slider
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .23, 'y': .9}, cursor_size=(30, 30))
