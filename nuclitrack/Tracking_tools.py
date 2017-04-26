@@ -371,8 +371,8 @@ class TrackingUI(Widget):
 
                         feat_id = frame_ids[mask2, 0]  # get unique id of segment in frame
 
-                        self.features[self.features[:, 0] == feat_id, 18] = 1
-                        self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                        self.features[self.features[:, 0] == feat_id-1, 18] = 1
+                        self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
 
                         self.tracks[self.tracks[:, 0] == feat_id, 0] = sel[0]
 
@@ -393,13 +393,13 @@ class TrackingUI(Widget):
 
                                 self.tracks = np.vstack(
                                     (self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                                self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
 
                             else:
 
                                 self.tracks = np.insert(self.tracks, i,
                                                         [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0], 0)
-                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                                self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
 
                     self.modify_update()
 
@@ -410,7 +410,7 @@ class TrackingUI(Widget):
                 self.track_btn3.state = 'normal'
 
                 if sum(mask) and min(d) < 50:
-                    self.features[self.features[:, 0] == sel[0], 18] = 1
+                    self.features[self.features[:, 0] == sel[0] - 1, 18] = 1
 
                     ind = np.where(mask)
                     self.tracks = np.delete(self.tracks, ind[0][0], 0)
@@ -476,7 +476,7 @@ class TrackingUI(Widget):
                     self.map_ind = r
 
                     self.tracks = np.vstack((self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                    self.features[self.features[:, 0] == sel[0], 18] = r
+                    self.features[self.features[:, 0] == sel[0]-1, 18] = r
 
                     self.modify_update()
 
@@ -550,7 +550,7 @@ class TrackingUI(Widget):
             else:
                 self.track_btn6.state = 'normal'
 
-            self.tracking_window.keyboard_press(self.track_btn6.state, 6)
+            self.tracking_window.keyboard_press(self.track_btn6.state, 5)
 
         if key == 'w':
 
@@ -741,29 +741,19 @@ class TrackingUI(Widget):
             feat_mat2 = np.delete(feat_mat, [15, 16], 1)
             np.savetxt(f, feat_mat2, delimiter=",")
 
-    def feat1(self, instance):
-        num = int(''.join([instance.text]))-1
+    def feat_change(self, flag, instance):
+        print(instance.text)
+        if instance.text.isdigit():
+            num = int(''.join([instance.text]))-1
 
-        if num >= 0 and num < len(self.feat_inds):
-            self.show_feat[0] = self.feat_inds[num]
+            if num >= 0 and num < len(self.feat_inds):
+                self.show_feat[flag] = self.feat_inds[num]
 
-        self.modify_update()
+            self.modify_update()
 
-    def feat2(self, instance):
-        num = int(''.join([instance.text]))-1
+            self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
+            self.keyboard.bind(on_key_down=self.key_print)
 
-        if num >= 0 and num < len(self.feat_inds):
-            self.show_feat[1] = self.feat_inds[num]
-
-        self.modify_update()
-
-    def feat3(self, instance):
-        num = int(''.join([instance.text]))-1
-
-        if num >= 0 and num < len(self.feat_inds):
-            self.show_feat[2] = self.feat_inds[num]
-
-        self.modify_update()
 
     def initialize(self, all_channels, labels, frames):
 
@@ -896,9 +886,12 @@ class TrackingUI(Widget):
         self.text_input3 = TextInput(text='Feat3',
                                      multiline=False, size_hint=(.09, .05), pos_hint={'x': .83, 'y': .923})
 
-        self.text_input1.bind(on_text_validate=self.feat1)
-        self.text_input2.bind(on_text_validate=self.feat2)
-        self.text_input3.bind(on_text_validate=self.feat3)
+        self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
+        self.text_input2.bind(on_text_validate=partial(self.feat_change, 1))
+        self.text_input3.bind(on_text_validate=partial(self.feat_change, 2))
+
+        mask = self.tracks[:, 0] == self.tracks[0, 0]  # Test if selection is in track array and identify it
+        self.track_ind = self.tracks[mask, 4]  # Set the selected track index
 
         with self.canvas:
             self.add_widget(self.tr_layout)
