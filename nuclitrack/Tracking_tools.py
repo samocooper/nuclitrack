@@ -145,6 +145,16 @@ class RunTracking(object):
     def finish_optimising(self):
 
         self.tracks[:, 0] = self.tracks[:, 0] - 1
+        unique, counts = np.unique(self.tracks[:, 0], return_counts=True)
+
+        self.segment_count = len(counts)
+        self.double_segment = sum(counts > 1)
+
+
+        double_seg = unique[counts > 1]
+        for val in double_seg:
+            self.tracks = self.tracks[np.logical_not(self.tracks[:, 0] == val), :]
+
         return self.tracks
 
     def get_count(self):
@@ -282,7 +292,7 @@ class TrackingUI(Widget):
         mask = inds == self.current_frame
         self.frame_feats = self.features[mask, :]
 
-        self.frame_text.text = '[color=000000][size=14]Frame <a d>: ' + str(int(val)) + '[/size][/color]'
+        self.frame_text.text = '[color=000000][size=14]<<a  Frame  d>>: ' + str(int(val)) + '[/size][/color]'
 
         self.track_frame_update()
 
@@ -301,9 +311,9 @@ class TrackingUI(Widget):
 
         self.map_ind = self.features[self.track_ids[0] - 1, 18]
 
-        feats_temp1 = self.features[self.track_ids - 1, self.show_feat[0]]
-        feats_temp2 = self.features[self.track_ids - 1, self.show_feat[1]]
-        feats_temp3 = self.features[self.track_ids - 1, self.show_feat[2]]
+        feats_temp1 = self.features[self.track_ids, self.show_feat[0]]
+        feats_temp2 = self.features[self.track_ids, self.show_feat[1]]
+        feats_temp3 = self.features[self.track_ids, self.show_feat[2]]
 
         feats_temp1 = feats_temp1 / max(feats_temp1)
         feats_temp2 = feats_temp2 / max(feats_temp2)
@@ -742,11 +752,12 @@ class TrackingUI(Widget):
             np.savetxt(f, feat_mat2, delimiter=",")
 
     def feat_change(self, flag, instance):
-        print(instance.text)
+
         if instance.text.isdigit():
             num = int(''.join([instance.text]))-1
 
-            if num >= 0 and num < len(self.feat_inds):
+            if 0 <= num < len(self.feat_inds):
+                print(self.feat_inds[num])
                 self.show_feat[flag] = self.feat_inds[num]
 
             self.modify_update()
@@ -806,7 +817,7 @@ class TrackingUI(Widget):
                                    pos_hint={'x': .145, 'y': .9}, cursor_size=(30, 30))
         self.frame_slider.bind(value=self.frame_select)
 
-        self.frame_text = Label(text='[color=000000][size=14]Frame <a d>: ' + str(0) + '[/size][/color]',
+        self.frame_text = Label(text='[color=000000][size=14]<<a  Frame  d>>: ' + str(0) + '[/size][/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .145, 'y': .9}, markup=True)
 
         self.tr_layout.add_widget(self.frame_slider)
@@ -859,7 +870,14 @@ class TrackingUI(Widget):
 
         self.layout4 = layout4
 
-        self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23]
+        self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
+
+        if self.features.shape[1] == 22:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21]
+
+        if self.features.shape[1] == 24:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23]
+
         self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
 
         self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,

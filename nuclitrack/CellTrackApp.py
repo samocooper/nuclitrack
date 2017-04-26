@@ -496,8 +496,10 @@ class UserInterface(Widget):
             self.add_cell_flag = True
             self.tracking_flag = False
 
+    # Schedule heavy duty operations alongside loading bar updates
 
     def do_work(self, dt):
+
         self.canvas.ask_update()
 
         if self.segment_flag:
@@ -557,7 +559,9 @@ class UserInterface(Widget):
             self.tracking_flag = True
 
         else:
-            self.track_message.text = '[b][color=000000]Tracking Completed [/b][/color]'
+            self.track_message.text = '[b][color=000000]Tracking Completed | Total segments: ' + \
+            str(self.tracking_instance.segment_count) + ' | Total double segments: ' + \
+            str(self.tracking_instance.double_segment) + '[/b][/color]'
 
     def initialize(self):
 

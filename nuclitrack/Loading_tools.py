@@ -64,13 +64,11 @@ class FileLoader(Widget):
         self.ld_layout.add_widget(self.text_input_param)
 
         # Display loaded file
-
         self.loaded_param = Label(text='[b][color=000000] [/b][/color]', markup=True,
                                   size_hint=(.48, .05), pos_hint={'x': .51, 'y': .85})
         self.ld_layout.add_widget(self.loaded_param)
 
         # Info on file loading
-
         self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
                                    size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
         self.ld_layout.add_widget(self.error_message)
