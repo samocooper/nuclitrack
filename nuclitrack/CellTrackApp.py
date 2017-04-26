@@ -73,6 +73,10 @@ class UserInterface(Widget):
             self.tracking_p.remove()
             self.remove_widget(self.tracking_p)
 
+        if self.current_ui == 9:
+
+            self.m_layout.remove_widget(self.class_label)
+
 
     def data_ui(self, instance):
 
@@ -249,6 +253,9 @@ class UserInterface(Widget):
 
     def classify_cells(self, instance):
 
+        self.clear_ui()
+        self.current_ui = 9
+
         self.training_data = self.s_param['training_data'][:, :]
         self.training_data = np.delete(self.training_data, 0, 0)
 
@@ -279,7 +286,11 @@ class UserInterface(Widget):
             return
 
         self.fov['features'][...] = self.features
+
         self.progression_state(8)
+        self.class_label = Label(text='[b][color=000000]Cells Classified[/b][/color]', markup=True,
+                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+        self.m_layout.add_widget(self.class_label)
 
     def finish_tracking(self, instance):
 

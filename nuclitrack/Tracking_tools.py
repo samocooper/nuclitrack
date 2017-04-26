@@ -612,6 +612,11 @@ class TrackingUI(Widget):
         ''' Create matrix and write to csv for features. Features are: Track_id, Frame, X_center, Y_center, Area,
         Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
         CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
+        if self.features.shape[1] == 20:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 4))))
+
+        if self.features.shape[1] == 22:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 2))))
 
         feat_mat = np.zeros((1, 18))
 
@@ -653,7 +658,12 @@ class TrackingUI(Widget):
                     b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
 
             feat_mat2 = np.delete(feat_mat, [15, 16], 1)
-            np.savetxt(f, feat_mat2, delimiter=",")
+            np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
+
+        if np.sum(self.features[:, 20:]) == 0:
+            self.features = self.features[:, :19]
+        if np.sum(self.features[:, 22:]) == 0:
+            self.features = self.features[:, :21]
 
         '''
         ### Data formatting for iscb benchmark dataset
@@ -707,6 +717,12 @@ class TrackingUI(Widget):
 
     def save_sel_csv(self, instance):
 
+        if self.features.shape[1] == 20:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 4))))
+
+        if self.features.shape[1] == 22:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 2))))
+
         feat_mat = np.zeros((1, 18))
 
         for i in range(1, int(max(self.tracks[:, 4]))):
@@ -742,14 +758,19 @@ class TrackingUI(Widget):
                     feat_mat[change_list[0][0], 17] = ind_change
                     feat_mat[i, 17] = ind_change
 
-        with open('Results.csv', 'wb') as f:
+        with open('Selection_results.csv', 'wb') as f:
 
             f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
                     b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
                     b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
 
             feat_mat2 = np.delete(feat_mat, [15, 16], 1)
-            np.savetxt(f, feat_mat2, delimiter=",")
+            np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
+
+        if np.sum(self.features[:, 20:]) == 0:
+            self.features = self.features[:, :19]
+        if np.sum(self.features[:, 22:]) == 0:
+            self.features = self.features[:, :21]
 
     def feat_change(self, flag, instance):
 
