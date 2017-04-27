@@ -1,1 +1,1 @@
-from .CellTrackApp import CellTrackApp
+from .main import CellTrackApp
