@@ -510,6 +510,9 @@ class FileLoader(Widget):
             if g == 'all_channels':
                 del self.parent.fov['all_channels']
 
+        for i in range(len(all_channels)):
+            all_channels[i] = all_channels[i]/np.max(all_channels[i].flatten())
+
         self.parent.all_channels = all_channels
         self.parent.frames = frames
         self.parent.dims = dims

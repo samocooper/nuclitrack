@@ -1,6 +1,5 @@
 import numpy as np
-import h5py
-import time
+
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
 from kivy.uix.button import Button
@@ -11,14 +10,13 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
-
+from kivy.uix.dropdown import DropDown
 from functools import partial
 
 from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from skimage.external import tifffile
-import time
 from scipy import ndimage
 import os
 
@@ -35,9 +33,9 @@ def segment_im(param, image):
     im_bin = threshold(image3, param[3])
     im_bin = object_filter(im_bin, param[4])
     [cell_center, d_mat] = cell_centers(image3, im_bin, param[5])
-    markers = fg_markers(cell_center, im_bin, param[6])
+    markers = fg_markers(cell_center, im_bin, param[6], param[9])
     im_edge = sobel_edges(image, param[7])
-    labels = watershed(markers, im_bin, im_edge, d_mat, param[8])
+    labels = watershed(markers, im_bin, im_edge, d_mat, param[8], param[9])
 
     return labels
 
@@ -106,9 +104,9 @@ def cell_centers(im, im_bin, val):
     return [im_cent, d_mat]
 
 
-def fg_markers(im_cent, im_bin, val):
+def fg_markers(im_cent, im_bin, val, edges):
 
-    local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=False)
+    local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=int(edges))
     markers = ndimage.label(local_maxi)[0]
     markers[local_maxi] += 1
     k = morphology.octagon(2, 2)
@@ -134,7 +132,7 @@ def sobel_edges(im, val):
     return im
 
 
-def watershed(markers, im_bin, im_edge, d_mat, val):
+def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     k = morphology.octagon(2, 2)
     im_bin = morphology.binary_dilation(im_bin, selem=k)
@@ -147,12 +145,20 @@ def watershed(markers, im_bin, im_edge, d_mat, val):
     labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
     labels[im_bin] -= 1
 
+    if edges == 1:
+        edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
+                              labels[-1, :].flatten()))
+        edge_val = np.unique(edge_vec)
+        for val in edge_val:
+            if not val == 0:
+                labels[labels == val] = 0
+
     return labels
 
 class SegmentationUI(Widget):
 
     def frame_select(self, instance, val):
-
+        self.current_frame = int(val)
         self.im = self.seg_channel[int(val), :, :].copy()
         self.im_disp.update_im(self.im)
         self.mov_disp.update_im(self.im)
@@ -239,7 +245,7 @@ class SegmentationUI(Widget):
                     self.params[6] = val
                     self.s7_label.text = '[color=000000][size=12]Separation Distance: ' + str(np.round(val, 2)) + '[/size][/color]'
 
-                self.markers = fg_markers(self.cell_center, self.im_bin, self.params[6])
+                self.markers = fg_markers(self.cell_center, self.im_bin, self.params[6],self.params[9])
 
                 if state == 8:
                     self.im_disp.update_im(self.cell_center + (self.markers > 0))
@@ -260,7 +266,9 @@ class SegmentationUI(Widget):
                 self.params[8] = val
                 self.s9_label.text = '[color=000000][size=12]Watershed Ratio: ' + str(np.round(val, 2)) + '[/size][/color]'
 
-                self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8])
+                self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8], self.params[9])
+
+
                 self.im_disp.update_im(self.labels.astype(float))
 
     def save_params(self, instance):
@@ -273,8 +281,23 @@ class SegmentationUI(Widget):
         else:
             self.parent.parallel = False
 
-    def initialize(self, frames, max_channels):
+    def update_edge(self, instance):
 
+        if instance.state == 'down':
+            self.params[9] = 1
+        else:
+            self.params[9] = 0
+    def change_channel(self, val, instance):
+
+        self.seg_channel = self.parent.all_channels[val]
+        self.im_disp.update_im(self.seg_channel[self.current_frame, :, :])
+        self.mov_disp.update_im(self.seg_channel[self.current_frame, :, :])
+        self.parent.seg_channel = val
+
+    def initialize(self, frames, max_channel):
+
+        self.current_frame = 0
+        self.max_channel = max_channel
         self.frames = frames
         self.seg_channel = self.parent.all_channels[0]
         self.ch_max = np.max(self.seg_channel.flatten())
@@ -283,7 +306,7 @@ class SegmentationUI(Widget):
         self.parent.progression_state(3)
         self.state = 0
 
-        self.parent.s_param.require_dataset('seg_param', (9,), dtype='f')
+        self.parent.s_param.require_dataset('seg_param', (10,), dtype='f')
         self.params = self.parent.s_param['seg_param'][:]
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
 
@@ -307,17 +330,34 @@ class SegmentationUI(Widget):
         self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .23, 'y': .9}, markup=True)
 
-        self.parallel_button = ToggleButton(text='Use Multiple Cores',
-                                size_hint=(.2, .04), pos_hint={'x': .73, 'y': .923}, markup=True)
+        self.parallel_button = ToggleButton(text='[size=13] Multiple Cores [/size]',
+                                size_hint=(.15, .04), pos_hint={'x': .682, 'y': .923}, markup=True)
         self.parallel_button.bind(on_press=self.update_parallel)
         self.s_layout.add_widget(self.parallel_button)
+
+        self.edge_button = ToggleButton(text='[size=13] Filter edge [/size]',
+                                            size_hint=(.15, .04), pos_hint={'x': .53, 'y': .923}, markup=True)
+        self.edge_button.bind(on_press=self.update_edge)
+        self.s_layout.add_widget(self.edge_button)
+
+        # Drop down menu for choosing which channel
+        self.channel_choice = DropDown()
+
+        for i in range(self.max_channel):
+            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
+            channel_btn.bind(on_press=partial(self.change_channel, i))
+            self.channel_choice.add_widget(channel_btn)
+
+        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
+        self.main_button.bind(on_release=self.channel_choice.open)
+        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+        self.s_layout.add_widget(self.main_button)
 
         # Sliders for updating parameters
 
         layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
 
-        s0 = Slider(min=float(self.ch_min), max=float(self.ch_max),
-                    step=float((self.ch_max-self.ch_min)/100), value=float(self.params[0]), cursor_size=(25, 25))
+        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]), cursor_size=(25, 25))
         s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]), cursor_size=(25, 25))
         s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]), cursor_size=(25, 25))
         s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]), cursor_size=(25, 25))
@@ -467,7 +507,6 @@ class ViewSegmentation(Widget):
 
         self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
         self.im_disp.create_im(im_temp, 'Random')
-
 
         self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
                                    pos_hint={'x': .1, 'y': .9}, cursor_size=(30, 30))

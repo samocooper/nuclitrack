@@ -1,18 +1,17 @@
 import numpy as np
-import h5py
 
 from kivy.graphics import Ellipse, Color
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton, Button
 from kivy.uix.gridlayout import GridLayout
-from kivy.core.window import Window, Keyboard
+from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from functools import partial
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
-from skimage.external import tifffile
 from scipy.spatial import distance
+from kivy.uix.dropdown import DropDown
 
 from .Image_widget import ImDisplay, IndexedDisplay
 from .Graph import Graph, SmoothLinePlot
@@ -613,12 +612,12 @@ class TrackingUI(Widget):
         Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
         CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
         if self.features.shape[1] == 20:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 4))))
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 6))))
 
-        if self.features.shape[1] == 22:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 2))))
+        if self.features.shape[1] == 23:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 3))))
 
-        feat_mat = np.zeros((1, 18))
+        feat_mat = np.zeros((1, 20))
 
         for i in range(1, int(max(self.tracks[:, 4])) + 1):
             if sum(self.tracks[:, 4] == i) > 0:
@@ -630,17 +629,17 @@ class TrackingUI(Widget):
                     fv = self.features[mask, :]
                     feat_mat = np.vstack((feat_mat,
                                           [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
-                                           fv[0, 8], fv[0, 9], fv[0, 10],
-                                           fv[0, 11], fv[0, 20], fv[0, 21], fv[0, 22], fv[0, 23], track_temp[j, 3],
+                                           fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
+                                           fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
                                            track_temp[j, 0], 0]))
 
         feat_mat = np.delete(feat_mat, 0, 0)
 
         for i in range(feat_mat.shape[0]):
 
-            if feat_mat[i, 15] > 0:
+            if feat_mat[i, 17] > 0:
 
-                mask = feat_mat[:, 16] == feat_mat[i, 15]
+                mask = feat_mat[:, 18] == feat_mat[i, 17]
                 ind_change = feat_mat[mask, 0]
 
                 frame_change = feat_mat[mask, 1]
@@ -649,21 +648,21 @@ class TrackingUI(Widget):
                     # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
                     change_list = np.where(mask_change)
-                    feat_mat[change_list[0][0], 17] = ind_change
-                    feat_mat[i, 17] = ind_change
+                    feat_mat[change_list[0][0], 19] = ind_change
+                    feat_mat[i, 19] = ind_change
 
         with open('Results.csv', 'wb') as f:
             f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
                     b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
                     b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
 
-            feat_mat2 = np.delete(feat_mat, [15, 16], 1)
+            feat_mat2 = np.delete(feat_mat, [17, 18], 1)
             np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
 
         if np.sum(self.features[:, 20:]) == 0:
             self.features = self.features[:, :19]
-        if np.sum(self.features[:, 22:]) == 0:
-            self.features = self.features[:, :21]
+        if np.sum(self.features[:, 23:]) == 0:
+            self.features = self.features[:, :22]
 
         '''
         ### Data formatting for iscb benchmark dataset
@@ -718,12 +717,12 @@ class TrackingUI(Widget):
     def save_sel_csv(self, instance):
 
         if self.features.shape[1] == 20:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 4))))
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 6))))
 
-        if self.features.shape[1] == 22:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 2))))
+        if self.features.shape[1] == 23:
+            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 3))))
 
-        feat_mat = np.zeros((1, 18))
+        feat_mat = np.zeros((1, 20))
 
         for i in range(1, int(max(self.tracks[:, 4]))):
             if self.parent.fov['tracks_stored'][i] == 1:
@@ -735,18 +734,18 @@ class TrackingUI(Widget):
                         mask = self.features[:, 0] == track_temp[j, 0]
                         fv = self.features[mask, :]
                         feat_mat = np.vstack((feat_mat,
-                                              [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
-                                               fv[0, 8], fv[0, 9], fv[0, 10],
-                                               fv[0, 11], fv[0, 20], fv[0, 21], fv[0, 22], fv[0, 23], track_temp[j, 3],
-                                               track_temp[j, 0], 0]))
+                                          [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
+                                           fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
+                                           fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
+                                           track_temp[j, 0], 0]))
 
         feat_mat = np.delete(feat_mat, 0, 0)
 
         for i in range(feat_mat.shape[0]):
 
-            if feat_mat[i, 15] > 0:
+            if feat_mat[i, 17] > 0:
 
-                mask = feat_mat[:, 16] == feat_mat[i, 15]
+                mask = feat_mat[:, 18] == feat_mat[i, 17]
                 ind_change = feat_mat[mask, 0]
 
                 frame_change = feat_mat[mask, 1]
@@ -755,8 +754,8 @@ class TrackingUI(Widget):
                     # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
                     change_list = np.where(mask_change)
-                    feat_mat[change_list[0][0], 17] = ind_change
-                    feat_mat[i, 17] = ind_change
+                    feat_mat[change_list[0][0], 19] = ind_change
+                    feat_mat[i, 19] = ind_change
 
         with open('Selection_results.csv', 'wb') as f:
 
@@ -764,13 +763,13 @@ class TrackingUI(Widget):
                     b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
                     b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
 
-            feat_mat2 = np.delete(feat_mat, [15, 16], 1)
+            feat_mat2 = np.delete(feat_mat, [17, 18], 1)
             np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
 
         if np.sum(self.features[:, 20:]) == 0:
             self.features = self.features[:, :19]
-        if np.sum(self.features[:, 22:]) == 0:
-            self.features = self.features[:, :21]
+        if np.sum(self.features[:, 23:]) == 0:
+            self.features = self.features[:, :22]
 
     def feat_change(self, flag, instance):
 
@@ -786,9 +785,14 @@ class TrackingUI(Widget):
             self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
             self.keyboard.bind(on_key_down=self.key_print)
 
+    def change_channel(self, val, instance):
 
-    def initialize(self, all_channels, labels, frames):
+        self.channel_im = self.parent.all_channels[val]
+        self.mov_disp.update_im(self.channel_im[self.current_frame, :, :])
 
+    def initialize(self, labels, frames, max_channel):
+
+        self.max_channel = max_channel
         self.tracks = self.parent.fov['tracks'][:, :]
         self.features = self.parent.fov['features'][:, :]
 
@@ -796,7 +800,7 @@ class TrackingUI(Widget):
         self.keyboard.bind(on_key_down=self.key_print)
 
         self.labels = labels
-        self.channel_im = all_channels[0]
+        self.channel_im = self.parent.all_channels[0]
         self.frames = frames
 
         self.dims = self.channel_im[0].shape
@@ -893,11 +897,11 @@ class TrackingUI(Widget):
 
         self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
 
-        if self.features.shape[1] == 22:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21]
+        if self.features.shape[1] == 23:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22]
 
-        if self.features.shape[1] == 24:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23]
+        if self.features.shape[1] == 26:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 24, 25]
 
         self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
 
@@ -919,15 +923,29 @@ class TrackingUI(Widget):
         self.graph.add_plot(self.plot3)
 
         self.text_input1 = TextInput(text='Feat1',
-                                     multiline=False, size_hint=(.09, .05), pos_hint={'x': .63, 'y': .923})
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .555, 'y': .919})
         self.text_input2 = TextInput(text='Feat2',
-                                     multiline=False, size_hint=(.09, .05), pos_hint={'x': .73, 'y': .923})
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .64, 'y': .919})
         self.text_input3 = TextInput(text='Feat3',
-                                     multiline=False, size_hint=(.09, .05), pos_hint={'x': .83, 'y': .923})
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .725, 'y': .919})
 
         self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
         self.text_input2.bind(on_text_validate=partial(self.feat_change, 1))
         self.text_input3.bind(on_text_validate=partial(self.feat_change, 2))
+
+        # Drop down menu for choosing which channel
+        self.channel_choice = DropDown()
+
+        for i in range(self.max_channel):
+            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
+            channel_btn.bind(on_press=partial(self.change_channel, i))
+            self.channel_choice.add_widget(channel_btn)
+
+        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04),
+                                  pos_hint={'x': .83, 'y': .923}, markup=True)
+        self.main_button.bind(on_release=self.channel_choice.open)
+        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+        self.tr_layout.add_widget(self.main_button)
 
         mask = self.tracks[:, 0] == self.tracks[0, 0]  # Test if selection is in track array and identify it
         self.track_ind = self.tracks[mask, 4]  # Set the selected track index

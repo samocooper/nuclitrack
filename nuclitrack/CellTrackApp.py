@@ -1,22 +1,17 @@
-import functools
 from multiprocessing import Pool
 import multiprocessing
 import numpy as np
 
-import tracking_c_tools
 from .Segmentation_tools import SegmentationUI, ViewSegmentation, segment_im
 from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI
 from .Loading_tools import FileLoader
-from .Image_widget import ImDisplay
 
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.button import Button
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.uix.slider import Slider
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.uix.progressbar import ProgressBar
@@ -26,7 +21,6 @@ from sklearn.ensemble import RandomForestClassifier
 from kivy.clock import Clock
 from functools import partial
 
-import time
 
 class UserInterface(Widget):
 
@@ -77,7 +71,6 @@ class UserInterface(Widget):
         if self.current_ui == 9:
 
             self.m_layout.remove_widget(self.class_label)
-
 
     def data_ui(self, instance):
 
@@ -133,8 +126,9 @@ class UserInterface(Widget):
             self.count_scheduled = 0
             self.count_completed = 0
             self.segment_flag = True
-            self.progression_state(4)
-            self.progression_state(5)
+
+        self.progression_state(4)
+        self.progression_state(5)
 
     def view_segments(self, instance):
 
@@ -154,13 +148,13 @@ class UserInterface(Widget):
 
     def segment_im(self, frame, dt):
 
-        self.labels[frame, :, :] = segment_im(self.params, self.all_channels[0][frame, :, :])
+        self.labels[frame, :, :] = segment_im(self.params, self.all_channels[self.seg_channel][frame, :, :])
 
     def segment_parallel(self, dt):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        results = pool.map(partial(segment_im, self.params),  [self.all_channels[0][i, :, :] for i in range(self.frames)])
+        results = pool.map(partial(segment_im, self.params),  [self.all_channels[self.seg_channel][i, :, :] for i in range(self.frames)])
         pool.close()
         pool.join()
         for i in range(self.frames):
@@ -267,7 +261,6 @@ class UserInterface(Widget):
 
             self.training_p.initialize(self.labels, self.all_channels[0], self.features, self.frames)
             Window.bind(on_resize=self.training_p.update_size)
-
 
     def classify_cells(self, instance):
 
@@ -384,7 +377,7 @@ class UserInterface(Widget):
             self.tracking_p = TrackingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.tracking_p)
 
-            self.tracking_p.initialize(self.all_channels, self.labels, self.frames)
+            self.tracking_p.initialize(self.labels, self.frames, len(self.all_channels))
             Window.bind(on_resize=self.tracking_p.update_size)
 
     def progression_state(self, state):
@@ -597,6 +590,7 @@ class UserInterface(Widget):
             str(self.tracking_instance.double_segment) + '[/b][/color]'
 
     def initialize(self):
+        self.seg_channel = 0
         self.parallel = False
         self.current_ui = 0
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
