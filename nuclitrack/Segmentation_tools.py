@@ -18,7 +18,7 @@ from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from skimage.external import tifffile
-
+import time
 from scipy import ndimage
 import os
 
@@ -34,11 +34,12 @@ def segment_im(param, image):
     image3 = blur(image2, param[2])
     im_bin = threshold(image3, param[3])
     im_bin = object_filter(im_bin, param[4])
-    cell_center = cell_centers(image3, im_bin, param[5])
+    [cell_center, d_mat] = cell_centers(image3, im_bin, param[5])
     markers = fg_markers(cell_center, im_bin, param[6])
     im_edge = sobel_edges(image, param[7])
+    labels = watershed(markers, im_bin, im_edge, d_mat, param[8])
 
-    return watershed(markers, im_bin, im_edge, param[8])
+    return labels
 
 
 # Functions for segmentation
@@ -64,18 +65,20 @@ def background(im, val):
 
 def blur(im, val):
 
-    im_temp = im.copy()
-
     if val != 0:
 
-        if val < 8:
-            im_temp = filters.gaussian(im_temp, val)
+        if val <= 5:
+            im = filters.gaussian(im, val)
+
         else:
-            im_temp = segmentation_c_tools.fast_blur(im_temp, val-1)
 
-    im_temp = im_temp/np.max(im_temp.flatten())
+            im = filters.gaussian(im, (val / 2))
+            im = filters.gaussian(im, (val / 2))
+            im = filters.gaussian(im, (val / 2))
 
-    return im_temp
+    im = im/np.max(im.flatten())
+
+    return im
 
 
 def threshold(im, val):
@@ -100,14 +103,14 @@ def cell_centers(im, im_bin, val):
     im_cent = (1 - val) * im + val * d_mat
     im_cent[np.logical_not(im_bin)] = 0
 
-    return im_cent
+    return [im_cent, d_mat]
 
 
 def fg_markers(im_cent, im_bin, val):
 
     local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=False)
     markers = ndimage.label(local_maxi)[0]
-
+    markers[local_maxi] += 1
     k = morphology.octagon(2, 2)
     markers = morphology.dilation(markers, selem=k)
 
@@ -116,10 +119,14 @@ def fg_markers(im_cent, im_bin, val):
 def sobel_edges(im, val):
 
     if val != 0:
-        if val < 8:
+        if val <= 5:
             im = filters.gaussian(im, val)
+
         else:
-            im = segmentation_c_tools.fast_blur(im, val-1)
+
+            im = filters.gaussian(im, (val / 2))
+            im = filters.gaussian(im, (val / 2))
+            im = filters.gaussian(im, (val / 2))
 
     im = filters.sobel(im) + 1
     im = im / np.max(im.flatten())
@@ -127,18 +134,18 @@ def sobel_edges(im, val):
     return im
 
 
-def watershed(markers, im_bin, im_edge, val):
+def watershed(markers, im_bin, im_edge, d_mat, val):
 
-    k = morphology.octagon(10, 10)
-    bgm = morphology.binary_dilation(im_bin, selem=k)
+    k = morphology.octagon(2, 2)
+    im_bin = morphology.binary_dilation(im_bin, selem=k)
+    im_bin = morphology.binary_dilation(im_bin, selem=k)
 
-    d_mat = ndimage.distance_transform_edt(im_bin)
-    d_mat = d_mat / np.max(d_mat.flatten())
-
-    markers_temp = markers + np.logical_not(bgm)
+    markers_temp = markers + np.logical_not(im_bin)
+    im_bin = morphology.binary_dilation(im_bin, selem=k)
     shed_im = (1 - val) * im_edge - val * d_mat
 
-    labels = morphology.watershed(shed_im, markers_temp) - 1
+    labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
+    labels[im_bin] -= 1
 
     return labels
 
@@ -221,7 +228,7 @@ class SegmentationUI(Widget):
                     self.params[5] = val
                     self.s6_label.text = '[color=000000][size=12]Distance to Intensity: ' + str(np.round(val, 2)) + '[/size][/color]'
 
-                self.cell_center = cell_centers(self.im3, self.im_bin, self.params[5])
+                [self.cell_center, self.d_mat] = cell_centers(self.im3, self.im_bin, self.params[5])
 
                 if state == 7:
                     self.im_disp.update_im(self.cell_center)
@@ -253,12 +260,18 @@ class SegmentationUI(Widget):
                 self.params[8] = val
                 self.s9_label.text = '[color=000000][size=12]Watershed Ratio: ' + str(np.round(val, 2)) + '[/size][/color]'
 
-                self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.params[8])
+                self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8])
                 self.im_disp.update_im(self.labels.astype(float))
 
     def save_params(self, instance):
 
         self.parent.s_param['seg_param'][:] = self.params[:]
+
+    def update_parallel(self, instance):
+        if instance.state == 'down':
+            self.parent.parallel = True
+        else:
+            self.parent.parallel = False
 
     def initialize(self, frames, max_channels):
 
@@ -293,6 +306,11 @@ class SegmentationUI(Widget):
         self.frame_slider.bind(value=self.frame_select)
         self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .23, 'y': .9}, markup=True)
+
+        self.parallel_button = ToggleButton(text='Use Multiple Cores',
+                                size_hint=(.2, .04), pos_hint={'x': .73, 'y': .923}, markup=True)
+        self.parallel_button.bind(on_press=self.update_parallel)
+        self.s_layout.add_widget(self.parallel_button)
 
         # Sliders for updating parameters
 

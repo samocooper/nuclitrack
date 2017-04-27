@@ -1,5 +1,6 @@
 import functools
 from multiprocessing import Pool
+import multiprocessing
 import numpy as np
 
 import tracking_c_tools
@@ -108,26 +109,32 @@ class UserInterface(Widget):
         self.clear_ui()
         self.current_ui = 3
 
-        self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
-                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-        self.m_layout.add_widget(self.seg_message)
-
-        self.pb.value = 1000 / self.frames
-        self.m_layout.add_widget(self.layout2)
-        self.layout2.add_widget(self.pb)
-
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
         self.params = self.s_param['seg_param'][:]
         self.frames = self.all_channels[0].shape[0]
         self.label_np = np.zeros(self.all_channels[0].shape)
 
-        self.count_scheduled = 0
-        self.count_completed = 0
+        if self.parallel == True:
+            self.seg_message = Label(text='[b][color=000000]Parallel Processing' \
+                                    '\n   No Loading Bar[/b][/color]', markup=True,
+                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+            self.m_layout.add_widget(self.seg_message)
+            self.segment_flag_parallel = True
 
-        self.segment_flag = True
+        else:
+            self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
+                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+            self.m_layout.add_widget(self.seg_message)
 
-        self.progression_state(4)
-        self.progression_state(5)
+            self.pb.value = 1000 / self.frames
+            self.m_layout.add_widget(self.layout2)
+            self.layout2.add_widget(self.pb)
+
+            self.count_scheduled = 0
+            self.count_completed = 0
+            self.segment_flag = True
+            self.progression_state(4)
+            self.progression_state(5)
 
     def view_segments(self, instance):
 
@@ -149,6 +156,17 @@ class UserInterface(Widget):
 
         self.labels[frame, :, :] = segment_im(self.params, self.all_channels[0][frame, :, :])
 
+    def segment_parallel(self, dt):
+
+        cpu_count = multiprocessing.cpu_count()
+        pool = Pool(cpu_count)
+        results = pool.map(partial(segment_im, self.params),  [self.all_channels[0][i, :, :] for i in range(self.frames)])
+        pool.close()
+        pool.join()
+        for i in range(self.frames):
+            self.labels[i, :, :] = results[i]
+
+        self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
 
     def frame_features(self, frame, dt):
 
@@ -513,6 +531,10 @@ class UserInterface(Widget):
 
         self.canvas.ask_update()
 
+        if self.segment_flag_parallel:
+            Clock.schedule_once(self.segment_parallel, 0)
+            self.segment_flag_parallel = False
+
         if self.segment_flag:
 
             Clock.schedule_once(self.update_bar, 0)
@@ -575,7 +597,7 @@ class UserInterface(Widget):
             str(self.tracking_instance.double_segment) + '[/b][/color]'
 
     def initialize(self):
-
+        self.parallel = False
         self.current_ui = 0
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -593,6 +615,7 @@ class UserInterface(Widget):
         self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=0)
 
         self.segment_flag = False
+        self.segment_flag_parallel = False
         self.feature_flag = False
         self.tracking_flag = False
         self.iterations = 2

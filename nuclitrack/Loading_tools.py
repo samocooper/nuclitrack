@@ -41,7 +41,7 @@ class FileLoader(Widget):
 
         self.text_input_fov = TextInput(text='example_data.hdf5', multiline=False,
                                         size_hint=(.48, .05), pos_hint={'x': .01, 'y': .9})
-        self.text_input_fov.bind(on_text_validate=partial(self.dir, self.text_input_fov.text, 'fov'))
+        self.text_input_fov.bind(on_text_validate=partial(self.dir, 'fov'))
         self.ld_layout.add_widget(self.text_input_fov)
 
         # Display loaded file
@@ -60,7 +60,7 @@ class FileLoader(Widget):
         # Input
         self.text_input_param = TextInput(text='example_params.hdf5', multiline=False,
                                           size_hint=(.48, .05), pos_hint={'x': .51, 'y': .9})
-        self.text_input_param.bind(on_text_validate=partial(self.dir, self.text_input_param.text, 'param'))
+        self.text_input_param.bind(on_text_validate=partial(self.dir, 'param'))
         self.ld_layout.add_widget(self.text_input_param)
 
         # Display loaded file
@@ -73,8 +73,8 @@ class FileLoader(Widget):
                                    size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
         self.ld_layout.add_widget(self.error_message)
 
-    def dir(self, input_text, input_type, obj):
-
+    def dir(self, input_type, obj):
+        input_text = obj.text
         # Display loaded files
 
         if input_type == 'fov':
