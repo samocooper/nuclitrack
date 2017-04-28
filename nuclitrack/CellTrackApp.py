@@ -37,7 +37,7 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.clear_ui(1)
-            self.loading_widget = LoadingUI(size=Window.size)
+            self.loading_widget = LoadingUI()
             self.add_widget(self.loading_widget)
             Window.bind(on_resize=self.loading_widget.update_size)
 
@@ -48,7 +48,7 @@ class UserInterface(Widget):
             self.clear_ui(2)
             self.params.require_dataset('seg_param', (10,), dtype='f')
             self.segment_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
-                                                 params=self.params['seg_param'][...], size=Window.size)
+                                                 params=self.params['seg_param'][...])
 
             self.add_widget(self.segment_widget)
             self.progression_state(3)
@@ -57,25 +57,17 @@ class UserInterface(Widget):
     def segment_movie(self, instance):
 
         self.clear_ui(3)
-        self.segmentation_object = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...])
+        self.batch_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...]
+                                         , frames=self.frames, parallel=self.parallel)
+        self.add_widget(self.batch_widget)
+
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
-        self.params['seg_param'][:]
 
         if self.parallel == True:
-            self.seg_message = Label(text='[b][color=000000]Parallel Processing' \
-                                    '\n   No Loading Bar[/b][/color]', markup=True,
-                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-            self.m_layout.add_widget(self.seg_message)
+
             self.segment_flag_parallel = True
 
         else:
-            self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
-                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-            self.m_layout.add_widget(self.seg_message)
-
-            self.pb.value = 1000 / self.frames
-            self.m_layout.add_widget(self.layout2)
-            self.layout2.add_widget(self.pb)
 
             self.count_scheduled = 0
             self.count_completed = 0
@@ -92,20 +84,12 @@ class UserInterface(Widget):
 
             self.view_segmentation = ViewSegmentation(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.view_segmentation)
-
             self.view_segmentation.initialize(self.labels, self.frames)
 
-
-    def update_bar(self, dt):
-        self.pb.value += 1000/self.frames
-
-    def segment_im(self, frame, dt):
-        self.segmentation_object.segment_im(frame)
-
     def segment_parallel(self, dt):
-        self.segmentation_object.segment_parallel(self.frames)
-        self.labels = self.segmentation_object.get()
-        self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
+
+        self.batch_widget.segment_parallel()
+        self.labels = self.batch_widget.get()
 
     def frame_features(self, frame, dt):
 
@@ -469,14 +453,13 @@ class UserInterface(Widget):
 
         if self.segment_flag:
 
-            Clock.schedule_once(self.update_bar, 0)
-            Clock.schedule_once(partial(self.segment_im, self.count_scheduled), 0)
+            Clock.schedule_once(self.batch_widget.update_bar, 0)
+            Clock.schedule_once(partial(self.batch_widget.segment_im, self.count_scheduled), 0)
             self.count_scheduled += 1
 
             if self.count_scheduled == self.frames:
                 self.segment_flag = False
-                self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
-                self.labels = self.segmentation_object.get()
+                self.labels = self.batch_widget.get()
 
         if self.feature_flag:
 
@@ -545,9 +528,6 @@ class UserInterface(Widget):
         self.layout1.add_widget(btn1)
 
         # Progress bar widget
-
-        self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
-        self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=0)
 
         self.segment_flag = False
         self.segment_flag_parallel = False

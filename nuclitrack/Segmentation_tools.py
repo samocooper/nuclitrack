@@ -13,6 +13,7 @@ from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.textinput import TextInput
 from kivy.uix.label import Label
 from kivy.uix.dropdown import DropDown
+from kivy.uix.progressbar import ProgressBar
 from functools import partial
 
 from skimage import filters
@@ -154,28 +155,58 @@ def segment_image(params, image):
 
 # Batch Segmentation
 
-class BatchSegment(object):
+class BatchSegment(Widget):
+    def __init__(self, images=None, params=None, frames=None, parallel=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def __init__(self, images=None, params=None):
+        self.frames = frames
         self.images = images
         self.labels = np.zeros(images.shape)
         self.params = params
+        self.layout = FloatLayout(size=(Window.width, Window.height))
 
-    def segment_im(self, frame):
+        if parallel:
+
+            self.seg_message = Label(text='[b][color=000000]Parallel Processing' \
+                                          '\n   No Loading Bar[/b][/color]', markup=True,
+                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+            with self.canvas:
+                self.add_widget(self.layout)
+                self.layout.add_widget(self.seg_message)
+
+        else:
+
+            self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
+                                     size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+
+            self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
+            self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=1000/self.frames)
+            self.layout2.add_widget(self.pb)
+
+            with self.canvas:
+                self.add_widget(self.layout)
+                self.layout.add_widget(self.seg_message)
+                self.layout.add_widget(self.layout2)
+
+    def update_bar(self, dt):
+        self.pb.value += 1000/self.frames
+
+    def segment_im(self, frame, dt):
         self.labels[frame, :, :] = segment_image(self.params, self.images[frame, :, :])
 
-    def segment_parallel(self, frames):
+    def segment_parallel(self):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        labels = pool.map(partial(segment_image, self.params), [self.images[frame, :, :] for frame in range(frames)])
+        labels = pool.map(partial(segment_image, self.params), [self.images[frame, :, :] for frame in range(self.frames)])
         pool.close()
         pool.join()
 
-        for i in range(frames):
+        for i in range(self.frames):
             self.labels[i, :, :] = labels[i]
 
     def get(self):
+        self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
         return self.labels
 
 # Segmentation UI
