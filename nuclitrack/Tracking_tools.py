@@ -246,7 +246,6 @@ class RunTracking(Widget):
         return self.tracks, self.features
 
 
-
 class CellMark(Widget):
 
     def draw_dot(self, cell_center, dims, r, g, b, d):
@@ -326,7 +325,188 @@ class Jump(Widget):
             xpos = (touch.pos[0] - self.pos[0]) / self.size[0]
             self.parent.parent.frame_select([], np.asarray([xpos]))
 
+
 class TrackingUI(Widget):
+
+    def __init__(self, images=None, labels=None, tracks=None, stored_tracks=None, features=None, frames=None,
+                 dims=None, channels=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.channels = channels
+        self.tracks = tracks
+        self.features = features
+        self.dims = dims
+        self.labels = labels
+        self.channel_im = images[0]
+
+        self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
+        self.keyboard.bind(on_key_down=self.key_print)
+
+        self.frames = frames
+
+        self.tr_layout = FloatLayout(size=(Window.width, Window.height))
+
+        # Stored Tracks
+
+        self.store_ids = set()
+
+        for i in range(len(stored_tracks)):
+            if stored_tracks[i] == 1:
+                self.store_ids = self.store_ids.union(set(self.tracks[self.tracks[:, 4] == i, 0]))
+
+        self.store_layout = FloatLayout(size=(Window.width, Window.height))
+
+        self.track_disp = IndexedDisplay(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
+        self.tr_layout.add_widget(self.track_disp)
+
+        self.mov_disp = ImDisplay(size_hint=(.43, .43), pos_hint={'x': .56, 'y': .46})
+        self.tr_layout.add_widget(self.mov_disp)
+
+        self.track_ids = np.zeros(1)
+        self.current_frame = 0
+
+        inds = self.features[:, 1]
+        mask = inds == 0
+
+        if sum(mask.astype(int)) > 0:
+            self.frame_feats = self.features[mask, :]
+
+        im_temp = self.labels[0, :, :]
+
+        mapping = np.hstack((0, self.features[:, 18].astype(int)))
+        self.track_disp.create_im(im_temp, 'Random', mapping)
+
+        self.mov_disp.create_im(self.channel_im[0], 'PastelHeat')
+
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .1),
+                                   pos_hint={'x': .145, 'y': .9}, cursor_size=(30, 30))
+        self.frame_slider.bind(value=self.frame_select)
+
+        self.frame_text = Label(text='[color=000000][size=14]<<a  Frame  d>>: ' + str(0) + '[/size][/color]',
+                                size_hint=(.3, .04), pos_hint={'x': .145, 'y': .9}, markup=True)
+
+        self.tr_layout.add_widget(self.frame_slider)
+        self.tr_layout.add_widget(self.frame_text)
+
+        self.tracking_window = TrackingData(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
+        self.jump_window = Jump(size_hint=(.87, .3), pos_hint={'x': .12, 'y': .12})
+
+        layout4 = GridLayout(cols=1, padding=2, size_hint=(.1, .78), pos_hint={'x': .01, 'y': .115})
+        self.cell_mark = CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
+
+        self.track_btn1 = ToggleButton(text='[size=12] Select Cell (z) [/size]', markup=True, halign='center', valign='center')
+        self.track_btn2 = ToggleButton(text='[size=12] Add Segment (c)[/size]', markup=True, halign='center', valign='center')
+        self.track_btn3 = ToggleButton(text='[size=12]Remove Segment(v)[/size]', markup=True, halign='center', valign='center')
+        self.track_btn4 = ToggleButton(text='[size=12]Swap Tracks (x)[/size]', markup=True, halign='center', valign='center')
+        self.track_btn5 = ToggleButton(text='[size=12]Jump (w)[/size]', markup=True, halign='center', valign='center')
+        self.track_btn6 = ToggleButton(text='[size=12]New Track (n)[/size]', markup=True, halign='center', valign='center')
+        self.track_btn9 = Button(text='[size=12]Store Track[/size]', markup=True, halign='center', valign='center')
+        self.track_btn7 = Button(text='[size=12]Save Tracks[/size]', markup=True, halign='center', valign='center')
+        self.track_btn8 = Button(text='[size=12]Load Tracks[/size]', markup=True, halign='center', valign='center')
+        self.track_btn10 = Button(text='[size=12]Export all to CSV[/size]', markup=True, halign='center', valign='center')
+        self.track_btn11 = Button(text='[size=12]Export sel to CSV[/size]', markup=True, halign='center', valign='center')
+
+        self.track_btn1.bind(on_press=partial(self.tracking_window.state_change, state=1))
+        self.track_btn2.bind(on_press=partial(self.tracking_window.state_change, state=2))
+        self.track_btn3.bind(on_press=partial(self.tracking_window.state_change, state=3))
+        self.track_btn4.bind(on_press=partial(self.tracking_window.state_change, state=4))
+        self.track_btn5.bind(on_press=self.jump_window.jump)
+        self.track_btn6.bind(on_press=partial(self.tracking_window.state_change, state=5))
+        self.track_btn7.bind(on_press=self.save_tracks)
+        self.track_btn8.bind(on_press=self.load_tracks)
+        self.track_btn9.bind(on_press=self.store_track)
+        self.track_btn10.bind(on_press=self.save_csv)
+        self.track_btn11.bind(on_press=self.save_sel_csv)
+
+        layout4.add_widget(self.track_btn1)
+        layout4.add_widget(self.track_btn2)
+        layout4.add_widget(self.track_btn3)
+        layout4.add_widget(self.track_btn4)
+        layout4.add_widget(self.track_btn6)
+        layout4.add_widget(self.track_btn5)
+        layout4.add_widget(self.track_btn7)
+        layout4.add_widget(self.track_btn8)
+        layout4.add_widget(self.track_btn9)
+        layout4.add_widget(self.track_btn10)
+        layout4.add_widget(self.track_btn11)
+
+        for child in layout4.children:
+            child.bind(size=child.setter('text_size'))
+
+        self.layout4 = layout4
+
+        self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
+
+        if self.features.shape[1] == 23:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22]
+
+        if self.features.shape[1] == 26:
+            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 24, 25]
+
+        self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
+
+        self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
+                           xmax=self.frames, ymin=0,
+                           ymax=1,
+                           size_hint=(.87, .32), pos_hint={'x': .12, 'y': .12})
+
+        self.plot1 = SmoothLinePlot(color=[1, 0, 0, 1])
+        self.plot1.points = [(0, 0), (0, 0)]
+        self.graph.add_plot(self.plot1)
+
+        self.plot2 = SmoothLinePlot(color=[0, 1, 0, 1])
+        self.plot2.points = [(0, 0), (0, 0)]
+        self.graph.add_plot(self.plot2)
+
+        self.plot3 = SmoothLinePlot(color=[0, 0, 1, 1])
+        self.plot3.points = [(0, 0), (0, 0)]
+        self.graph.add_plot(self.plot3)
+
+        self.text_input1 = TextInput(text='Feat1',
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .555, 'y': .919})
+        self.text_input2 = TextInput(text='Feat2',
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .64, 'y': .919})
+        self.text_input3 = TextInput(text='Feat3',
+                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .725, 'y': .919})
+
+        self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
+        self.text_input2.bind(on_text_validate=partial(self.feat_change, 1))
+        self.text_input3.bind(on_text_validate=partial(self.feat_change, 2))
+
+        # Drop down menu for choosing which channel
+        self.channel_choice = DropDown()
+
+        for i in range(self.channels):
+            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
+            channel_btn.bind(on_press=partial(self.change_channel, images, i))
+            self.channel_choice.add_widget(channel_btn)
+
+        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04),
+                                  pos_hint={'x': .83, 'y': .923}, markup=True)
+        self.main_button.bind(on_release=self.channel_choice.open)
+        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+        self.tr_layout.add_widget(self.main_button)
+
+        mask = self.tracks[:, 0] == self.tracks[0, 0]  # Test if selection is in track array and identify it
+        self.track_ind = self.tracks[mask, 4]  # Set the selected track index
+
+        with self.canvas:
+            self.add_widget(self.tr_layout)
+            self.add_widget(self.store_layout)
+
+            self.tr_layout.add_widget(self.layout4)
+            self.tr_layout.add_widget(self.tracking_window)
+            self.tr_layout.add_widget(self.jump_window)
+            self.tr_layout.add_widget(self.cell_mark)
+            self.tr_layout.add_widget(self.graph)
+
+            self.tr_layout.add_widget(self.text_input1)
+            self.tr_layout.add_widget(self.text_input2)
+            self.tr_layout.add_widget(self.text_input3)
+
+            for i in range(len(stored_tracks)):
+                self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
+
     def track_frame_update(self):
 
         if self.track_ids.any:
@@ -869,187 +1049,11 @@ class TrackingUI(Widget):
             self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
             self.keyboard.bind(on_key_down=self.key_print)
 
-    def change_channel(self, val, instance):
+    def change_channel(self, images, val, instance):
 
-        self.channel_im = self.parent.images[val]
+        self.channel_im = images[val]
         self.mov_disp.update_im(self.channel_im[self.current_frame, :, :])
 
-    def initialize(self, labels, frames, max_channel):
-
-        self.max_channel = max_channel
-        self.tracks = self.parent.fov['tracks'][:, :]
-        self.features = self.parent.fov['features'][:, :]
-
-        self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
-        self.keyboard.bind(on_key_down=self.key_print)
-
-        self.labels = labels
-        self.channel_im = self.parent.images[0]
-        self.frames = frames
-
-        self.dims = self.channel_im[0].shape
-        self.tr_layout = FloatLayout(size=(Window.width, Window.height))
-
-        # Stored Tracks
-
-        self.store_ids = set()
-
-        for i in range(len(self.parent.fov['tracks_stored'])):
-            if self.parent.fov['tracks_stored'][i] == 1:
-                self.store_ids = self.store_ids.union(set(self.tracks[self.tracks[:, 4] == i, 0]))
-
-        self.store_layout = FloatLayout(size=(Window.width, Window.height))
-
-        self.track_disp = IndexedDisplay(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
-        self.tr_layout.add_widget(self.track_disp)
-
-        self.mov_disp = ImDisplay(size_hint=(.43, .43), pos_hint={'x': .56, 'y': .46})
-        self.tr_layout.add_widget(self.mov_disp)
-
-        self.track_ids = np.zeros(1)
-        self.current_frame = 0
-
-        inds = self.features[:, 1]
-        mask = inds == 0
-
-        if sum(mask.astype(int)) > 0:
-            self.frame_feats = self.features[mask, :]
-
-        im_temp = self.labels[0, :, :]
-
-        mapping = np.hstack((0, self.features[:, 18].astype(int)))
-        self.track_disp.create_im(im_temp, 'Random', mapping)
-
-        self.mov_disp.create_im(self.channel_im[0], 'PastelHeat')
-
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .1),
-                                   pos_hint={'x': .145, 'y': .9}, cursor_size=(30, 30))
-        self.frame_slider.bind(value=self.frame_select)
-
-        self.frame_text = Label(text='[color=000000][size=14]<<a  Frame  d>>: ' + str(0) + '[/size][/color]',
-                                size_hint=(.3, .04), pos_hint={'x': .145, 'y': .9}, markup=True)
-
-        self.tr_layout.add_widget(self.frame_slider)
-        self.tr_layout.add_widget(self.frame_text)
-
-        self.tracking_window = TrackingData(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
-        self.jump_window = Jump(size_hint=(.87, .3), pos_hint={'x': .12, 'y': .12})
-
-        layout4 = GridLayout(cols=1, padding=2, size_hint=(.1, .78), pos_hint={'x': .01, 'y': .115})
-        self.cell_mark = CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
-
-        self.track_btn1 = ToggleButton(text='[size=12] Select Cell (z) [/size]', markup=True, halign='center', valign='center')
-        self.track_btn2 = ToggleButton(text='[size=12] Add Segment (c)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn3 = ToggleButton(text='[size=12]Remove Segment(v)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn4 = ToggleButton(text='[size=12]Swap Tracks (x)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn5 = ToggleButton(text='[size=12]Jump (w)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn6 = ToggleButton(text='[size=12]New Track (n)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn9 = Button(text='[size=12]Store Track[/size]', markup=True, halign='center', valign='center')
-        self.track_btn7 = Button(text='[size=12]Save Tracks[/size]', markup=True, halign='center', valign='center')
-        self.track_btn8 = Button(text='[size=12]Load Tracks[/size]', markup=True, halign='center', valign='center')
-        self.track_btn10 = Button(text='[size=12]Export all to CSV[/size]', markup=True, halign='center', valign='center')
-        self.track_btn11 = Button(text='[size=12]Export sel to CSV[/size]', markup=True, halign='center', valign='center')
-
-        self.track_btn1.bind(on_press=partial(self.tracking_window.state_change, state=1))
-        self.track_btn2.bind(on_press=partial(self.tracking_window.state_change, state=2))
-        self.track_btn3.bind(on_press=partial(self.tracking_window.state_change, state=3))
-        self.track_btn4.bind(on_press=partial(self.tracking_window.state_change, state=4))
-        self.track_btn5.bind(on_press=self.jump_window.jump)
-        self.track_btn6.bind(on_press=partial(self.tracking_window.state_change, state=5))
-        self.track_btn7.bind(on_press=self.save_tracks)
-        self.track_btn8.bind(on_press=self.load_tracks)
-        self.track_btn9.bind(on_press=self.store_track)
-        self.track_btn10.bind(on_press=self.save_csv)
-        self.track_btn11.bind(on_press=self.save_sel_csv)
-
-        layout4.add_widget(self.track_btn1)
-        layout4.add_widget(self.track_btn2)
-        layout4.add_widget(self.track_btn3)
-        layout4.add_widget(self.track_btn4)
-        layout4.add_widget(self.track_btn6)
-        layout4.add_widget(self.track_btn5)
-        layout4.add_widget(self.track_btn7)
-        layout4.add_widget(self.track_btn8)
-        layout4.add_widget(self.track_btn9)
-        layout4.add_widget(self.track_btn10)
-        layout4.add_widget(self.track_btn11)
-
-        for child in layout4.children:
-            child.bind(size=child.setter('text_size'))
-
-        self.layout4 = layout4
-
-        self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
-
-        if self.features.shape[1] == 23:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22]
-
-        if self.features.shape[1] == 26:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 24, 25]
-
-        self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
-
-        self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
-                           xmax=self.frames, ymin=0,
-                           ymax=1,
-                           size_hint=(.87, .32), pos_hint={'x': .12, 'y': .12})
-
-        self.plot1 = SmoothLinePlot(color=[1, 0, 0, 1])
-        self.plot1.points = [(0, 0), (0, 0)]
-        self.graph.add_plot(self.plot1)
-
-        self.plot2 = SmoothLinePlot(color=[0, 1, 0, 1])
-        self.plot2.points = [(0, 0), (0, 0)]
-        self.graph.add_plot(self.plot2)
-
-        self.plot3 = SmoothLinePlot(color=[0, 0, 1, 1])
-        self.plot3.points = [(0, 0), (0, 0)]
-        self.graph.add_plot(self.plot3)
-
-        self.text_input1 = TextInput(text='Feat1',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .555, 'y': .919})
-        self.text_input2 = TextInput(text='Feat2',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .64, 'y': .919})
-        self.text_input3 = TextInput(text='Feat3',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .725, 'y': .919})
-
-        self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
-        self.text_input2.bind(on_text_validate=partial(self.feat_change, 1))
-        self.text_input3.bind(on_text_validate=partial(self.feat_change, 2))
-
-        # Drop down menu for choosing which channel
-        self.channel_choice = DropDown()
-
-        for i in range(self.max_channel):
-            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
-            channel_btn.bind(on_press=partial(self.change_channel, i))
-            self.channel_choice.add_widget(channel_btn)
-
-        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04),
-                                  pos_hint={'x': .83, 'y': .923}, markup=True)
-        self.main_button.bind(on_release=self.channel_choice.open)
-        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
-        self.tr_layout.add_widget(self.main_button)
-
-        mask = self.tracks[:, 0] == self.tracks[0, 0]  # Test if selection is in track array and identify it
-        self.track_ind = self.tracks[mask, 4]  # Set the selected track index
-
-        with self.canvas:
-            self.add_widget(self.tr_layout)
-            self.add_widget(self.store_layout)
-
-            self.tr_layout.add_widget(self.layout4)
-            self.tr_layout.add_widget(self.tracking_window)
-            self.tr_layout.add_widget(self.jump_window)
-            self.tr_layout.add_widget(self.cell_mark)
-            self.tr_layout.add_widget(self.graph)
-
-            self.tr_layout.add_widget(self.text_input1)
-            self.tr_layout.add_widget(self.text_input2)
-            self.tr_layout.add_widget(self.text_input3)
-
-            for i in range(len(self.parent.fov['tracks_stored'])):
-                self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
 
     def remove(self):
 

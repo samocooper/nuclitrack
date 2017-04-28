@@ -1,22 +1,12 @@
 import numpy as np
 from skimage.measure import regionprops
-from sklearn.ensemble import RandomForestClassifier
-from functools import partial
 
-from .Segmentation_tools import SegmentationUI, ViewSegment, BatchSegment
-from .Tracking_tools import TrackingUI, RunTracking
-from .Training_tools import TrainingUI
-from .Loading_tools import LoadingUI
-
-from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.uix.progressbar import ProgressBar
-from kivy.clock import Clock
 
 
 class FeatureExtract(Widget):

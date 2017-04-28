@@ -1,5 +1,4 @@
 import numpy as np
-
 import h5py
 
 import os
@@ -581,7 +580,6 @@ class LoadingUI(Widget):
         self.remove_widget(self.img_layout)
 
     def update_size(self, window, width, height):
-        print('hello')
         self.ld_layout.width = width
         self.ld_layout.height = height
         self.img_layout.width = width

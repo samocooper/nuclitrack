@@ -1,5 +1,4 @@
 import numpy as np
-import h5py
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -250,7 +249,6 @@ class TrainingUI(Widget):
 
                 ind = np.nonzero(self.training_data[:, 0] == sel[0])
                 self.training_data = np.delete(self.training_data, ind, 0)
-                print(sel[0])
                 self.features[int(sel[0]), 17] = 1.
 
             else:
