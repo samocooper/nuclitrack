@@ -12,8 +12,54 @@ from kivy.uix.dropdown import DropDown
 
 from kivy.core.window import Window
 
+from sklearn.ensemble import RandomForestClassifier
 from scipy.spatial import distance
 from .Image_widget import IndexedDisplay, ImDisplay
+
+
+class ClassifyCells(Widget):
+    def __init__(self, features=None, training_data=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.layout = FloatLayout(size=(Window.width, Window.height))
+
+        training_data = np.delete(training_data, 0, 0)
+        clf = RandomForestClassifier(n_estimators=100)
+        mask = np.sum(training_data[:, 12:17], axis=0) > 0
+
+        if sum(mask) > 1:
+            inds = np.where(mask)[0]
+            clf = clf.fit(training_data[:, 5:10], training_data[:, 12 + inds].astype(bool))
+            probs = clf.predict_proba(features[:, 5:10])
+
+            i = 0
+            for p in probs:
+                if len(p[0]) == 1:
+                    p = np.hstack([np.asarray(p), np.zeros((len(p), 1))])
+                else:
+                    p = np.asarray(p)
+
+                features[:, 12 + inds[i]] = p[:, 1]
+                i += 1
+
+        if sum(mask) == 1:
+            ind = np.where(mask)[0]
+            features[:, 12 + ind] = 1
+
+        if sum(mask) == 0:
+            return
+
+        self.features = features
+        self.class_label = Label(text='[b][color=000000]Cells Classified[/b][/color]', markup=True,
+                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
+        with self.canvas:
+            self.add_widget(self.layout)
+            self.layout.add_widget(self.class_label)
+
+    def get(self):
+
+        return self.features
+
 
 class TrainingData(Widget):
     cell_type = 0
@@ -79,19 +125,19 @@ class TrainingUI(Widget):
         self.current_frame = 0
         self.training_data = np.zeros([1, self.feature_number])
 
-        self.t_layout = FloatLayout(size=(Window.width, Window.height))
+        self.layout = FloatLayout(size=(Window.width, Window.height))
 
         im_temp = self.labels[0, :, :].astype(float)
         mapping = self.features[:, 17].astype(int)
 
         self.im_disp = IndexedDisplay(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
-        self.t_layout.add_widget(self.im_disp)
+        self.layout.add_widget(self.im_disp)
 
         self.label_disp = ImDisplay(size_hint=(.32, .3225), pos_hint={'x': .67, 'y': .15})
-        self.t_layout.add_widget(self.label_disp)
+        self.layout.add_widget(self.label_disp)
 
         self.mov_disp = ImDisplay(size_hint=(.32, .3225), pos_hint={'x': .67, 'y': .4775})
-        self.t_layout.add_widget(self.mov_disp)
+        self.layout.add_widget(self.mov_disp)
 
         self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
@@ -166,9 +212,9 @@ class TrainingUI(Widget):
 
         with self.canvas:
 
-            self.add_widget(self.t_layout)
-            self.t_layout.add_widget(self.training_window)
-            self.t_layout.add_widget(self.layout3)
+            self.add_widget(self.layout)
+            self.layout.add_widget(self.training_window)
+            self.layout.add_widget(self.layout3)
 
     def training_frame(self, instance, val):
 
@@ -223,11 +269,11 @@ class TrainingUI(Widget):
 
         # Delete if features already exists otherwise store extracted features
 
-        for g in self.parent.s_param:
+        for g in self.parent.params:
             if g == 'training_data':
-                del self.parent.s_param['training_data']
+                del self.parent.params['training_data']
 
-        self.parent.s_param.create_dataset("training_data", data=self.training_data)
+        self.parent.params.create_dataset("training_data", data=self.training_data)
         self.parent.progression_state(7)
 
     def tracking_distance(self,instance, val):
@@ -250,10 +296,10 @@ class TrainingUI(Widget):
         # Remove segmentation ui widgets
 
         self.layout3.clear_widgets()
-        self.t_layout.clear_widgets()
-        self.remove_widget(self.t_layout)
+        self.layout.clear_widgets()
+        self.remove_widget(self.layout)
 
     def update_size(self, window, width, height):
 
-        self.t_layout.width = width
-        self.t_layout.height = height
+        self.layout.width = width
+        self.layout.height = height

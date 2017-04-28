@@ -1,10 +1,9 @@
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
 from functools import partial
 
 from .Segmentation_tools import SegmentationUI, ViewSegment, BatchSegment
 from .Tracking_tools import TrackingUI, RunTracking
-from .Training_tools import TrainingUI
+from .Training_tools import TrainingUI, ClassifyCells
 from .Loading_tools import LoadingUI
 from .Feature_tools import FeatureExtract
 from kivy.app import App
@@ -95,6 +94,19 @@ class UserInterface(Widget):
             self.count_scheduled = 0
             self.count_completed = 0
 
+    def save_features(self, dt):
+
+        [self.features, self.labels[...]] = self.current_widget.get()
+
+        # Delete if features already exists otherwise store extracted features as number of segments may change
+
+        for g in self.fov:
+            if g == 'features':
+                del self.fov['features']
+
+        self.fov.create_dataset("features", data=self.features)
+        self.progression_state(6)
+
     def training_ui(self, instance):
 
         flag = False
@@ -105,113 +117,30 @@ class UserInterface(Widget):
         if instance.state == 'down' and flag:
 
             self.clear_ui(6)
-            self.current_widget = TrainingUI(images=self.images[self.seg_channel], labels=self.labels, frames=self.frames)
+            self.current_widget = TrainingUI(images=self.images[self.seg_channel], labels=self.labels,
+                                             features=self.features, frames=self.frames)
             self.add_widget(self.current_widget)
-
             Window.bind(on_resize=self.current_widget.update_size)
 
     def classify_cells(self, instance):
+        if instance.state == 'down':
+            self.clear_ui(7)
 
-        self.clear_ui(7)
+            self.training_data = self.params['training_data'][:, :]
+            self.current_widget = ClassifyCells(features=self.features[...], training_data=self.training_data)
+            self.add_widget(self.current_widget)
+            self.fov['features'][...] = self.current_widget.get()
 
-        self.training_data = self.params['training_data'][:, :]
-        self.training_data = np.delete(self.training_data, 0, 0)
-
-        clf = RandomForestClassifier(n_estimators=100)
-
-        mask = np.sum(self.training_data[:, 12:17], axis=0) > 0
-
-        if sum(mask) > 1:
-            inds = np.where(mask)[0]
-            clf = clf.fit(self.training_data[:, 5:10], self.training_data[:, 12+inds].astype(bool))
-            probs = clf.predict_proba(self.features[:, 5:10])
-
-            i = 0
-            for p in probs:
-                if len(p[0]) == 1:
-                    p = np.hstack([np.asarray(p), np.zeros((len(p), 1))])
-                else:
-                    p = np.asarray(p)
-
-                self.features[:, 12 + inds[i]] = p[:, 1]
-                i += 1
-
-        if sum(mask) == 1:
-            ind = np.where(mask)[0]
-            self.features[:, 12 + ind] = 1
-
-        if sum(mask) == 0:
-            return
-
-        self.fov['features'][...] = self.features
-
-        self.progression_state(8)
-        self.class_label = Label(text='[b][color=000000]Cells Classified[/b][/color]', markup=True,
-                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-        self.m_layout.add_widget(self.class_label)
-
-    def finish_tracking(self, instance):
-
-        tracks = self.tracking_instance.finish_optimising()
-
-        # Color labels
-
-        r = int(252 * np.random.rand()) + 3
-        ind = tracks[0, 4]
-
-        for j in range(tracks.shape[0]):
-
-            if tracks[j, 4] != ind:
-                ind = tracks[j, 4]
-                r = int(252 * np.random.rand()) + 3
-
-            self.features[int(tracks[j, 0]), 18] = r
-
-            if tracks[j, 3] > 0:
-                self.features[int(tracks[j, 0]), 18] = 5
-
-        self.fov['features'][...] = self.features
-        tracks[:, 0] = tracks[:, 0] + 1
-
-        # Delete if tracks already exists otherwise store extracted features
-
-        for g in self.fov:
-            if g == 'tracks':
-                del self.fov['tracks']
-
-        for g in self.fov:
-            if g == 'tracks_stored':
-                del self.fov['tracks_stored']
-
-        self.fov.create_dataset("tracks", data=tracks)
-
-        tracks_stored = np.zeros(int(max(tracks[:, 4])))
-        self.fov.create_dataset("tracks_stored", data=tracks_stored)
-
-        self.progression_state(9)
+            self.progression_state(8)
 
     def run_tracking(self, instance):
 
         self.clear_ui(8)
 
-        self.track_message = Label(text='[b][color=000000] Tracking cells [/b][/color]', markup=True,
-                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-        self.track_counter = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .6})
-        self.m_layout.add_widget(self.track_counter)
-        self.m_layout.add_widget(self.track_message)
-
-        self.features[:, 18] = 1
-        self.tracking_instance = RunTracking(self.features, self.frames, self.track_param)
-
-        self.tracking_state = 0
-        self.min_score = 5
-        self.score = self.min_score + 1
-
-        self.optimise_count = 0
+        self.current_widget = RunTracking(features=self.features, track_param=self.track_param, frames=self.frames)
+        self.add_widget(self.current_widget)
 
         self.tracking_flag = True
-        self.add_cell_flag = True
 
     def tracking_ui(self, instance):
 
@@ -222,7 +151,7 @@ class UserInterface(Widget):
             self.tracking_p = TrackingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.tracking_p)
 
-            self.tracking_p.initialize(self.labels, self.frames, len(self.all_channels))
+            self.tracking_p.initialize(self.labels, self.frames, self.channels)
             Window.bind(on_resize=self.tracking_p.update_size)
 
     def progression_state(self, state):
@@ -323,44 +252,35 @@ class UserInterface(Widget):
 
             self.progression[9] = 1
 
-    def save_features(self, instance):
+    def add_tracks(self, dt):
 
-        [self.features, self.labels[...]] = self.current_widget.get()
+        self.finish_flag = self.current_widget.add_track()
 
-        # Delete if features already exists otherwise store extracted features as number of segments may change
+    def update_count(self, dt):
 
-        for g in self.fov:
-            if g == 'features':
-                del self.fov['features']
+        self.current_widget.update_count()
+        self.tracking_flag = True
 
-        self.fov.create_dataset("features", data=self.features)
-        self.progression_state(6)
+        if self.finish_flag:
 
-    def add_tracks(self, instance):
-
-        if self.score > self.min_score:
-
-            self.score = self.tracking_instance.add_cell(self.min_score)
-            self.add_cell_flag = True
-
-        else:
-            self.tracking_state = 1
-            Clock.schedule_once(partial(self.update_message, 1), 0)
-            self.add_cell_flag = True
-
-    def optimise_tracks(self, dt):
-
-        if self.optimise_count < self.tracking_instance.get_max():
-
-            self.tracking_instance.optimise(self.optimise_count)
-            self.optimise_count += 1
-            self.add_cell_flag = True
-
-        else:
-            self.optimise_count = 0
-            Clock.schedule_once(partial(self.update_message, self.tracking_state + 1), 0)
-            self.add_cell_flag = True
             self.tracking_flag = False
+            self.tracks, self.fov['features'][...] = self.current_widget.finish_tracking()
+
+            # Delete if tracks already exists otherwise store extracted features
+
+            for g in self.fov:
+                if g == 'tracks':
+                    del self.fov['tracks']
+
+            for g in self.fov:
+                if g == 'tracks_stored':
+                    del self.fov['tracks_stored']
+
+            self.fov.create_dataset("tracks", data=self.tracks)
+
+            tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
+            self.fov.create_dataset("tracks_stored", data=tracks_stored)
+            self.progression_state(9)
 
     # Schedule heavy duty operations alongside loading bar updates
 
@@ -395,41 +315,13 @@ class UserInterface(Widget):
 
         if self.tracking_flag:
 
-            if self.tracking_state == 0:
-
-                if self.add_cell_flag:
-                    self.add_cell_flag = False
-                    Clock.schedule_once(self.add_tracks, 0)
-                    Clock.schedule_once(partial(self.update_count, 1), 0)
-
-            if 0 < self.tracking_state <= self.iterations:
-                if self.add_cell_flag:
-                    self.add_cell_flag = False
-                    Clock.schedule_once(partial(self.optimise_tracks), 0)
-                    Clock.schedule_once(partial(self.update_count, 2), 0)
-
-            if self.tracking_state > self.iterations:
-                Clock.schedule_once(self.finish_tracking, 0)
-                Clock.schedule_once(partial(self.update_message, -1), 0)
+            if self.tracking_flag:
                 self.tracking_flag = False
-
-    def update_count(self, instance, dt):
-        if instance == 1:
-            self.track_counter.text = '[b][color=000000]' + str(self.tracking_instance.get_count()) + '[/b][/color]'
-        if instance == 2:
-            self.track_counter.text = '[b][color=000000]' + str(self.optimise_count) + '[/b][/color]'
+                Clock.schedule_once(self.add_tracks, 0)
+                Clock.schedule_once(self.update_count, 0)
 
 
-    def update_message(self, instance, dt):
-        if instance >= 0:
-            self.track_message.text = '[b][color=000000]Optimising Tracks Sweep ' + str(instance) + ' [/b][/color]'
-            self.tracking_state = instance
-            self.tracking_flag = True
 
-        else:
-            self.track_message.text = '[b][color=000000]Tracking Completed | Total segments: ' + \
-            str(self.tracking_instance.segment_count) + ' | Total double segments: ' + \
-            str(self.tracking_instance.double_segment) + '[/b][/color]'
 
     def initialize(self):
         self.current_frame = 0
@@ -452,6 +344,8 @@ class UserInterface(Widget):
         self.segment_flag_parallel = False
         self.feature_flag = False
         self.tracking_flag = False
+        self.finish_flag = False
+
         self.iterations = 2
         Clock.schedule_interval(self.do_work, 0)
 
