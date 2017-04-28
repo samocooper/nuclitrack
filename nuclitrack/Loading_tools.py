@@ -1,4 +1,5 @@
 import numpy as np
+import platform
 import h5py
 
 import os
@@ -264,11 +265,14 @@ class LoadingUI(Widget):
         self.load_from_dir(instance.text)
 
     def load_from_dir(self, file_name):
+        if platform.system() == 'Windows':
+            file_name_split = file_name.split('\\')
+            file_name_split = [s + '\\' for s in file_name_split]
+        else:
+            file_name_split = file_name.split('/')
+            file_name_split = [s + '/' for s in file_name_split]
 
-        file_name_split = file_name.split('/')
-        file_name_split = [s + '/' for s in file_name_split]
         dir_name = ''.join(file_name_split[:-1])
-
         file_list = os.listdir(dir_name)
         file_name_split2 = file_name.split('.')
         file_type = file_name_split2[1]
@@ -295,8 +299,14 @@ class LoadingUI(Widget):
     def load_from_textfile(self, file_name):
 
         if os.path.isfile(file_name):
-            file_name_split = file_name.split('/')
-            file_name_split = [s + '/' for s in file_name_split]
+
+            if platform.system() == 'Windows':
+                file_name_split = file_name.split('\\')
+                file_name_split = [s + '\\' for s in file_name_split]
+            else:
+                file_name_split = file_name.split('/')
+                file_name_split = [s + '/' for s in file_name_split]
+
             dir_name = ''.join(file_name_split[:-1])
             file_list = []
             with open(file_name) as f:
