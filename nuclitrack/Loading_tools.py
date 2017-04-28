@@ -17,9 +17,10 @@ from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.gridlayout import GridLayout
 
-class FileLoader(Widget):
+class LoadingUI(Widget):
 
-    def build(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # Master layout for loading screen
 
@@ -86,7 +87,7 @@ class FileLoader(Widget):
             self.file_loaded[0] = True
 
         if input_type == 'param':
-            self.parent.s_param = h5py.File(input_text, "a")
+            self.parent.params = h5py.File(input_text, "a")
             self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
             self.file_loaded[1] = True
 
@@ -101,19 +102,19 @@ class FileLoader(Widget):
             flag = True
 
             for g in self.parent.fov:
-                if g == 'all_channels':
+                if g == 'image_filenames':
                     self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
                                               markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
                     self.ld_layout.add_widget(self.message)
                     flag = False
 
-                    all_channels = []
+                    images = []
 
-                    all_channels_np = self.parent.fov['all_channels'][...]
-                    for i in range(all_channels_np.shape[0]):
-                        all_channels.append([str(fname, encoding='utf8') for fname in all_channels_np[i, :]])
+                    images_np = self.parent.fov['image_filenames'][...]
+                    for i in range(images_np.shape[0]):
+                        images.append([str(fname, encoding='utf8') for fname in images_np[i, :]])
 
-                    self.load_movie(all_channels)
+                    self.load_movie(images)
 
             # Give user choice of how to load image series
 
@@ -364,14 +365,14 @@ class FileLoader(Widget):
             self.error_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
             return
 
-        all_channels = []
+        images = []
 
         for i in range(self.max_channel):
             if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
                 if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
-                    all_channels.append(self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
+                    images.append(self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
 
-        flag = self.load_movie(all_channels)
+        flag = self.load_movie(images)
 
         if flag:
 
@@ -464,13 +465,13 @@ class FileLoader(Widget):
     # LOAD IMAGES FROM FILE LIST #
     ##############################
 
-    def load_movie(self, all_channel_files):
+    def load_movie(self, image_filenames):
 
         # Check channels are same length and all files are present
 
-        frames = len(all_channel_files[0])
+        frames = len(image_filenames[0])
 
-        for all_image_files in all_channel_files:
+        for all_image_files in image_filenames:
 
             if not (frames == len(all_image_files)):
                 self.error_message.text = '[b][color=000000] Channels not same length [/b][/color]'
@@ -483,14 +484,14 @@ class FileLoader(Widget):
 
         # Load images from first channel
 
-        frames = len(all_channel_files[0])
-        im_test = tifffile.imread(all_channel_files[0][0])
+        frames = len(image_filenames[0])
+        im_test = tifffile.imread(image_filenames[0][0])
         dims = im_test.shape
 
-        all_channels = []
-        all_channel_files_np = []
+        images = []
+        images_np = []
 
-        for all_image_files in all_channel_files:
+        for all_image_files in image_filenames:
 
             all_images = np.zeros((frames, dims[0], dims[1]))
 
@@ -499,27 +500,28 @@ class FileLoader(Widget):
                 im_temp = im_temp.astype(float)
                 all_images[i, :, :] = im_temp
 
-            all_channels.append(all_images)
+            images.append(all_images)
 
             # Transform file names to bytes for storing in hdf5 file
-            all_channel_files_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
+            images_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
 
-        all_channel_files_np = np.asarray(all_channel_files_np)
+        images_np = np.asarray(images_np)
 
         # Overwrite previous file lists
 
         for g in self.parent.fov:
-            if g == 'all_channels':
-                del self.parent.fov['all_channels']
+            if g == 'image_filenames':
+                del self.parent.fov['image_filenames']
 
-        for i in range(len(all_channels)):
-            all_channels[i] = all_channels[i]/np.max(all_channels[i].flatten())
+        for i in range(len(images)):
+            images[i] = images[i]/np.max(images[i].flatten())
 
-        self.parent.all_channels = all_channels
+        self.parent.images = images
         self.parent.frames = frames
+        self.parent.channels = len(images)
         self.parent.dims = dims
 
-        self.parent.fov.create_dataset('all_channels', data=all_channel_files_np)
+        self.parent.fov.create_dataset('image_filenames', data=images_np)
         self.parent.progression[0] = 1
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
@@ -563,7 +565,7 @@ class FileLoader(Widget):
                 if g == 'labels':
                     del self.parent.fov['labels']
 
-            self.parent.s_param.require_dataset('seg_param', (9,), dtype='f')
+            self.parent.params.require_dataset('seg_param', (9,), dtype='f')
             self.parent.fov.create_dataset("labels", data=labels)
 
             self.parent.progression[2] = 1

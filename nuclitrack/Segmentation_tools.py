@@ -1,4 +1,6 @@
 import numpy as np
+import multiprocessing
+from multiprocessing import Pool
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -22,23 +24,6 @@ import os
 
 from .Image_widget import ImDisplay
 import segmentation_c_tools
-
-# Batch Segmentation
-
-def segment_im(param, image):
-
-    image = clipping(image, param[0])
-    image2 = background(image, param[1])
-    image3 = blur(image2, param[2])
-    im_bin = threshold(image3, param[3])
-    im_bin = object_filter(im_bin, param[4])
-    [cell_center, d_mat] = cell_centers(image3, im_bin, param[5])
-    markers = fg_markers(cell_center, im_bin, param[6], param[9])
-    im_edge = sobel_edges(image, param[7])
-    labels = watershed(markers, im_bin, im_edge, d_mat, param[8], param[9])
-
-    return labels
-
 
 # Functions for segmentation
 
@@ -155,7 +140,168 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     return labels
 
+def segment_image(params, image):
+
+    image = clipping(image, params[0])
+    image2 = background(image, params[1])
+    image3 = blur(image2, params[2])
+    im_bin = threshold(image3, params[3])
+    im_bin = object_filter(im_bin, params[4])
+    [cell_center, d_mat] = cell_centers(image3, im_bin, params[5])
+    markers = fg_markers(cell_center, im_bin, params[6], params[9])
+    im_edge = sobel_edges(image, params[7])
+    return watershed(markers, im_bin, im_edge, d_mat, params[8], params[9])
+
+# Batch Segmentation
+
+class BatchSegment(object):
+
+    def __init__(self, images=None, params=None):
+        self.images = images
+        self.labels = np.zeros(images.shape)
+        self.params = params
+
+    def segment_im(self, frame):
+        self.labels[frame, :, :] = segment_image(self.params, self.images[frame, :, :])
+
+    def segment_parallel(self, frames):
+
+        cpu_count = multiprocessing.cpu_count()
+        pool = Pool(cpu_count)
+        labels = pool.map(partial(segment_image, self.params), [self.images[frame, :, :] for frame in range(frames)])
+        pool.close()
+        pool.join()
+
+        for i in range(frames):
+            self.labels[i, :, :] = labels[i]
+
+    def get(self):
+        return self.labels
+
+# Segmentation UI
+
 class SegmentationUI(Widget):
+    def __init__(self, images=None, frames=None, channels=None, params=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.current_frame = 0
+        self.channels = channels
+        self.frames = frames
+        self.seg_channel = images[0]
+        self.ch_max = np.max(self.seg_channel.flatten())
+        self.ch_min = np.min(self.seg_channel.flatten())
+        self.state = 0
+
+        self.s_layout = FloatLayout(size=(Window.width, Window.height))
+
+        self.im_disp = ImDisplay(size_hint=(.76, .76), pos_hint={'x': .23, 'y': .14})
+        self.s_layout.add_widget(self.im_disp)
+
+        self.mov_disp = ImDisplay(size_hint=(.2, .2), pos_hint={'x': .78, 'y': .14})
+        self.s_layout.add_widget(self.mov_disp)
+
+        self.im = self.seg_channel[0, :, :].copy()
+        self.im_disp.create_im(self.im, 'PastelHeat')
+        self.mov_disp.create_im(self.im, 'PastelHeat')
+        self.params = params
+        if self.params[0] == 0:
+            self.params[0] = self.ch_max
+
+        # Frame slider
+
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .23, 'y': .9}, cursor_size=(30, 30))
+        self.frame_slider.bind(value=self.frame_select)
+        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
+                                size_hint=(.3, .04), pos_hint={'x': .23, 'y': .9}, markup=True)
+
+        self.parallel_button = ToggleButton(text='[size=13] Multiple Cores [/size]',
+                                size_hint=(.15, .04), pos_hint={'x': .682, 'y': .923}, markup=True)
+        self.parallel_button.bind(on_press=self.update_parallel)
+        self.s_layout.add_widget(self.parallel_button)
+
+        self.edge_button = ToggleButton(text='[size=13] Filter edge [/size]',
+                                            size_hint=(.15, .04), pos_hint={'x': .53, 'y': .923}, markup=True)
+        self.edge_button.bind(on_press=self.update_edge)
+        self.s_layout.add_widget(self.edge_button)
+
+        # Drop down menu for choosing which channel
+        self.channel_choice = DropDown()
+
+        for i in range(self.channels):
+            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
+            channel_btn.bind(on_press=partial(self.change_channel, images, i))
+            self.channel_choice.add_widget(channel_btn)
+
+        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
+        self.main_button.bind(on_release=self.channel_choice.open)
+        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+        self.s_layout.add_widget(self.main_button)
+
+        # Sliders for updating parameters
+
+        layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
+
+        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]), cursor_size=(25, 25))
+        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]), cursor_size=(25, 25))
+        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]), cursor_size=(25, 25))
+        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]), cursor_size=(25, 25))
+        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]), cursor_size=(25, 25))
+        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]), cursor_size=(25, 25))
+        s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]), cursor_size=(25, 25))
+        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]), cursor_size=(25, 25))
+        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]), cursor_size=(25, 25))
+        b2 = Button(text='save params')
+
+        s0.bind(value=partial(self.segment_script, state=2))
+        s1.bind(value=partial(self.segment_script, state=3))
+        s2.bind(value=partial(self.segment_script, state=4))
+        s3.bind(value=partial(self.segment_script, state=5))
+        s4.bind(value=partial(self.segment_script, state=6))
+        s5.bind(value=partial(self.segment_script, state=7))
+        s6.bind(value=partial(self.segment_script, state=8))
+        s7.bind(value=partial(self.segment_script, state=1))
+        s8.bind(value=partial(self.segment_script, state=9))
+        b2.bind(on_press=self.save_params)
+
+        self.s1_label = Label(text='[color=000000][size=12]Clipping Limit: ' + str(self.params[0]) + '[/size][/color]', markup=True)
+        self.s2_label = Label(text='[color=000000][size=12]Background blur: ' + str(self.params[1]) + '[/size][/color]', markup=True)
+        self.s3_label = Label(text='[color=000000][size=12]Image blur: ' + str(self.params[2]) + '[/size][/color]', markup=True)
+        self.s4_label = Label(text='[color=000000][size=12]Threshold: ' + str(self.params[3]) + '[/size][/color]', markup=True)
+        self.s5_label = Label(text='[color=000000][size=12]Smallest Object: ' + str(self.params[4]) + '[/size][/color]', markup=True)
+        self.s6_label = Label(text='[color=000000][size=12]Distance to Intensity: ' + str(self.params[5]) + '[/size][/color]', markup=True)
+        self.s7_label = Label(text='[color=000000][size=12]Separation Distance: ' + str(self.params[6]) + '[/size][/color]', markup=True)
+        self.s8_label = Label(text='[color=000000][size=12]Edge Blur: ' + str(self.params[7]) + '[/size][/color]', markup=True)
+        self.s9_label = Label(text='[color=000000][size=12]Watershed Ratio: ' + str(self.params[8]) + '[/size][/color]', markup=True)
+
+        layout2.add_widget(s0)
+        layout2.add_widget(self.s1_label)
+        layout2.add_widget(s1)
+        layout2.add_widget(self.s2_label)
+        layout2.add_widget(s2)
+        layout2.add_widget(self.s3_label)
+        layout2.add_widget(s3)
+        layout2.add_widget(self.s4_label)
+        layout2.add_widget(s4)
+        layout2.add_widget(self.s5_label)
+        layout2.add_widget(s5)
+        layout2.add_widget(self.s6_label)
+        layout2.add_widget(s6)
+        layout2.add_widget(self.s7_label)
+        layout2.add_widget(s7)
+        layout2.add_widget(self.s8_label)
+        layout2.add_widget(s8)
+        layout2.add_widget(self.s9_label)
+        layout2.add_widget(b2)
+
+        self.layout2 = layout2
+
+        with self.canvas:
+
+            self.add_widget(self.s_layout)
+
+            self.s_layout.add_widget(self.frame_slider)
+            self.s_layout.add_widget(self.frame_text)
+            self.s_layout.add_widget(self.layout2)
 
     def frame_select(self, instance, val):
         self.current_frame = int(val)
@@ -273,7 +419,7 @@ class SegmentationUI(Widget):
 
     def save_params(self, instance):
 
-        self.parent.s_param['seg_param'][:] = self.params[:]
+        self.parent.params['seg_param'][...] = self.params[...]
 
     def update_parallel(self, instance):
         if instance.state == 'down':
@@ -287,137 +433,12 @@ class SegmentationUI(Widget):
             self.params[9] = 1
         else:
             self.params[9] = 0
-    def change_channel(self, val, instance):
+    def change_channel(self, images, val, instance):
 
-        self.seg_channel = self.parent.all_channels[val]
+        self.seg_channel = images[val]
         self.im_disp.update_im(self.seg_channel[self.current_frame, :, :])
         self.mov_disp.update_im(self.seg_channel[self.current_frame, :, :])
         self.parent.seg_channel = val
-
-    def initialize(self, frames, max_channel):
-
-        self.current_frame = 0
-        self.max_channel = max_channel
-        self.frames = frames
-        self.seg_channel = self.parent.all_channels[0]
-        self.ch_max = np.max(self.seg_channel.flatten())
-        self.ch_min = np.min(self.seg_channel.flatten())
-
-        self.parent.progression_state(3)
-        self.state = 0
-
-        self.parent.s_param.require_dataset('seg_param', (10,), dtype='f')
-        self.params = self.parent.s_param['seg_param'][:]
-        self.s_layout = FloatLayout(size=(Window.width, Window.height))
-
-        self.im_disp = ImDisplay(size_hint=(.76, .76), pos_hint={'x': .23, 'y': .14})
-        self.s_layout.add_widget(self.im_disp)
-
-        self.mov_disp = ImDisplay(size_hint=(.2, .2), pos_hint={'x': .78, 'y': .14})
-        self.s_layout.add_widget(self.mov_disp)
-
-        self.im = self.seg_channel[0, :, :].copy()
-        self.im_disp.create_im(self.im, 'PastelHeat')
-        self.mov_disp.create_im(self.im, 'PastelHeat')
-
-        if self.params[0] == 0:
-            self.params[0] = self.ch_max
-
-        # Frame slider
-
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .23, 'y': .9}, cursor_size=(30, 30))
-        self.frame_slider.bind(value=self.frame_select)
-        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
-                                size_hint=(.3, .04), pos_hint={'x': .23, 'y': .9}, markup=True)
-
-        self.parallel_button = ToggleButton(text='[size=13] Multiple Cores [/size]',
-                                size_hint=(.15, .04), pos_hint={'x': .682, 'y': .923}, markup=True)
-        self.parallel_button.bind(on_press=self.update_parallel)
-        self.s_layout.add_widget(self.parallel_button)
-
-        self.edge_button = ToggleButton(text='[size=13] Filter edge [/size]',
-                                            size_hint=(.15, .04), pos_hint={'x': .53, 'y': .923}, markup=True)
-        self.edge_button.bind(on_press=self.update_edge)
-        self.s_layout.add_widget(self.edge_button)
-
-        # Drop down menu for choosing which channel
-        self.channel_choice = DropDown()
-
-        for i in range(self.max_channel):
-            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
-            channel_btn.bind(on_press=partial(self.change_channel, i))
-            self.channel_choice.add_widget(channel_btn)
-
-        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
-        self.main_button.bind(on_release=self.channel_choice.open)
-        self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
-        self.s_layout.add_widget(self.main_button)
-
-        # Sliders for updating parameters
-
-        layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
-
-        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]), cursor_size=(25, 25))
-        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]), cursor_size=(25, 25))
-        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]), cursor_size=(25, 25))
-        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]), cursor_size=(25, 25))
-        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]), cursor_size=(25, 25))
-        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]), cursor_size=(25, 25))
-        s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]), cursor_size=(25, 25))
-        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]), cursor_size=(25, 25))
-        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]), cursor_size=(25, 25))
-        b2 = Button(text='save params')
-
-        s0.bind(value=partial(self.segment_script, state=2))
-        s1.bind(value=partial(self.segment_script, state=3))
-        s2.bind(value=partial(self.segment_script, state=4))
-        s3.bind(value=partial(self.segment_script, state=5))
-        s4.bind(value=partial(self.segment_script, state=6))
-        s5.bind(value=partial(self.segment_script, state=7))
-        s6.bind(value=partial(self.segment_script, state=8))
-        s7.bind(value=partial(self.segment_script, state=1))
-        s8.bind(value=partial(self.segment_script, state=9))
-        b2.bind(on_press=self.save_params)
-
-        self.s1_label = Label(text='[color=000000][size=12]Clipping Limit: ' + str(self.params[0]) + '[/size][/color]', markup=True)
-        self.s2_label = Label(text='[color=000000][size=12]Background blur: ' + str(self.params[1]) + '[/size][/color]', markup=True)
-        self.s3_label = Label(text='[color=000000][size=12]Image blur: ' + str(self.params[2]) + '[/size][/color]', markup=True)
-        self.s4_label = Label(text='[color=000000][size=12]Threshold: ' + str(self.params[3]) + '[/size][/color]', markup=True)
-        self.s5_label = Label(text='[color=000000][size=12]Smallest Object: ' + str(self.params[4]) + '[/size][/color]', markup=True)
-        self.s6_label = Label(text='[color=000000][size=12]Distance to Intensity: ' + str(self.params[5]) + '[/size][/color]', markup=True)
-        self.s7_label = Label(text='[color=000000][size=12]Separation Distance: ' + str(self.params[6]) + '[/size][/color]', markup=True)
-        self.s8_label = Label(text='[color=000000][size=12]Edge Blur: ' + str(self.params[7]) + '[/size][/color]', markup=True)
-        self.s9_label = Label(text='[color=000000][size=12]Watershed Ratio: ' + str(self.params[8]) + '[/size][/color]', markup=True)
-
-        layout2.add_widget(s0)
-        layout2.add_widget(self.s1_label)
-        layout2.add_widget(s1)
-        layout2.add_widget(self.s2_label)
-        layout2.add_widget(s2)
-        layout2.add_widget(self.s3_label)
-        layout2.add_widget(s3)
-        layout2.add_widget(self.s4_label)
-        layout2.add_widget(s4)
-        layout2.add_widget(self.s5_label)
-        layout2.add_widget(s5)
-        layout2.add_widget(self.s6_label)
-        layout2.add_widget(s6)
-        layout2.add_widget(self.s7_label)
-        layout2.add_widget(s7)
-        layout2.add_widget(self.s8_label)
-        layout2.add_widget(s8)
-        layout2.add_widget(self.s9_label)
-        layout2.add_widget(b2)
-
-        self.layout2 = layout2
-
-        with self.canvas:
-
-            self.add_widget(self.s_layout)
-
-            self.s_layout.add_widget(self.frame_slider)
-            self.s_layout.add_widget(self.frame_text)
-            self.s_layout.add_widget(self.layout2)
 
     def remove(self):
 
@@ -431,6 +452,7 @@ class SegmentationUI(Widget):
 
         self.s_layout.width = width
         self.s_layout.height = height
+
 
 class ViewSegmentation(Widget):
 

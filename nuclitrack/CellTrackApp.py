@@ -1,11 +1,12 @@
-from multiprocessing import Pool
-import multiprocessing
 import numpy as np
+from skimage.measure import regionprops
+from sklearn.ensemble import RandomForestClassifier
+from functools import partial
 
-from .Segmentation_tools import SegmentationUI, ViewSegmentation, segment_im
+from .Segmentation_tools import SegmentationUI, ViewSegmentation, BatchSegment
 from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI
-from .Loading_tools import FileLoader
+from .Loading_tools import LoadingUI
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -15,97 +16,50 @@ from kivy.uix.label import Label
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.uix.progressbar import ProgressBar
-
-from skimage.measure import regionprops
-from sklearn.ensemble import RandomForestClassifier
 from kivy.clock import Clock
-from functools import partial
-
 
 class UserInterface(Widget):
 
-    def clear_ui(self):
+    def clear_ui(self, val):
 
-        if self.current_ui == 1:
+        self.m_layout.clear_widgets()
 
-            self.data_widget.remove()
-            self.remove_widget(self.data_widget)
+        if self.current_frame == 1:
+            self.remove_widget(self.loading_widget)
 
-        if self.current_ui == 2:
+        if self.current_frame == 2:
+            self.remove_widget(self.segment_widget)
 
-            self.segment_p.remove()
-            self.remove_widget(self.segment_p)
+        self.current_frame = val
 
-        if self.current_ui == 3:
-
-            self.layout2.clear_widgets()
-            self.m_layout.remove_widget(self.layout2)
-            self.m_layout.remove_widget(self.seg_message)
-
-        if self.current_ui == 4:
-
-            self.view_segmentation.remove()
-            self.remove_widget(self.view_segmentation)
-
-        if self.current_ui == 5:
-
-            self.layout2.clear_widgets()
-            self.m_layout.remove_widget(self.layout2)
-            self.m_layout.remove_widget(self.feat_message)
-
-        if self.current_ui == 6:
-
-            self.training_p.remove()
-            self.remove_widget(self.training_p)
-
-        if self.current_ui == 7:
-
-            self.m_layout.remove_widget(self.track_message)
-            self.m_layout.remove_widget(self.track_counter)
-
-        if self.current_ui == 8:
-
-            self.tracking_p.remove()
-            self.remove_widget(self.tracking_p)
-
-        if self.current_ui == 9:
-
-            self.m_layout.remove_widget(self.class_label)
-
-    def data_ui(self, instance):
+    def loading_ui(self, instance):
 
         if instance.state == 'down':
-            self.clear_ui()
-            self.current_ui = 1
 
-            self.data_widget = FileLoader(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
-            self.add_widget(self.data_widget)
-
-            self.data_widget.build()
-            Window.bind(on_resize=self.data_widget.update_size)
+            self.clear_ui(1)
+            self.loading_widget = LoadingUI(size=Window.size)
+            self.add_widget(self.loading_widget)
+            Window.bind(on_resize=self.loading_widget.update_size)
 
     def segment_ui(self, instance):
 
         if instance.state == 'down':
 
-            self.clear_ui()
-            self.current_ui = 2
+            self.clear_ui(2)
+            self.params.require_dataset('seg_param', (10,), dtype='f')
+            self.segment_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
+                                                 params=self.params['seg_param'][...], size=Window.size)
 
-            self.segment_p = SegmentationUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
-            self.add_widget(self.segment_p)
-
-            self.segment_p.initialize(self.frames, len(self.all_channels))
-            Window.bind(on_resize=self.segment_p.update_size)
+            self.add_widget(self.segment_widget)
+            self.progression_state(3)
+            Window.bind(on_resize=self.segment_widget.update_size)
 
     def segment_movie(self, instance):
 
-        self.clear_ui()
-        self.current_ui = 3
-
+        self.clear_ui(3)
+        self.segmentation_object = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...])
         self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
-        self.params = self.s_param['seg_param'][:]
-        self.frames = self.all_channels[0].shape[0]
-        self.label_np = np.zeros(self.all_channels[0].shape)
+        self.params['seg_param'][:]
 
         if self.parallel == True:
             self.seg_message = Label(text='[b][color=000000]Parallel Processing' \
@@ -134,8 +88,7 @@ class UserInterface(Widget):
 
         if instance.state == 'down':
 
-            self.clear_ui()
-            self.current_ui = 4
+            self.clear_ui(4)
 
             self.view_segmentation = ViewSegmentation(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.view_segmentation)
@@ -147,19 +100,11 @@ class UserInterface(Widget):
         self.pb.value += 1000/self.frames
 
     def segment_im(self, frame, dt):
-
-        self.labels[frame, :, :] = segment_im(self.params, self.all_channels[self.seg_channel][frame, :, :])
+        self.segmentation_object.segment_im(frame)
 
     def segment_parallel(self, dt):
-
-        cpu_count = multiprocessing.cpu_count()
-        pool = Pool(cpu_count)
-        results = pool.map(partial(segment_im, self.params),  [self.all_channels[self.seg_channel][i, :, :] for i in range(self.frames)])
-        pool.close()
-        pool.join()
-        for i in range(self.frames):
-            self.labels[i, :, :] = results[i]
-
+        self.segmentation_object.segment_parallel(self.frames)
+        self.labels = self.segmentation_object.get()
         self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
 
     def frame_features(self, frame, dt):
@@ -167,7 +112,7 @@ class UserInterface(Widget):
         img_label = self.labels[frame, :, :].copy()
         features_temp = []
 
-        for j in range(self.channel_num):
+        for j in range(self.channels):
             features_temp.append(regionprops(img_label, self.all_channels[j][frame, :, :]))
 
         feature_mat = np.zeros((len(features_temp[0]), self.feature_num))
@@ -202,7 +147,7 @@ class UserInterface(Widget):
             features_vector[10] = np.std(im_temp)
             features_vector[11] = np.std(im_temp[im_temp > mu])
 
-            for k in range(1, self.channel_num):
+            for k in range(1, self.channels):
                 cell_temp = features_temp[k][j]
 
                 mu = cell_temp.mean_intensity
@@ -224,16 +169,14 @@ class UserInterface(Widget):
 
     def extract_features(self, instance):
 
-        self.clear_ui()
-        self.current_ui = 5
+        self.clear_ui(5)
 
         self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
 
         self.m_layout.add_widget(self.feat_message)
 
-        self.channel_num = len(self.all_channels)
-        self.feature_num = 20 + 3*(self.channel_num-1)
+        self.feature_num = 20 + 3*(self.channels - 1)
         self.features = np.zeros([1, self.feature_num])
         self.counter = 1
 
@@ -254,8 +197,7 @@ class UserInterface(Widget):
 
         if instance.state == 'down' and flag == True:
 
-            self.clear_ui()
-            self.current_ui = 6
+            self.clear_ui(6)
             self.training_p = TrainingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.training_p)
 
@@ -264,10 +206,9 @@ class UserInterface(Widget):
 
     def classify_cells(self, instance):
 
-        self.clear_ui()
-        self.current_ui = 9
+        self.clear_ui(7)
 
-        self.training_data = self.s_param['training_data'][:, :]
+        self.training_data = self.params['training_data'][:, :]
         self.training_data = np.delete(self.training_data, 0, 0)
 
         clf = RandomForestClassifier(n_estimators=100)
@@ -345,8 +286,7 @@ class UserInterface(Widget):
 
     def run_tracking(self, instance):
 
-        self.clear_ui()
-        self.current_ui = 7
+        self.clear_ui(8)
 
         self.track_message = Label(text='[b][color=000000] Tracking cells [/b][/color]', markup=True,
                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
@@ -371,8 +311,7 @@ class UserInterface(Widget):
 
         if instance.state == 'down':
 
-            self.clear_ui()
-            self.current_ui = 8
+            self.clear_ui(9)
 
             self.tracking_p = TrackingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
             self.add_widget(self.tracking_p)
@@ -390,7 +329,7 @@ class UserInterface(Widget):
 
             self.progression[2] = 1
 
-            for g in self.s_param:
+            for g in self.params:
                 if g == 'seg_param':
                     state = 3
 
@@ -439,7 +378,7 @@ class UserInterface(Widget):
 
             self.progression[6] = 1
 
-            for g in self.s_param:
+            for g in self.params:
                 if g == 'training_data':
                     state = 7
 
@@ -537,6 +476,7 @@ class UserInterface(Widget):
             if self.count_scheduled == self.frames:
                 self.segment_flag = False
                 self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
+                self.labels = self.segmentation_object.get()
 
         if self.feature_flag:
 
@@ -590,17 +530,18 @@ class UserInterface(Widget):
             str(self.tracking_instance.double_segment) + '[/b][/color]'
 
     def initialize(self):
+        self.current_frame = 0
         self.seg_channel = 0
         self.parallel = False
-        self.current_ui = 0
+
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
-        self.layout1 = GridLayout(rows=1, padding=2, size_hint=(.98, .1), pos_hint={'x': .01, 'y': .01})
+        self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width,Window.height/10))
 
         btn1 = ToggleButton(text=' Load \nData', group='ui_choice')
-        btn1.bind(on_press=self.data_ui)
+        btn1.bind(on_press=self.loading_ui)
         self.layout1.add_widget(btn1)
 
         # Progress bar widget
@@ -617,7 +558,7 @@ class UserInterface(Widget):
 
         with self.canvas:
             self.add_widget(self.m_layout)
-            self.m_layout.add_widget(self.layout1)
+            self.add_widget(self.layout1)
 
     def update_size(self, window, width, height):
 
