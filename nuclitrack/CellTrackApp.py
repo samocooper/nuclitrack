@@ -1,13 +1,12 @@
 import numpy as np
-from skimage.measure import regionprops
 from sklearn.ensemble import RandomForestClassifier
 from functools import partial
 
-from .Segmentation_tools import SegmentationUI, ViewSegmentation, BatchSegment
+from .Segmentation_tools import SegmentationUI, ViewSegment, BatchSegment
 from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI
 from .Loading_tools import LoadingUI
-
+from .Feature_tools import FeatureExtract
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
@@ -15,7 +14,6 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
-from kivy.uix.progressbar import ProgressBar
 from kivy.clock import Clock
 
 class UserInterface(Widget):
@@ -24,153 +22,78 @@ class UserInterface(Widget):
 
         self.m_layout.clear_widgets()
 
-        if self.current_frame == 1:
-            self.remove_widget(self.loading_widget)
-
-        if self.current_frame == 2:
-            self.remove_widget(self.segment_widget)
+        if 1 <= self.current_frame:
+            self.remove_widget(self.current_widget)
 
         self.current_frame = val
 
     def loading_ui(self, instance):
-
         if instance.state == 'down':
 
             self.clear_ui(1)
-            self.loading_widget = LoadingUI()
-            self.add_widget(self.loading_widget)
-            Window.bind(on_resize=self.loading_widget.update_size)
+            self.current_widget = LoadingUI()
+            self.add_widget(self.current_widget)
+            Window.bind(on_resize=self.current_widget.update_size)
 
     def segment_ui(self, instance):
-
         if instance.state == 'down':
 
             self.clear_ui(2)
             self.params.require_dataset('seg_param', (10,), dtype='f')
-            self.segment_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
+            self.current_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
                                                  params=self.params['seg_param'][...])
 
-            self.add_widget(self.segment_widget)
+            self.add_widget(self.current_widget)
             self.progression_state(3)
-            Window.bind(on_resize=self.segment_widget.update_size)
+            Window.bind(on_resize=self.current_widget.update_size)
 
     def segment_movie(self, instance):
+        if instance.state == 'down':
 
-        self.clear_ui(3)
-        self.batch_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...]
-                                         , frames=self.frames, parallel=self.parallel)
-        self.add_widget(self.batch_widget)
+            self.clear_ui(3)
+            self.current_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...],
+                                               frames=self.frames, parallel=self.parallel)
+            self.add_widget(self.current_widget)
 
-        self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
+            self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
 
-        if self.parallel == True:
+            if self.parallel == True:
+                self.segment_flag_parallel = True
 
-            self.segment_flag_parallel = True
+            else:
+                self.count_scheduled = 0
+                self.count_completed = 0
+                self.segment_flag = True
 
-        else:
-
-            self.count_scheduled = 0
-            self.count_completed = 0
-            self.segment_flag = True
-
-        self.progression_state(4)
-        self.progression_state(5)
+            self.progression_state(4)
+            self.progression_state(5)
 
     def view_segments(self, instance):
-
         if instance.state == 'down':
 
             self.clear_ui(4)
-
-            self.view_segmentation = ViewSegmentation(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
-            self.add_widget(self.view_segmentation)
-            self.view_segmentation.initialize(self.labels, self.frames)
+            self.current_widget = ViewSegment(labels=self.labels, frames=self.frames)
+            self.add_widget(self.current_widget)
 
     def segment_parallel(self, dt):
 
-        self.batch_widget.segment_parallel()
-        self.labels = self.batch_widget.get()
+        self.current_widget.segment_parallel()
+        self.labels[...] = self.current_widget.get()
 
-    def frame_features(self, frame, dt):
+    def finish_segmentation(self, dt):
 
-        img_label = self.labels[frame, :, :].copy()
-        features_temp = []
-
-        for j in range(self.channels):
-            features_temp.append(regionprops(img_label, self.all_channels[j][frame, :, :]))
-
-        feature_mat = np.zeros((len(features_temp[0]), self.feature_num))
-        img_new = np.zeros(img_label.shape)
-
-        for j in range(len(features_temp[0])):
-
-            cell_temp = features_temp[0][j]
-
-            features_vector = np.zeros(self.feature_num)
-
-            ypos = cell_temp.centroid[0]
-            xpos = cell_temp.centroid[1]
-
-            features_vector[0] = self.counter
-            features_vector[1] = frame
-            features_vector[2] = xpos
-            features_vector[3] = ypos
-            features_vector[4] = min([ypos, self.dims[0] - ypos, xpos, self.dims[1] - xpos])
-
-            features_vector[5] = cell_temp.area
-            features_vector[6] = cell_temp.eccentricity
-            features_vector[7] = cell_temp.major_axis_length
-            features_vector[8] = cell_temp.perimeter
-
-            mu = cell_temp.mean_intensity
-            im_temp = cell_temp.intensity_image.flatten()
-            bin_temp = cell_temp.image.flatten()
-            im_temp = im_temp[bin_temp]
-
-            features_vector[9] = mu
-            features_vector[10] = np.std(im_temp)
-            features_vector[11] = np.std(im_temp[im_temp > mu])
-
-            for k in range(1, self.channels):
-                cell_temp = features_temp[k][j]
-
-                mu = cell_temp.mean_intensity
-                im_temp = cell_temp.intensity_image.flatten()
-                bin_temp = cell_temp.image.flatten()
-                im_temp = im_temp[bin_temp]
-
-                features_vector[20 + (k - 1) * 3 + 0] = mu
-                features_vector[20 + (k - 1) * 3 + 1] = np.std(im_temp)
-                features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
-
-            feature_mat[j, :] = features_vector
-            img_new[img_label == cell_temp.label] = self.counter
-
-            self.counter += 1
-
-        self.features = np.vstack((self.features, feature_mat))
-        self.labels[frame, :, :] = img_new
+        self.labels[...] = self.current_widget.get()
 
     def extract_features(self, instance):
+        if instance.state == 'down':
 
-        self.clear_ui(5)
-
-        self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
-                                 size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
-
-        self.m_layout.add_widget(self.feat_message)
-
-        self.feature_num = 20 + 3*(self.channels - 1)
-        self.features = np.zeros([1, self.feature_num])
-        self.counter = 1
-
-        self.pb.value = 1000 / self.frames
-        self.m_layout.add_widget(self.layout2)
-        self.layout2.add_widget(self.pb)
-
-        self.feature_flag = True
-        self.count_scheduled = 0
-        self.count_completed = 0
+            self.clear_ui(5)
+            self.current_widget = FeatureExtract(images=self.images, labels=self.labels, frames=self.frames,
+                                                 channels=self.channels, dims=self.dims)
+            self.add_widget(self.current_widget)
+            self.feature_flag = True
+            self.count_scheduled = 0
+            self.count_completed = 0
 
     def training_ui(self, instance):
 
@@ -179,14 +102,13 @@ class UserInterface(Widget):
             if g == 'features':
                 flag = True
 
-        if instance.state == 'down' and flag == True:
+        if instance.state == 'down' and flag:
 
             self.clear_ui(6)
-            self.training_p = TrainingUI(size_hint=(1., 1.), pos_hint={'x': .01, 'y': .01})
-            self.add_widget(self.training_p)
+            self.current_widget = TrainingUI(images=self.images[self.seg_channel], labels=self.labels, frames=self.frames)
+            self.add_widget(self.current_widget)
 
-            self.training_p.initialize(self.labels, self.all_channels[0], self.features, self.frames)
-            Window.bind(on_resize=self.training_p.update_size)
+            Window.bind(on_resize=self.current_widget.update_size)
 
     def classify_cells(self, instance):
 
@@ -403,8 +325,7 @@ class UserInterface(Widget):
 
     def save_features(self, instance):
 
-        self.features[1:, 17:19] = 1
-        self.features = self.features[np.argsort(self.features[:, 0]), :]
+        [self.features, self.labels[...]] = self.current_widget.get()
 
         # Delete if features already exists otherwise store extracted features as number of segments may change
 
@@ -453,25 +374,23 @@ class UserInterface(Widget):
 
         if self.segment_flag:
 
-            Clock.schedule_once(self.batch_widget.update_bar, 0)
-            Clock.schedule_once(partial(self.batch_widget.segment_im, self.count_scheduled), 0)
+            Clock.schedule_once(self.current_widget.update_bar, 0)
+            Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
             self.count_scheduled += 1
 
             if self.count_scheduled == self.frames:
                 self.segment_flag = False
-                self.labels = self.batch_widget.get()
+                Clock.schedule_once(self.finish_segmentation)
 
         if self.feature_flag:
 
-            Clock.schedule_once(self.update_bar, 0)
-            Clock.schedule_once(partial(self.frame_features, self.count_scheduled), 0)
+            Clock.schedule_once(self.current_widget.update_bar, 0)
+            Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
             self.count_scheduled += 1
 
             if self.count_scheduled == self.frames:
 
-                self.feat_message.text = '[b][color=000000]Features Extracted[/b][/color]'
                 self.feature_flag = False
-
                 Clock.schedule_once(self.save_features, 0)
 
         if self.tracking_flag:

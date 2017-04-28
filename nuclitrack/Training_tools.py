@@ -66,84 +66,10 @@ class TrainingData(Widget):
 
 class TrainingUI(Widget):
 
-    def training_frame(self, instance, val):
+    def __init__(self, images=None, labels=None, features=None, frames=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.current_frame = int(val)
-        im_temp = self.labels[int(val), :, :]
-
-        mapping = self.features[:, 17].astype(int)
-        self.im_disp.update_im(im_temp, mapping)
-        self.label_disp.update_im(np.mod(im_temp, 64))
-
-        mov_temp = self.seg_channel[int(val), :, :]
-        self.mov_disp.update_im(mov_temp)
-        inds = self.features[:, 1]
-        mask = inds == self.current_frame
-
-        if sum(mask.astype(int)) > 0:
-            self.frame_feats = self.features[mask, :]
-
-        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
-
-    def update_training(self, pos, val):
-
-        pos = np.asarray([pos[0] * self.dims[1], pos[1] * self.dims[0]])
-        d = distance.cdist(self.frame_feats[:, [2, 3]], [pos])
-
-        sel = self.frame_feats[np.argmin(d), :].copy()
-
-        if min(d) < 50:
-
-            mask = self.training_data[:, 0] == sel[0]
-
-            if np.any(mask):
-
-                ind = np.nonzero(self.training_data[:, 0] == sel[0])
-                self.training_data = np.delete(self.training_data, ind, 0)
-                print(sel[0])
-                self.features[int(sel[0]), 17] = 1.
-
-            else:
-
-                sel[12:17] = 0
-                sel[11 + val] = 1
-                self.training_data = np.vstack((self.training_data, sel))
-                self.features[int(sel[0]), 17] = 1.0 + val
-
-        im_temp = self.labels[self.current_frame, :, :]
-        mapping = self.features[:, 17].astype(int)
-        self.im_disp.update_im(im_temp, mapping)
-        self.canvas.ask_update()
-
-    def save_training(self, instance):
-
-        # Delete if features already exists otherwise store extracted features
-
-        for g in self.parent.s_param:
-            if g == 'training_data':
-                del self.parent.s_param['training_data']
-
-        self.parent.s_param.create_dataset("training_data", data=self.training_data)
-        self.parent.progression_state(7)
-
-    def tracking_distance(self,instance, val):
-
-        self.parent.track_param[1] = val
-        self.txt_dist.text = '[color=000000][size=14]Search distance: ' + str(val) + '[/size][/color]'
-
-    def max_gap_change(self, instance, val):
-
-        self.parent.track_param[6] = val
-        self.txt_gap.text = '[color=000000][size=14]Max time gap: ' + str(val) + '[/size][/color]'
-
-    def mig_cost_change(self, instance, val):
-
-        self.parent.track_param[0] = val
-        self.txt_mig.text = '[color=000000][size=14]Migration cost: ' + str(val) + '[/size][/color]'
-
-    def initialize(self, labels, seg_channel, features, frames):
-
-        self.seg_channel = seg_channel
+        self.seg_channel = images
         self.labels = labels
         self.features = features
         self.frames = frames
@@ -243,6 +169,81 @@ class TrainingUI(Widget):
             self.add_widget(self.t_layout)
             self.t_layout.add_widget(self.training_window)
             self.t_layout.add_widget(self.layout3)
+
+    def training_frame(self, instance, val):
+
+        self.current_frame = int(val)
+        im_temp = self.labels[int(val), :, :]
+
+        mapping = self.features[:, 17].astype(int)
+        self.im_disp.update_im(im_temp, mapping)
+        self.label_disp.update_im(np.mod(im_temp, 64))
+
+        mov_temp = self.seg_channel[int(val), :, :]
+        self.mov_disp.update_im(mov_temp)
+        inds = self.features[:, 1]
+        mask = inds == self.current_frame
+
+        if sum(mask.astype(int)) > 0:
+            self.frame_feats = self.features[mask, :]
+
+        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
+
+    def update_training(self, pos, val):
+
+        pos = np.asarray([pos[0] * self.dims[1], pos[1] * self.dims[0]])
+        d = distance.cdist(self.frame_feats[:, [2, 3]], [pos])
+
+        sel = self.frame_feats[np.argmin(d), :].copy()
+
+        if min(d) < 50:
+
+            mask = self.training_data[:, 0] == sel[0]
+
+            if np.any(mask):
+
+                ind = np.nonzero(self.training_data[:, 0] == sel[0])
+                self.training_data = np.delete(self.training_data, ind, 0)
+                print(sel[0])
+                self.features[int(sel[0]), 17] = 1.
+
+            else:
+
+                sel[12:17] = 0
+                sel[11 + val] = 1
+                self.training_data = np.vstack((self.training_data, sel))
+                self.features[int(sel[0]), 17] = 1.0 + val
+
+        im_temp = self.labels[self.current_frame, :, :]
+        mapping = self.features[:, 17].astype(int)
+        self.im_disp.update_im(im_temp, mapping)
+        self.canvas.ask_update()
+
+    def save_training(self, instance):
+
+        # Delete if features already exists otherwise store extracted features
+
+        for g in self.parent.s_param:
+            if g == 'training_data':
+                del self.parent.s_param['training_data']
+
+        self.parent.s_param.create_dataset("training_data", data=self.training_data)
+        self.parent.progression_state(7)
+
+    def tracking_distance(self,instance, val):
+
+        self.parent.track_param[1] = val
+        self.txt_dist.text = '[color=000000][size=14]Search distance: ' + str(val) + '[/size][/color]'
+
+    def max_gap_change(self, instance, val):
+
+        self.parent.track_param[6] = val
+        self.txt_gap.text = '[color=000000][size=14]Max time gap: ' + str(val) + '[/size][/color]'
+
+    def mig_cost_change(self, instance, val):
+
+        self.parent.track_param[0] = val
+        self.txt_mig.text = '[color=000000][size=14]Migration cost: ' + str(val) + '[/size][/color]'
 
     def remove(self):
 

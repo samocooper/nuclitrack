@@ -485,7 +485,67 @@ class SegmentationUI(Widget):
         self.s_layout.height = height
 
 
-class ViewSegmentation(Widget):
+class ViewSegment(Widget):
+
+    def __init__(self, labels=None, frames=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.labels = labels
+        self.frames = frames
+
+        self.view = 'seg_view'
+        self.view_button = ToggleButton(text='View Labels', size_hint=(.2, .05), pos_hint={'x': .53, 'y': .925},
+                                        group='view')
+        self.export_button = ToggleButton(text='Export Labels', size_hint=(.2, .05), pos_hint={'x': .74, 'y': .925},
+                                          group='view')
+        self.view_button.bind(on_press=self.view_segment)
+        self.export_button.bind(on_press=self.export_data)
+
+        self.s_layout = FloatLayout(size=(Window.width, Window.height))
+
+        self.s_layout.add_widget(self.view_button)
+        self.s_layout.add_widget(self.export_button)
+
+
+
+        im_temp = self.labels[0, :, :]
+
+        #### SEG WIDGETS ####
+
+        self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
+        self.im_disp.create_im(im_temp, 'Random')
+
+        self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
+                             pos_hint={'x': .1, 'y': .9}, cursor_size=(30, 30))
+        self.sframe.bind(value=self.segment_frame)
+        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
+                                size_hint=(.3, .04), pos_hint={'x': .1, 'y': .9}, markup=True)
+
+        #### FILE WIDGETS ####
+
+        self.file_choose = FileChooserListView(size_hint=(.9, .6), pos_hint={'x': .05, 'y': .14})
+
+        # Crate dir
+        self.folder_input = TextInput(text='Directory Name',
+                                      multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .85})
+        self.folder_input.bind(on_text_validate=self.make_folder)
+        self.folder_label = Label(text='[b][color=000000]Create directory name: [/b][/color]', markup=True,
+                                  size_hint=(.25, .05), pos_hint={'x': .05, 'y': .85})
+
+        # Export labels to tif files
+
+        self.text_file_input = TextInput(text='File Name',
+                                         multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .79})
+        self.text_file_input.bind(on_text_validate=self.export_files)
+        self.file_label = Label(text='[b][color=000000]Choose file name: [/b][/color]', markup=True,
+                                size_hint=(.25, .05), pos_hint={'x': .05, 'y': .79})
+
+        self.s_layout.add_widget(self.frame_text)
+        self.s_layout.add_widget(self.im_disp)
+        self.s_layout.add_widget(self.sframe)
+
+        with self.canvas:
+            self.add_widget(self.s_layout)
 
     def make_folder(self, instance):
         os.makedirs(self.file_choose.path + '\\' + instance.text)
@@ -534,63 +594,6 @@ class ViewSegmentation(Widget):
             self.s_layout.add_widget(self.frame_text)
 
         self.view = 'seg_view'
-
-
-    def initialize(self, labels, frames):
-
-        self.view = 'seg_view'
-        self.view_button = ToggleButton(text='View Labels', size_hint=(.2, .05), pos_hint={'x': .53, 'y': .925},
-                                        group='view')
-        self.export_button = ToggleButton(text='Export Labels', size_hint=(.2, .05), pos_hint={'x': .74, 'y': .925},
-                                          group='view')
-        self.view_button.bind(on_press=self.view_segment)
-        self.export_button.bind(on_press=self.export_data)
-
-        self.s_layout = FloatLayout(size=(Window.width, Window.height))
-
-        self.s_layout.add_widget(self.view_button)
-        self.s_layout.add_widget(self.export_button)
-
-        self.labels = labels
-        self.frames = frames
-
-        im_temp = self.labels[0, :, :]
-
-        #### SEG WIDGETS ####
-
-        self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
-        self.im_disp.create_im(im_temp, 'Random')
-
-        self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
-                                   pos_hint={'x': .1, 'y': .9}, cursor_size=(30, 30))
-        self.sframe.bind(value=self.segment_frame)
-        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
-                                size_hint=(.3, .04), pos_hint={'x': .1, 'y': .9}, markup=True)
-
-        #### FILE WIDGETS ####
-
-        self.file_choose = FileChooserListView(size_hint=(.9, .6), pos_hint={'x': .05, 'y': .14})
-
-        # Crate dir
-        self.folder_input = TextInput(text='Directory Name',
-                                         multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .85})
-        self.folder_input.bind(on_text_validate=self.make_folder)
-        self.folder_label = Label(text='[b][color=000000]Create directory name: [/b][/color]', markup=True, size_hint=(.25, .05), pos_hint={'x': .05, 'y': .85})
-
-        # Export labels to tif files
-
-        self.text_file_input = TextInput(text='File Name',
-                                         multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .79})
-        self.text_file_input.bind(on_text_validate=self.export_files)
-        self.file_label = Label(text='[b][color=000000]Choose file name: [/b][/color]', markup=True, size_hint=(.25, .05), pos_hint={'x': .05, 'y': .79})
-
-        self.s_layout.add_widget(self.frame_text)
-        self.s_layout.add_widget(self.im_disp)
-        self.s_layout.add_widget(self.sframe)
-
-
-        with self.canvas:
-            self.add_widget(self.s_layout)
 
     def segment_frame(self, instance, val):
 
