@@ -149,21 +149,21 @@ class TrainingUI(Widget):
         if sum(mask.astype(int)) > 0:
             self.frame_feats = self.features[mask, :]
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, cursor_size=(30, 30))
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1)
         self.frame_slider.bind(value=self.training_frame)
-        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]', markup=True)
+        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]', markup=True)
 
-        self.track_dist = Slider(min=0, max=100, value=50, step=1, cursor_size=(25, 25))
+        self.track_dist = Slider(min=0, max=100, value=50, step=1)
         self.track_dist.bind(value=self.tracking_distance)
-        self.txt_dist = Label(text='[color=000000][size=14]Search distance: ' + str(50) + '[/size][/color]', markup=True)
+        self.txt_dist = Label(text='[color=000000]Search distance: ' + str(50) + '[/color]', markup=True)
 
-        self.max_gap = Slider(min=0, max=6, value=3, step=1, cursor_size=(25, 25))
+        self.max_gap = Slider(min=0, max=6, value=3, step=1)
         self.max_gap.bind(value=self.max_gap_change)
-        self.txt_gap = Label(text='[color=000000][size=14]Max time gap: ' + str(3) + '[/size][/color]', markup=True)
+        self.txt_gap = Label(text='[color=000000]Max time gap: ' + str(3) + '[/color]', markup=True)
 
-        self.mig_cost = Slider(min=0, max=0.1, value=0.05, step=0.001, cursor_size=(25, 25))
+        self.mig_cost = Slider(min=0, max=0.1, value=0.05, step=0.001)
         self.mig_cost.bind(value=self.mig_cost_change)
-        self.txt_mig = Label(text='[color=000000][size=14]Migration cost: ' + str(0.05) + '[/size][/color]', markup=True)
+        self.txt_mig = Label(text='[color=000000]Migration cost: ' + str(0.05) + '[/color]', markup=True)
 
         self.training_window = TrainingData(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
         self.layout3 = GridLayout(rows=2, cols=5, padding=2, size_hint=(.98, .12), pos_hint={'x': .01, 'y': .87})
@@ -232,7 +232,7 @@ class TrainingUI(Widget):
         if sum(mask.astype(int)) > 0:
             self.frame_feats = self.features[mask, :]
 
-        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
 
     def update_training(self, pos, val):
 
@@ -277,17 +277,17 @@ class TrainingUI(Widget):
     def tracking_distance(self,instance, val):
 
         self.parent.track_param[1] = val
-        self.txt_dist.text = '[color=000000][size=14]Search distance: ' + str(val) + '[/size][/color]'
+        self.txt_dist.text = '[color=000000]Search distance: ' + str(val) + '[/color]'
 
     def max_gap_change(self, instance, val):
 
         self.parent.track_param[6] = val
-        self.txt_gap.text = '[color=000000][size=14]Max time gap: ' + str(val) + '[/size][/color]'
+        self.txt_gap.text = '[color=000000]Max time gap: ' + str(val) + '[/color]'
 
     def mig_cost_change(self, instance, val):
 
         self.parent.track_param[0] = val
-        self.txt_mig.text = '[color=000000][size=14]Migration cost: ' + str(val) + '[/size][/color]'
+        self.txt_mig.text = '[color=000000]Migration cost: ' + str(val) + '[/color]'
 
     def remove(self):
 

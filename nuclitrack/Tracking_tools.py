@@ -379,10 +379,10 @@ class TrackingUI(Widget):
         self.mov_disp.create_im(self.channel_im[0], 'PastelHeat')
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .1),
-                                   pos_hint={'x': .145, 'y': .9}, cursor_size=(30, 30))
+                                   pos_hint={'x': .145, 'y': .9})
         self.frame_slider.bind(value=self.frame_select)
 
-        self.frame_text = Label(text='[color=000000][size=14]<<a  Frame  d>>: ' + str(0) + '[/size][/color]',
+        self.frame_text = Label(text='[color=000000]<<a  Frame  d>>: ' + str(0) + '[/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .145, 'y': .9}, markup=True)
 
         self.tr_layout.add_widget(self.frame_slider)
@@ -394,17 +394,17 @@ class TrackingUI(Widget):
         layout4 = GridLayout(cols=1, padding=2, size_hint=(.1, .78), pos_hint={'x': .01, 'y': .115})
         self.cell_mark = CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
 
-        self.track_btn1 = ToggleButton(text='[size=12] Select Cell (z) [/size]', markup=True, halign='center', valign='center')
-        self.track_btn2 = ToggleButton(text='[size=12] Add Segment (c)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn3 = ToggleButton(text='[size=12]Remove Segment(v)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn4 = ToggleButton(text='[size=12]Swap Tracks (x)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn5 = ToggleButton(text='[size=12]Jump (w)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn6 = ToggleButton(text='[size=12]New Track (n)[/size]', markup=True, halign='center', valign='center')
-        self.track_btn9 = Button(text='[size=12]Store Track[/size]', markup=True, halign='center', valign='center')
-        self.track_btn7 = Button(text='[size=12]Save Tracks[/size]', markup=True, halign='center', valign='center')
-        self.track_btn8 = Button(text='[size=12]Load Tracks[/size]', markup=True, halign='center', valign='center')
-        self.track_btn10 = Button(text='[size=12]Export all to CSV[/size]', markup=True, halign='center', valign='center')
-        self.track_btn11 = Button(text='[size=12]Export sel to CSV[/size]', markup=True, halign='center', valign='center')
+        self.track_btn1 = ToggleButton(text=' Select Cell (z) ', markup=True, halign='center', valign='center')
+        self.track_btn2 = ToggleButton(text=' Add Segment (c)', markup=True, halign='center', valign='center')
+        self.track_btn3 = ToggleButton(text='Remove Segment(v)', markup=True, halign='center', valign='center')
+        self.track_btn4 = ToggleButton(text='Swap Tracks (x)', markup=True, halign='center', valign='center')
+        self.track_btn5 = ToggleButton(text='Jump (w)', markup=True, halign='center', valign='center')
+        self.track_btn6 = ToggleButton(text='New Track (n)', markup=True, halign='center', valign='center')
+        self.track_btn9 = Button(text='Store Track', markup=True, halign='center', valign='center')
+        self.track_btn7 = Button(text='Save Tracks', markup=True, halign='center', valign='center')
+        self.track_btn8 = Button(text='Load Tracks', markup=True, halign='center', valign='center')
+        self.track_btn10 = Button(text='Export all to CSV', markup=True, halign='center', valign='center')
+        self.track_btn11 = Button(text='Export sel to CSV', markup=True, halign='center', valign='center')
 
         self.track_btn1.bind(on_press=partial(self.tracking_window.state_change, state=1))
         self.track_btn2.bind(on_press=partial(self.tracking_window.state_change, state=2))
@@ -481,7 +481,7 @@ class TrackingUI(Widget):
             channel_btn.bind(on_press=partial(self.change_channel, images, i))
             self.channel_choice.add_widget(channel_btn)
 
-        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04),
+        self.main_button = Button(text=' Channel ', size_hint=(.15, .04),
                                   pos_hint={'x': .83, 'y': .923}, markup=True)
         self.main_button.bind(on_release=self.channel_choice.open)
         self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
@@ -555,7 +555,7 @@ class TrackingUI(Widget):
         mask = inds == self.current_frame
         self.frame_feats = self.features[mask, :]
 
-        self.frame_text.text = '[color=000000][size=14]<<a  Frame  d>>: ' + str(int(val)) + '[/size][/color]'
+        self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
 
         self.track_frame_update()
 

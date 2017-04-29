@@ -28,7 +28,7 @@ class UserInterface(Widget):
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
         self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
 
-        btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='center')
+        btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
         btn1.bind(on_press=self.loading_ui)
         btn1.bind(size=btn1.setter('text_size'))
         self.layout1.add_widget(btn1)
@@ -211,7 +211,7 @@ class UserInterface(Widget):
 
         if state == 2 and self.progression[2] == 0 and self.progression[0] == 1 and self.progression[1] == 1:
 
-            btn2 = ToggleButton(text='Segment',  group='ui_choice', halign='center', valign='center')
+            btn2 = ToggleButton(text='Segment',  group='ui_choice', halign='center', valign='middle')
             btn2.bind(on_press=self.segment_ui)
             btn2.bind(size=btn2.setter('text_size'))
 
@@ -225,7 +225,7 @@ class UserInterface(Widget):
 
         if state == 3 and self.progression[3] == 0:
 
-            btn3 = ToggleButton(text='Segment\nMovie',  group='ui_choice', halign='center', valign='center')
+            btn3 = ToggleButton(text='Segment\nMovie',  group='ui_choice', halign='center', valign='middle')
             btn3.bind(on_press=self.segment_movie)
             btn3.bind(size=btn3.setter('text_size'))
             self.layout1.add_widget(btn3)
@@ -243,7 +243,7 @@ class UserInterface(Widget):
 
         if state == 4 and self.progression[4] == 0:
 
-            btn4 = ToggleButton(text='View\nSegment',  group='ui_choice', halign='center', valign='center')
+            btn4 = ToggleButton(text='View\nSegment',  group='ui_choice', halign='center', valign='middle')
             btn4.bind(on_press=self.view_segments)
             btn4.bind(size=btn4.setter('text_size'))
 
@@ -251,7 +251,7 @@ class UserInterface(Widget):
 
             self.progression[4] = 1
 
-            btn5 = ToggleButton(text='Extract\nFeatures', group='ui_choice', halign='center', valign='center')
+            btn5 = ToggleButton(text='Extract\nFeatures', group='ui_choice', halign='center', valign='middle')
             btn5.bind(on_press=self.extract_features)
             btn5.bind(size=btn5.setter('text_size'))
 
@@ -266,7 +266,7 @@ class UserInterface(Widget):
 
         if state == 6 and self.progression[6] == 0:
 
-            btn6 = ToggleButton(text='Training\nData', group='ui_choice', halign='center', valign='center')
+            btn6 = ToggleButton(text='Training\nData', group='ui_choice', halign='center', valign='middle')
             btn6.bind(on_press=self.training_ui)
             btn6.bind(size=btn6.setter('text_size'))
 
@@ -280,7 +280,7 @@ class UserInterface(Widget):
 
         if state == 7 and self.progression[7] == 0:
 
-            btn7 = ToggleButton(text='Classify\nCells', group='ui_choice', halign='center', valign='center')
+            btn7 = ToggleButton(text='Classify\nCells', group='ui_choice', halign='center', valign='middle')
             btn7.bind(on_press=self.classify_cells)
             btn7.bind(size=btn7.setter('text_size'))
 
@@ -298,7 +298,7 @@ class UserInterface(Widget):
                         state = 8
 
         if state == 8 and self.progression[8] == 0:
-            btn8 = ToggleButton(text='Track\nCells', group='ui_choice', halign='center', valign='center')
+            btn8 = ToggleButton(text='Track\nCells', group='ui_choice', halign='center', valign='middle')
             btn8.bind(on_press=self.run_tracking)
             btn8.bind(size=btn8.setter('text_size'))
 
@@ -311,7 +311,7 @@ class UserInterface(Widget):
                     state = 9
 
         if state == 9 and self.progression[9] == 0:
-            btn9 = ToggleButton(text='View\nTracks', group='ui_choice', halign='center', valign='center')
+            btn9 = ToggleButton(text='View\nTracks', group='ui_choice', halign='center', valign='middle')
             btn9.bind(on_press=self.tracking_ui)
             btn9.bind(size=btn9.setter('text_size'))
 

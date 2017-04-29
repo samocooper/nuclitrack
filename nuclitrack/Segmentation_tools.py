@@ -129,7 +129,6 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
     shed_im = (1 - val) * im_edge - val * d_mat
 
     labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
-    labels[im_bin] -= 1
 
     if edges == 1:
         edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
@@ -212,8 +211,8 @@ class BatchSegment(Widget):
 # Segmentation UI
 
 class SegmentationUI(Widget):
-    def __init__(self, images=None, frames=None, channels=None, params=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, images=None, frames=None, channels=None, params=None, **kwargs):
+        super().__init__(**kwargs)
 
         self.current_frame = 0
         self.channels = channels
@@ -240,17 +239,17 @@ class SegmentationUI(Widget):
 
         # Frame slider
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .23, 'y': .9}, cursor_size=(30, 30))
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1), pos_hint={'x': .23, 'y': .9})
         self.frame_slider.bind(value=self.frame_select)
-        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
+        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .23, 'y': .9}, markup=True)
 
-        self.parallel_button = ToggleButton(text='[size=13] Multiple Cores [/size]',
+        self.parallel_button = ToggleButton(text=' Multiple Cores ',
                                 size_hint=(.15, .04), pos_hint={'x': .682, 'y': .923}, markup=True)
         self.parallel_button.bind(on_press=self.update_parallel)
         self.s_layout.add_widget(self.parallel_button)
 
-        self.edge_button = ToggleButton(text='[size=13] Filter edge [/size]',
+        self.edge_button = ToggleButton(text=' Filter edge ',
                                             size_hint=(.15, .04), pos_hint={'x': .53, 'y': .923}, markup=True)
         self.edge_button.bind(on_press=self.update_edge)
         self.s_layout.add_widget(self.edge_button)
@@ -263,7 +262,7 @@ class SegmentationUI(Widget):
             channel_btn.bind(on_press=partial(self.change_channel, images, i))
             self.channel_choice.add_widget(channel_btn)
 
-        self.main_button = Button(text='[size=13] Channel [/size]', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
+        self.main_button = Button(text=' Channel ', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
         self.main_button.bind(on_release=self.channel_choice.open)
         self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
         self.s_layout.add_widget(self.main_button)
@@ -272,15 +271,15 @@ class SegmentationUI(Widget):
 
         layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
 
-        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]), cursor_size=(25, 25))
-        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]), cursor_size=(25, 25))
-        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]), cursor_size=(25, 25))
-        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]), cursor_size=(25, 25))
-        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]), cursor_size=(25, 25))
-        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]), cursor_size=(25, 25))
-        s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]), cursor_size=(25, 25))
-        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]), cursor_size=(25, 25))
-        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]), cursor_size=(25, 25))
+        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]))
+        s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]))
+        s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]))
+        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]))
+        s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]))
+        s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]))
+        s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]))
+        s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]))
+        s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]))
         b2 = Button(text='save params')
 
         s0.bind(value=partial(self.segment_script, state=2))
@@ -294,15 +293,15 @@ class SegmentationUI(Widget):
         s8.bind(value=partial(self.segment_script, state=9))
         b2.bind(on_press=self.save_params)
 
-        self.s1_label = Label(text='[color=000000][size=12]Clipping Limit: ' + str(self.params[0]) + '[/size][/color]', markup=True)
-        self.s2_label = Label(text='[color=000000][size=12]Background blur: ' + str(self.params[1]) + '[/size][/color]', markup=True)
-        self.s3_label = Label(text='[color=000000][size=12]Image blur: ' + str(self.params[2]) + '[/size][/color]', markup=True)
-        self.s4_label = Label(text='[color=000000][size=12]Threshold: ' + str(self.params[3]) + '[/size][/color]', markup=True)
-        self.s5_label = Label(text='[color=000000][size=12]Smallest Object: ' + str(self.params[4]) + '[/size][/color]', markup=True)
-        self.s6_label = Label(text='[color=000000][size=12]Distance to Intensity: ' + str(self.params[5]) + '[/size][/color]', markup=True)
-        self.s7_label = Label(text='[color=000000][size=12]Separation Distance: ' + str(self.params[6]) + '[/size][/color]', markup=True)
-        self.s8_label = Label(text='[color=000000][size=12]Edge Blur: ' + str(self.params[7]) + '[/size][/color]', markup=True)
-        self.s9_label = Label(text='[color=000000][size=12]Watershed Ratio: ' + str(self.params[8]) + '[/size][/color]', markup=True)
+        self.s1_label = Label(text='[color=000000]Clipping Limit: ' + str(self.params[0]) + '[/color]', markup=True)
+        self.s2_label = Label(text='[color=000000]Background blur: ' + str(self.params[1]) + '[/color]', markup=True)
+        self.s3_label = Label(text='[color=000000]Image blur: ' + str(self.params[2]) + '[/color]', markup=True)
+        self.s4_label = Label(text='[color=000000]Threshold: ' + str(self.params[3]) + '[/color]', markup=True)
+        self.s5_label = Label(text='[color=000000]Smallest Object: ' + str(self.params[4]) + '[/color]', markup=True)
+        self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]', markup=True)
+        self.s7_label = Label(text='[color=000000]Separation Distance: ' + str(self.params[6]) + '[/color]', markup=True)
+        self.s8_label = Label(text='[color=000000]Edge Blur: ' + str(self.params[7]) + '[/color]', markup=True)
+        self.s9_label = Label(text='[color=000000]Watershed Ratio: ' + str(self.params[8]) + '[/color]', markup=True)
 
         layout2.add_widget(s0)
         layout2.add_widget(self.s1_label)
@@ -339,7 +338,7 @@ class SegmentationUI(Widget):
         self.im = self.seg_channel[int(val), :, :].copy()
         self.im_disp.update_im(self.im)
         self.mov_disp.update_im(self.im)
-        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
 
     def segment_script(self, instance, val, **kwargs):
 
@@ -354,7 +353,7 @@ class SegmentationUI(Widget):
                 if state == 2:  # if state is equal to stage of segmentation modify parameter
 
                     self.params[0] = val
-                    self.s1_label.text = '[color=000000][size=12]Clipping Limit ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s1_label.text = '[color=000000]Clipping Limit ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im1 = clipping(self.im, self.params[0])  # perform image analysis operation
 
@@ -365,7 +364,7 @@ class SegmentationUI(Widget):
 
                 if state == 3:
                     self.params[1] = val
-                    self.s2_label.text = '[color=000000][size=12]Background blur: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s2_label.text = '[color=000000]Background blur: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im2 = background(self.im1, self.params[1])
 
@@ -376,7 +375,7 @@ class SegmentationUI(Widget):
 
                 if state == 4:
                     self.params[2] = val
-                    self.s3_label.text = '[color=000000][size=12]Image blur: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s3_label.text = '[color=000000]Image blur: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im3 = blur(self.im2, self.params[2])
 
@@ -387,7 +386,7 @@ class SegmentationUI(Widget):
 
                 if state == 5:
                     self.params[3] = val
-                    self.s4_label.text = '[color=000000][size=12]Threshold: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s4_label.text = '[color=000000]Threshold: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im_bin_uf = threshold(self.im3, self.params[3])
 
@@ -398,7 +397,7 @@ class SegmentationUI(Widget):
 
                 if state == 6:
                     self.params[4] = val
-                    self.s5_label.text = '[color=000000][size=12]Smallest Object: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s5_label.text = '[color=000000]Smallest Object: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im_bin = object_filter(self.im_bin_uf, self.params[4])
 
@@ -409,7 +408,7 @@ class SegmentationUI(Widget):
 
                 if state == 7:
                     self.params[5] = val
-                    self.s6_label.text = '[color=000000][size=12]Distance to Intensity: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s6_label.text = '[color=000000]Distance to Intensity: ' + str(np.round(val, 2)) + '[/color]'
 
                 [self.cell_center, self.d_mat] = cell_centers(self.im3, self.im_bin, self.params[5])
 
@@ -420,7 +419,7 @@ class SegmentationUI(Widget):
 
                 if state == 8:
                     self.params[6] = val
-                    self.s7_label.text = '[color=000000][size=12]Separation Distance: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s7_label.text = '[color=000000]Separation Distance: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.markers = fg_markers(self.cell_center, self.im_bin, self.params[6],self.params[9])
 
@@ -431,7 +430,7 @@ class SegmentationUI(Widget):
 
                 if state == 1:
                     self.params[7] = val
-                    self.s8_label.text = '[color=000000][size=12]Edge Blur: ' + str(np.round(val, 2)) + '[/size][/color]'
+                    self.s8_label.text = '[color=000000]Edge Blur: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.im_edge = sobel_edges(self.im1, self.params[7])
 
@@ -441,7 +440,7 @@ class SegmentationUI(Widget):
             if state == 9:
 
                 self.params[8] = val
-                self.s9_label.text = '[color=000000][size=12]Watershed Ratio: ' + str(np.round(val, 2)) + '[/size][/color]'
+                self.s9_label.text = '[color=000000]Watershed Ratio: ' + str(np.round(val, 2)) + '[/color]'
 
                 self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8], self.params[9])
 
@@ -516,9 +515,9 @@ class ViewSegment(Widget):
         self.im_disp.create_im(im_temp, 'Random')
 
         self.sframe = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .1),
-                             pos_hint={'x': .1, 'y': .9}, cursor_size=(30, 30))
+                             pos_hint={'x': .1, 'y': .9})
         self.sframe.bind(value=self.segment_frame)
-        self.frame_text = Label(text='[color=000000][size=14]Frame: ' + str(0) + '[/size][/color]',
+        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
                                 size_hint=(.3, .04), pos_hint={'x': .1, 'y': .9}, markup=True)
 
         #### FILE WIDGETS ####
@@ -597,7 +596,7 @@ class ViewSegment(Widget):
 
     def segment_frame(self, instance, val):
 
-        self.frame_text.text = '[color=000000][size=14]Frame: ' + str(int(val)) + '[/size][/color]'
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
         im_temp = self.labels[int(val), :, :]
         self.im_disp.update_im(im_temp)
 
