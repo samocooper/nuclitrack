@@ -41,7 +41,6 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.label_fov)
 
         # Input
-
         self.text_input_fov = TextInput(text='example_data.hdf5', multiline=False,
                                         size_hint=(.48, .05), pos_hint={'x': .01, 'y': .9})
         self.text_input_fov.bind(on_text_validate=partial(self.dir, 'fov'))
