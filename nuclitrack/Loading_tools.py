@@ -166,11 +166,11 @@ class LoadingUI(Widget):
 
             for i in range(self.max_channel):
 
-                channel_btn = ToggleButton(text='Channel ' + str(i+1), group='channel', size_hint_y=None, height=25)
+                channel_btn = ToggleButton(text='Channel ' + str(i+1), group='channel', size_hint_y=None)
                 channel_btn.bind(on_press=partial(self.change_channel, i))
                 self.channel_choice.add_widget(channel_btn)
 
-            channel_btn = ToggleButton(text='Labels', group='channel', size_hint_y=None, height=25)
+            channel_btn = ToggleButton(text='Labels', group='channel', size_hint_y=None)
             channel_btn.bind(on_press=partial(self.change_channel, self.max_channel))
             self.channel_choice.add_widget(channel_btn)
 

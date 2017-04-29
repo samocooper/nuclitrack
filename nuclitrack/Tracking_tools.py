@@ -477,7 +477,7 @@ class TrackingUI(Widget):
         self.channel_choice = DropDown()
 
         for i in range(self.channels):
-            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None, height=25)
+            channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None)
             channel_btn.bind(on_press=partial(self.change_channel, images, i))
             self.channel_choice.add_widget(channel_btn)
 

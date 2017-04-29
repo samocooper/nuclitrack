@@ -172,11 +172,11 @@ class TrainingUI(Widget):
 
         self.channel_choice = DropDown()
 
-        btn1 = ToggleButton(text='0 Cell', group='type', size_hint_y=None, height=25)
-        btn2 = ToggleButton(text='1 Cell', group='type', size_hint_y=None, height=25)
-        btn3 = ToggleButton(text='2 Cell', group='type', size_hint_y=None, height=25)
-        btn4 = ToggleButton(text='Mit Cell', group='type', size_hint_y=None, height=25)
-        btn5 = ToggleButton(text='Mitex Cell', group='type', size_hint_y=None, height=25)
+        btn1 = ToggleButton(text='0 Cell', group='type', size_hint_y=None)
+        btn2 = ToggleButton(text='1 Cell', group='type', size_hint_y=None)
+        btn3 = ToggleButton(text='2 Cell', group='type', size_hint_y=None)
+        btn4 = ToggleButton(text='Mit Cell', group='type', size_hint_y=None)
+        btn5 = ToggleButton(text='Mitex Cell', group='type', size_hint_y=None)
 
         btn6 = Button(text='Save Training')
 

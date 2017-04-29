@@ -90,9 +90,6 @@ class UserInterface(Widget):
                 self.count_completed = 0
                 self.segment_flag = True
 
-            self.progression_state(4)
-            self.progression_state(5)
-
     def view_segments(self, instance):
         if instance.state == 'down':
 
@@ -105,9 +102,15 @@ class UserInterface(Widget):
         self.current_widget.segment_parallel()
         self.labels[...] = self.current_widget.get()
 
+        self.progression_state(4)
+        self.progression_state(5)
+
     def finish_segmentation(self, dt):
 
         self.labels[...] = self.current_widget.get()
+
+        self.progression_state(4)
+        self.progression_state(5)
 
     def extract_features(self, instance):
         if instance.state == 'down':
