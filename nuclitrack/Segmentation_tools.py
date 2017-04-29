@@ -129,7 +129,7 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
     shed_im = (1 - val) * im_edge - val * d_mat
 
     labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
-
+    labels -= 1
     if edges == 1:
         edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
                               labels[-1, :].flatten()))
@@ -486,7 +486,7 @@ class SegmentationUI(Widget):
 
 class ViewSegment(Widget):
 
-    def __init__(self, labels=None, frames=None, *args,kwargs):
+    def __init__(self, labels=None, frames=None, **kwargs):
         super().__init__(**kwargs)
 
         self.labels = labels

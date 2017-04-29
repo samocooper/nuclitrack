@@ -122,7 +122,7 @@ class UserInterface(Widget):
 
     def save_features(self, dt):
 
-        [self.features, self.labels[...]] = self.current_widget.get()
+        [features, self.labels[...]] = self.current_widget.get()
 
         # Delete if features already exists otherwise store extracted features as number of segments may change
 
@@ -130,7 +130,7 @@ class UserInterface(Widget):
             if g == 'features':
                 del self.fov['features']
 
-        self.fov.create_dataset("features", data=self.features)
+        self.fov.create_dataset("features", data=features)
         self.progression_state(6)
 
     def training_ui(self, instance):
@@ -144,7 +144,7 @@ class UserInterface(Widget):
 
             self.remove_widget(self.current_widget)
             self.current_widget = TrainingUI(images=self.images[self.seg_channel], labels=self.labels,
-                                             features=self.features, frames=self.frames)
+                                             features=self.fov['features'][...], frames=self.frames)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
 
@@ -153,7 +153,7 @@ class UserInterface(Widget):
 
             self.remove_widget(self.current_widget)
             self.training_data = self.params['training_data'][:, :]
-            self.current_widget = ClassifyCells(features=self.features[...], training_data=self.training_data)
+            self.current_widget = ClassifyCells(features=self.fov['features'][...], training_data=self.training_data)
             self.add_widget(self.current_widget)
             self.fov['features'][...] = self.current_widget.get()
 
@@ -162,7 +162,7 @@ class UserInterface(Widget):
     def run_tracking(self, instance):
 
         self.remove_widget(self.current_widget)
-        self.current_widget = RunTracking(features=self.features, track_param=self.track_param, frames=self.frames)
+        self.current_widget = RunTracking(features=self.fov['features'][...], track_param=self.track_param, frames=self.frames)
         self.add_widget(self.current_widget)
         self.tracking_flag = True
 
@@ -261,8 +261,8 @@ class UserInterface(Widget):
 
             for g in self.fov:
                 if g == 'features':
-                    self.features = self.fov['features'][...]
                     state = 6
+
 
         if state == 6 and self.progression[6] == 0:
 
