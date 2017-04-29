@@ -35,15 +35,19 @@ class LoadingUI(Widget):
         # Record whether both files are loaded
         self.file_loaded = [False, False]
 
+        self.file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
+        self.ld_layout.add_widget(self.file_choose)
+        self.file_choose.bind(on_entries_cleared=self.dir_change)
+
         # Label
         self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
                                size_hint=(.48, .05), pos_hint={'x': .01, 'y': .95})
         self.ld_layout.add_widget(self.label_fov)
 
         # Input
-        self.text_input_fov = TextInput(text='example_data.hdf5', multiline=False,
+        self.text_input_fov = TextInput(text='', multiline=False,
                                         size_hint=(.48, .05), pos_hint={'x': .01, 'y': .9})
-        self.text_input_fov.bind(on_text_validate=partial(self.dir, 'fov'))
+        self.text_input_fov.bind(on_text_validate=partial(self.file_name_val, 'fov'))
         self.ld_layout.add_widget(self.text_input_fov)
 
         # Display loaded file
@@ -51,6 +55,11 @@ class LoadingUI(Widget):
         self.loaded_fov = Label(text='[b][color=000000] [/b][/color]', markup=True,
                                 size_hint=(.49, .05), pos_hint={'x': .01, 'y': .85})
         self.ld_layout.add_widget(self.loaded_fov)
+
+        # Info on file loading
+        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
+                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+        self.ld_layout.add_widget(self.error_message)
 
         # Assign/Load HDF5 file for storing tracking and segmentation parameter data.
 
@@ -60,9 +69,9 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.label_param)
 
         # Input
-        self.text_input_param = TextInput(text='example_params.hdf5', multiline=False,
+        self.text_input_param = TextInput(text='', multiline=False,
                                           size_hint=(.48, .05), pos_hint={'x': .51, 'y': .9})
-        self.text_input_param.bind(on_text_validate=partial(self.dir, 'param'))
+        self.text_input_param.bind(on_text_validate=partial(self.file_name_val, 'param'))
         self.ld_layout.add_widget(self.text_input_param)
 
         # Display loaded file
@@ -70,24 +79,44 @@ class LoadingUI(Widget):
                                   size_hint=(.48, .05), pos_hint={'x': .51, 'y': .85})
         self.ld_layout.add_widget(self.loaded_param)
 
-        # Info on file loading
-        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
-                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
-        self.ld_layout.add_widget(self.error_message)
+    def file_name_val(self, input_type, obj):
+        self.load_data(input_type, obj.text)
 
-    def dir(self, input_type, obj):
-        input_text = obj.text
+    def dir_click(self,flag, val, file_name, touch):
+        if flag == 1:
+            self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
+            self.update_file_labels(file_name[0])
+
+        if flag == 2:
+            self.load_from_textfile(file_name[0])
+
+        if flag == 3:
+            self.load_from_dir(file_name[0])
+
+    def dir_change(self, val):
+            self.text_input_fov.text = self.file_choose.path + '/example_data.hdf5'
+            self.text_input_param.text = self.file_choose.path + '/example_params.hdf5'
+
+    def load_data(self, input_type, input_text):
         # Display loaded files
 
         if input_type == 'fov':
 
             self.parent.fov = h5py.File(input_text, "a")
-            self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            if len(input_text) < 20:
+                self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            else:
+                self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text[-30:] + '[/b][/color]'
+
             self.file_loaded[0] = True
 
         if input_type == 'param':
             self.parent.params = h5py.File(input_text, "a")
-            self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            if len(input_text) < 20:
+                self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+            else:
+                self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text[-30:] + '[/b][/color]'
+
             self.file_loaded[1] = True
 
         ########################
@@ -95,6 +124,8 @@ class LoadingUI(Widget):
         ########################
 
         if self.file_loaded[0] and self.file_loaded[1]:
+
+            self.file_choose.unbind(on_entries_cleared=self.dir_change)
 
             # Inform user if data already exists in file
 
@@ -206,9 +237,7 @@ class LoadingUI(Widget):
 
             # File browser widget for choosing file
 
-            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
-            file_choose.bind(on_submit=self.record_filename_click)
-            self.img_layout.add_widget(file_choose)
+            self.file_choose.bind(on_submit=partial(self.dir_click, 1))
 
             # Text input for selecting image location
 
@@ -225,9 +254,7 @@ class LoadingUI(Widget):
 
             # File browser widget for choosing file
 
-            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
-            file_choose.bind(on_submit=self.record_text_file_click)
-            self.img_layout.add_widget(file_choose)
+            self.file_choose.bind(on_submit=partial(self.dir_click, 2))
 
             # Text input for selecting image location
 
@@ -242,9 +269,7 @@ class LoadingUI(Widget):
 
         if load_type == 'dir':
 
-            file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
-            file_choose.bind(on_submit=self.record_dir_click)
-            self.img_layout.add_widget(file_choose)
+            self.file_choose.bind(on_submit=partial(self.dir_click, 3))
 
             # Text input for selecting image location
 
@@ -256,9 +281,6 @@ class LoadingUI(Widget):
     ############################
     # DIRECTORY LOAD FUNCTIONS #
     ############################
-
-    def record_dir_click(self, val, file_name, touch):
-        self.load_from_dir(file_name[0])
 
     def record_dir(self, instance):
         self.load_from_dir(instance.text)
@@ -289,8 +311,6 @@ class LoadingUI(Widget):
     # TEXT FILE LOAD FUNCTIONS #
     ############################
 
-    def record_text_file_click(self, val, file_name, touch):
-        self.load_from_textfile(file_name[0])
 
     def record_text_file(self, instance):
         self.load_from_textfile(instance.text)
@@ -338,9 +358,6 @@ class LoadingUI(Widget):
         self.file_names[self.channel*2 + self.img_pos] = instance.text
         self.update_file_labels(instance.text)
 
-    def record_filename_click(self, val, file_name, touch):
-        self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
-        self.update_file_labels(file_name[0])
 
     def update_file_labels(self, most_recent_text):
 
