@@ -28,8 +28,8 @@ class RunTracking(Widget):
         on probability of segments, p2*(s+1) - p3*(s); 4) mitosis penalty reduce the likelihood of mitosis,
         negative values increase the likelihood; 5) weighting for gaps in tracking; 6) max gap'''
 
-    def __init__(self, features=None, track_param=None, frames=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, features=None, track_param=None, frames=None, **kwargs):
+        super().__init__(**kwargs)
 
         features[:, 18] = 1
         self.frames = int(frames)

@@ -155,8 +155,8 @@ def segment_image(params, image):
 # Batch Segmentation
 
 class BatchSegment(Widget):
-    def __init__(self, images=None, params=None, frames=None, parallel=False, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, images=None, params=None, frames=None, parallel=False, **kwargs):
+        super().__init__(**kwargs)
 
         self.frames = frames
         self.images = images
@@ -486,8 +486,8 @@ class SegmentationUI(Widget):
 
 class ViewSegment(Widget):
 
-    def __init__(self, labels=None, frames=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, labels=None, frames=None, *args,kwargs):
+        super().__init__(**kwargs)
 
         self.labels = labels
         self.frames = frames

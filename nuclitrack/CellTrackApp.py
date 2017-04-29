@@ -15,8 +15,8 @@ from kivy.uix.widget import Widget
 from kivy.clock import Clock
 
 class UserInterface(Widget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         self.current_frame = 0
         self.seg_channel = 0
