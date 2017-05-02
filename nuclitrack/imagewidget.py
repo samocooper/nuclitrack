@@ -25,12 +25,12 @@ class ImDisplay(Widget):
 
 
         if scale:
-            im = numpy_to_image.scale_im(m, len(self.cmap) // 3 - 1)  # Scale image between 0 and 255
+            im = numpytoimage.scale_im(m, len(self.cmap) // 3 - 1)  # Scale image between 0 and 255
         else:
             im = m
 
         im = im.astype(int)
-        im = numpy_to_image.mat_to_im(im, self.cmap)  # Map scaled image to colormap
+        im = numpytoimage.mat_to_im(im, self.cmap)  # Map scaled image to colormap
         arr = np.asarray(im, dtype=np.uint8)
         self.texture.blit_buffer(arr.tostring(), colorfmt='rgb', bufferfmt='ubyte')
 
@@ -45,12 +45,12 @@ class ImDisplay(Widget):
         m = m.astype(float)
 
         if self.scale:
-            im = numpy_to_image.scale_im(m, len(self.cmap) // 3 - 1)
+            im = numpytoimage.scale_im(m, len(self.cmap) // 3 - 1)
         else:
             im = m
 
         im = im.astype(int)
-        im = numpy_to_image.mat_to_im(im, self.cmap)
+        im = numpytoimage.mat_to_im(im, self.cmap)
 
         arr = np.asarray(im, dtype=np.uint8)
         self.texture.blit_buffer(arr.tostring(), colorfmt='rgb', bufferfmt='ubyte')
@@ -74,7 +74,7 @@ class IndexedDisplay(Widget):
         self.cmap = color_map(c_map)
         m = mat.flatten()
 
-        im = numpy_to_image.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
+        im = numpytoimage.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
         arr = np.asarray(im, dtype=np.uint8)
         self.texture.blit_buffer(arr.tostring(), colorfmt='rgb', bufferfmt='ubyte')
 
@@ -86,7 +86,7 @@ class IndexedDisplay(Widget):
     def update_im(self, mat, mapping):
         mat = np.flipud(mat)
         m = mat.flatten()
-        im = numpy_to_image.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
+        im = numpytoimage.indexed_mat_to_im(m.astype(int), self.cmap, mapping)
 
         arr = np.asarray(im, dtype=np.uint8)
         self.texture.blit_buffer(arr.tostring(), colorfmt='rgb', bufferfmt='ubyte')

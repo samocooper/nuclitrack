@@ -22,7 +22,7 @@ def background(im, val):
     im_temp = im.copy()
 
     if val != 0:
-        im_temp = im_temp - segmentation_c_tools.fast_blur(im_temp, val)
+        im_temp = im_temp - ctoolsegmentation.fast_blur(im_temp, val)
 
     return im_temp
 

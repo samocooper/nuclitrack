@@ -20,11 +20,11 @@ class TrackCells(object):
         self.states = np.zeros(self.features.shape[0], dtype=int)
         self.tracks = np.zeros([1, 8])
 
-        self.d_mat = tracking_c_tools.distance_mat(self.features, frames, track_param)
+        self.d_mat = ctooltracking.distance_mat(self.features, frames, track_param)
         self.d_mat = self.d_mat[self.d_mat[:, 2].argsort(), :]
         self.track_param = track_param
         self.d_mat = np.vstack((self.d_mat, np.zeros((1, self.d_mat.shape[1]))))
-        self.s_mat = tracking_c_tools.swaps_mat(self.d_mat, frames)
+        self.s_mat = ctooltracking.swaps_mat(self.d_mat, frames)
         self.cum_score = 0.
 
         self.count = 1
@@ -35,16 +35,16 @@ class TrackCells(object):
 
     def addtrack(self):
 
-        score_mat = tracking_c_tools.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
+        score_mat = ctooltracking.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
         max_score = max(score_mat[:, 3])
 
         if max_score > self.min_score:
 
             self.cum_score += max_score
-            track_temp, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
+            track_temp, self.s_mat, self.states = ctooltracking.track_back(score_mat, self.states, self.s_mat)
             track_temp[:, 4] = self.count
 
-            self.tracks, track_temp = tracking_c_tools.swap_test(self.tracks, track_temp, self.d_mat, self.count)
+            self.tracks, track_temp = ctooltracking.swap_test(self.tracks, track_temp, self.d_mat, self.count)
             self.tracks = np.vstack((self.tracks, track_temp))
             self.count += 1
 
@@ -91,16 +91,16 @@ class TrackCells(object):
                         self.s_mat[m4, 6] = 0
                         self.s_mat[m4, 8] = 0
 
-            score_mat = tracking_c_tools.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
+            score_mat = ctooltracking.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
             max_score = max(score_mat[:, 3])
 
             if max_score > track_store[-1, 2]:
 
                 self.cum_score = self.cum_score + max_score - track_store[-1, 2]
-                track_replace, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
+                track_replace, self.s_mat, self.states = ctooltracking.track_back(score_mat, self.states, self.s_mat)
                 track_replace[:, 4] = track_ind
 
-                self.tracks, track_replace = tracking_c_tools.swap_test(self.tracks, track_replace, self.d_mat, track_ind)
+                self.tracks, track_replace = ctooltracking.swap_test(self.tracks, track_replace, self.d_mat, track_ind)
                 self.tracks = np.vstack((self.tracks, track_replace))
 
             else:
