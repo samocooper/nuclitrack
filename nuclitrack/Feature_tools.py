@@ -8,7 +8,6 @@ from kivy.uix.label import Label
 from kivy.uix.widget import Widget
 from kivy.uix.progressbar import ProgressBar
 
-
 class FeatureExtract(Widget):
 
     def __init__(self, images=None, labels=None, frames=None, channels=None, dims=None, *args, **kwargs):

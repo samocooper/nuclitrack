@@ -1,10 +1,10 @@
 import numpy as np
 from functools import partial
 
-from .Segmentation_tools import SegmentationUI, ViewSegment, BatchSegment
+from .uisegmentation import SegmentationUI, ViewSegment, BatchSegment
 from .Tracking_tools import TrackingUI, RunTracking
 from .Training_tools import TrainingUI, ClassifyCells
-from .Loading_tools import LoadingUI
+from .uiloading import LoadingUI
 from .Feature_tools import FeatureExtract
 from kivy.app import App
 from kivy.core.window import Window
@@ -79,7 +79,7 @@ class UserInterface(Widget):
             self.current_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...],
                                                frames=self.frames, parallel=self.parallel)
             self.add_widget(self.current_widget)
-
+            print(self.dims)
             self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
 
             if self.parallel == True:
@@ -219,7 +219,6 @@ class UserInterface(Widget):
             btn2.bind(size=btn2.setter('text_size'))
 
             self.layout1.add_widget(btn2)
-
             self.progression[2] = 1
 
             for g in self.params:

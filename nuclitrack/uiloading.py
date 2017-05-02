@@ -1,10 +1,6 @@
-import numpy as np
-import platform
 import h5py
-
 import os
 from functools import partial
-from skimage.external import tifffile
 
 from kivy.uix.dropdown import DropDown
 from kivy.uix.widget import Widget
@@ -17,10 +13,13 @@ from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.gridlayout import GridLayout
 
+from . import loadimages
+
+
 class LoadingUI(Widget):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
         # Master layout for loading screen
 
@@ -57,9 +56,9 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_fov)
 
         # Info on file loading
-        self.error_message = Label(text='[b][color=000000][/b][/color]', markup=True,
-                                   size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
-        self.ld_layout.add_widget(self.error_message)
+        self.ui_message = Label(text='[b][color=000000][/b][/color]', markup=True,
+                                size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+        self.ld_layout.add_widget(self.ui_message)
 
         # Assign/Load HDF5 file for storing tracking and segmentation parameter data.
 
@@ -98,6 +97,7 @@ class LoadingUI(Widget):
             self.text_input_param.text = self.file_choose.path + '/example_params.hdf5'
 
     def load_data(self, input_type, input_text):
+
         # Display loaded files
 
         if input_type == 'fov':
@@ -132,19 +132,25 @@ class LoadingUI(Widget):
             flag = True
 
             for g in self.parent.fov:
-                if g == 'image_filenames':
+                if g == 'file_list':
+
                     self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
                                               markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
                     self.ld_layout.add_widget(self.message)
+                    self.ld_layout.remove_widget(self.file_choose)
                     flag = False
 
-                    images = []
+                    file_list = loadimages.loadfilelist(self.parent.fov)
+                    images = loadimages.loadimages(file_list)
 
-                    images_np = self.parent.fov['image_filenames'][...]
-                    for i in range(images_np.shape[0]):
-                        images.append([str(fname, encoding='utf8') for fname in images_np[i, :]])
+                    self.parent.images = images
+                    self.parent.frames = len(images[0])
+                    self.parent.channels = len(images)
+                    self.parent.dims = images[0].shape[1:]
 
-                    self.load_movie(images)
+                    self.parent.progression[0] = 1
+                    self.parent.progression[1] = 1
+                    self.parent.progression_state(2)
 
             # Give user choice of how to load image series
 
@@ -166,8 +172,6 @@ class LoadingUI(Widget):
 
                 self.ld_layout.add_widget(self.load_choice)
 
-            self.parent.progression[0] = 1
-            self.parent.progression_state(2)
 
     def load_imgs(self, load_type, obj):
 
@@ -285,59 +289,28 @@ class LoadingUI(Widget):
     def record_dir(self, instance):
         self.load_from_dir(instance.text)
 
-    def load_from_dir(self, file_name):
-        if platform.system() == 'Windows':
-            file_name_split = file_name.split('\\')
-            file_name_split = [s + '\\' for s in file_name_split]
-        else:
-            file_name_split = file_name.split('/')
-            file_name_split = [s + '/' for s in file_name_split]
+    def load_from_dir(self, dir_name):
 
-        dir_name = ''.join(file_name_split[:-1])
-        file_list = os.listdir(dir_name)
-        file_name_split2 = file_name.split('.')
-        file_type = file_name_split2[1]
-
-        # Filter out files of a different file type
-
-        file_list_filtered = []
-        for f in file_list:
-            if not (f.find(file_type) == -1):
-                file_list_filtered.append(dir_name + f)
-
-        self.load_movie([file_list_filtered])
+        file_list = loadimages.filelistfromdir(dir_name)
+        self.load_movie(file_list)
 
     ############################
     # TEXT FILE LOAD FUNCTIONS #
     ############################
 
-
     def record_text_file(self, instance):
+
         self.load_from_textfile(instance.text)
 
-    def load_from_textfile(self, file_name):
+    def load_from_textfile(self, text_file):
 
-        if os.path.isfile(file_name):
+        if os.path.isfile(text_file):
 
-            if platform.system() == 'Windows':
-                file_name_split = file_name.split('\\')
-                file_name_split = [s + '\\' for s in file_name_split]
-            else:
-                file_name_split = file_name.split('/')
-                file_name_split = [s + '/' for s in file_name_split]
-
-            dir_name = ''.join(file_name_split[:-1])
-            file_list = []
-            with open(file_name) as f:
-                for line in f:
-                    if line[-1] == '\n':
-                        line = line[:-1]
-                    file_list.append(dir_name + line)
-
-            self.load_movie([file_list])
+           file_list = loadimages.filelistfromtext(text_file)
+           self.load_movie(file_list)
 
         else:
-            self.error_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
+            self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
             return
 
     #######################
@@ -357,7 +330,6 @@ class LoadingUI(Widget):
 
         self.file_names[self.channel*2 + self.img_pos] = instance.text
         self.update_file_labels(instance.text)
-
 
     def update_file_labels(self, most_recent_text):
 
@@ -379,15 +351,15 @@ class LoadingUI(Widget):
         # Handle errors in file loading
 
         if self.file_names[0] == '' or self.file_names[1] == '':
-            self.error_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
+            self.ui_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
             return
 
         if self.file_names[0] == self.file_names[1]:
-            self.error_message.text = '[b][color=000000]Select two different files [/b][/color]'
+            self.ui_message.text = '[b][color=000000]Select two different files [/b][/color]'
             return
 
         if not(len(self.file_names[0]) == len(self.file_names[1])):
-            self.error_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
+            self.ui_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
             return
 
         images = []
@@ -395,7 +367,7 @@ class LoadingUI(Widget):
         for i in range(self.max_channel):
             if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
                 if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
-                    images.append(self.auto_list(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
+                    images.append(loadimages.autofilelist(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
 
         flag = self.load_movie(images)
 
@@ -405,207 +377,87 @@ class LoadingUI(Widget):
 
             if (not self.file_names[mx * 2 + 0] == '') and (not self.file_names[mx * 2 + 1] == ''):
                 if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
-                    labels = self.auto_list(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
+                    labels = loadimages.autofilelist(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
                     self.load_labels(labels)
-
-
-    def generate_list_test(self, first_name, dif_loc2):
-
-        if (dif_loc2 + 1) < len(first_name):
-
-            test_digit = first_name[dif_loc2+1]
-            flag = True
-
-            if test_digit.isdigit():
-                for j in np.arange(int(test_digit) + 1, int(test_digit) + 10):
-                    if j < 10:
-
-                        test_digit_temp = str(j)
-                        test_name = list(first_name)
-                        test_name[dif_loc2+1] = test_digit_temp[0]
-                    else:
-                        test_digit_temp = str(j)
-                        test_name = list(first_name)
-                        test_name[dif_loc2] = test_digit_temp[0]
-                        test_name[dif_loc2+1] = test_digit_temp[1]
-
-                    if not os.path.isfile(''.join(test_name)):
-                        flag = False
-            else:
-                flag = False
-
-            if flag:
-
-                dif_loc2 += 1
-                dif_loc2 = self.generate_list_test(first_name, dif_loc2)
-
-        return dif_loc2
-
-    def auto_list(self, first_name, last_name):
-
-        # Determine whether a difference of one exists somewhere in file names
-
-        fnm = list(first_name)
-
-        l1 = np.asarray([ord(i) for i in list(first_name)])
-        l2 = np.asarray([ord(i) for i in list(last_name)])
-
-        dif = l2 - l1
-
-        dif_loc = np.where(dif)[0][0]
-        dif_loc2 = np.where(dif)[0][-1]
-
-        # Use recursion to test if last digit is in fact last digit
-
-        dif_loc2 = self.generate_list_test(first_name, dif_loc2)
-
-        nm = dif[dif_loc:dif_loc2 + 1]
-        mul = 10 ** len(nm)
-        tot = 0
-        for x in nm:
-            mul //= 10
-            tot += x * mul
-
-        pad = len(str(tot))
-
-        start_num = ''
-        for i in range(dif_loc, dif_loc + pad):
-            start_num += fnm[i]
-
-        start_num = int(start_num)
-
-        file_list = []
-
-        for i in range(tot + 1):
-            s = str(start_num + i).zfill(pad)
-
-            for j in range(pad):
-                fnm[dif_loc + j] = s[j]
-
-            file_list.append(''.join(fnm))
-
-        return file_list
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
     ##############################
 
-    def load_movie(self, image_filenames):
+    def load_movie(self, file_list):
 
         # Check channels are same length and all files are present
 
-        frames = len(image_filenames[0])
+        frames = len(file_list[0])
 
-        for all_image_files in image_filenames:
+        for channel in file_list:
 
-            if not (frames == len(all_image_files)):
-                self.error_message.text = '[b][color=000000] Channels not same length [/b][/color]'
+            if not (frames == len(channel)):
+                self.ui_message.text = '[b][color=000000] Channels not same length [/b][/color]'
                 return
 
-            for f in all_image_files:
+            for f in channel:
                 if not os.path.isfile(f):
-                    self.error_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
+                    self.ui_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
                     return
 
-        # Load images from first channel
+        # Load images save list of file names into hdf5 file
 
-        frames = len(image_filenames[0])
-        im_test = tifffile.imread(image_filenames[0][0])
-        dims = im_test.shape
-
-        images = []
-        images_np = []
-
-        for all_image_files in image_filenames:
-
-            all_images = np.zeros((frames, dims[0], dims[1]))
-
-            for i in range(len(all_image_files)):
-                im_temp = tifffile.imread(all_image_files[i])
-                im_temp = im_temp.astype(float)
-                all_images[i, :, :] = im_temp
-
-            images.append(all_images)
-
-            # Transform file names to bytes for storing in hdf5 file
-            images_np.append([bytes(image_file, encoding='utf8') for image_file in all_image_files])
-
-        images_np = np.asarray(images_np)
-
-        # Overwrite previous file lists
-
-        for g in self.parent.fov:
-            if g == 'image_filenames':
-                del self.parent.fov['image_filenames']
-
-        for i in range(len(images)):
-            images[i] = images[i]/np.max(images[i].flatten())
+        images = loadimages.loadimages(file_list)
+        loadimages.savefilelist(file_list, self.parent.fov)
 
         self.parent.images = images
         self.parent.frames = frames
         self.parent.channels = len(images)
-        self.parent.dims = dims
+        self.parent.dims = images[0].shape[1:]
 
-        self.parent.fov.create_dataset('image_filenames', data=images_np)
         self.parent.progression[0] = 1
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
 
-        self.error_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
+        self.ui_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
+
         return True
 
-    def load_labels(self, label_files):
+    def load_labels(self, file_list):
 
             # Check channels are same length and all files are present
+
             frames = self.parent.frames
-            dims = self.parent.dims
 
-            if not (frames == len(label_files)):
-                self.error_message.text = '[b][color=000000] Labels not same length [/b][/color]'
+            if not (frames == len(file_list)):
+                self.ui_message.text = '[b][color=000000] Labels not same length [/b][/color]'
                 return
 
-            if not (frames == len(label_files)):
-                self.error_message.text = '[b][color=000000] Labels not same length [/b][/color]'
+            if not (frames == len(file_list)):
+                self.ui_message.text = '[b][color=000000] Labels not same length [/b][/color]'
                 return
 
-            for f in label_files:
+            for f in file_list:
                 if not os.path.isfile(f):
-                    self.error_message.text = '[b][color=000000]Missing label file: ' + f + '[/b][/color]'
+                    self.ui_message.text = '[b][color=000000]Missing label file: ' + f + '[/b][/color]'
                     return
 
-            im_test = tifffile.imread(label_files[0])
-            if not(im_test.shape[0] == dims[0] and im_test.shape[1] == dims[1]):
-                self.error_message.text = '[b][color=000000]Label file dimensions different [/b][/color]'
-                return
+            # Load and save label images
 
-            labels = np.zeros((frames, dims[0], dims[1]))
+            labels = loadimages.loadimages(file_list)
 
-            for i in range(frames):
-                im_temp = tifffile.imread(label_files[i])
-                im_temp = im_temp
-                labels[i, :, :] = im_temp
-
-            labels = labels.astype(int)
             for g in self.parent.fov:
                 if g == 'labels':
                     del self.parent.fov['labels']
 
-            self.parent.params.require_dataset('seg_param', (9,), dtype='f')
             self.parent.fov.create_dataset("labels", data=labels)
+
+            # initialise segmentation parameters with dummy variables for state progression
+
+            self.parent.params.require_dataset('seg_param', (9,), dtype='f')
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
-
-            self.error_message.text = '[b][color=000000]Movie and Labels Loaded[/b][/color]'
-
-    def remove(self):
-
-        self.ld_layout.clear_widgets()
-        self.remove_widget(self.ld_layout)
-        self.img_layout.clear_widgets()
-        self.remove_widget(self.img_layout)
+            self.ui_message.text = '[b][color=000000]Movie and Labels Loaded[/b][/color]'
 
     def update_size(self, window, width, height):
+
         self.ld_layout.width = width
         self.ld_layout.height = height
         self.img_layout.width = width

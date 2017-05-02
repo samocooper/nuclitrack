@@ -1,6 +1,8 @@
 import numpy as np
 import multiprocessing
 from multiprocessing import Pool
+from skimage.external import tifffile
+import os
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -16,145 +18,14 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.progressbar import ProgressBar
 from functools import partial
 
-from skimage import filters
-from skimage import morphology
-from skimage.feature import peak_local_max
-from skimage.external import tifffile
-from scipy import ndimage
-import os
-
+from . import segmentimages
 from .Image_widget import ImDisplay
-import segmentation_c_tools
 
-# Functions for segmentation
-
-def clipping(im, val):
-
-    im_temp = im.copy()
-
-    if val != 0:
-        im_temp[im > val] = val
-
-    return im_temp
-
-def background(im, val):
-
-    im_temp = im.copy()
-
-    if val != 0:
-        im_temp = im_temp - segmentation_c_tools.fast_blur(im_temp, val)
-
-    return im_temp
-
-
-def blur(im, val):
-
-    if val != 0:
-
-        if val <= 5:
-            im = filters.gaussian(im, val)
-
-        else:
-
-            im = filters.gaussian(im, (val / 2))
-            im = filters.gaussian(im, (val / 2))
-            im = filters.gaussian(im, (val / 2))
-
-    im = im/np.max(im.flatten())
-
-    return im
-
-
-def threshold(im, val):
-
-    im_bin = im > val
-
-    return im_bin
-
-
-def object_filter(im_bin, val):
-
-    im_bin = morphology.remove_small_objects(im_bin, val)
-
-    return im_bin
-
-
-def cell_centers(im, im_bin, val):
-
-    d_mat = ndimage.distance_transform_edt(im_bin)
-    d_mat = d_mat / np.max(d_mat.flatten())
-
-    im_cent = (1 - val) * im + val * d_mat
-    im_cent[np.logical_not(im_bin)] = 0
-
-    return [im_cent, d_mat]
-
-
-def fg_markers(im_cent, im_bin, val, edges):
-
-    local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=int(edges))
-    markers = ndimage.label(local_maxi)[0]
-    markers[local_maxi] += 1
-    k = morphology.octagon(2, 2)
-    markers = morphology.dilation(markers, selem=k)
-
-    return markers
-
-def sobel_edges(im, val):
-
-    if val != 0:
-        if val <= 5:
-            im = filters.gaussian(im, val)
-
-        else:
-
-            im = filters.gaussian(im, (val / 2))
-            im = filters.gaussian(im, (val / 2))
-            im = filters.gaussian(im, (val / 2))
-
-    im = filters.sobel(im) + 1
-    im = im / np.max(im.flatten())
-
-    return im
-
-
-def watershed(markers, im_bin, im_edge, d_mat, val, edges):
-
-    k = morphology.octagon(2, 2)
-    im_bin = morphology.binary_dilation(im_bin, selem=k)
-    im_bin = morphology.binary_dilation(im_bin, selem=k)
-
-    markers_temp = markers + np.logical_not(im_bin)
-    im_bin = morphology.binary_dilation(im_bin, selem=k)
-    shed_im = (1 - val) * im_edge - val * d_mat
-
-    labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
-    labels -= 1
-    if edges == 1:
-        edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
-                              labels[-1, :].flatten()))
-        edge_val = np.unique(edge_vec)
-        for val in edge_val:
-            if not val == 0:
-                labels[labels == val] = 0
-
-    return labels
-
-def segment_image(params, image):
-
-    image = clipping(image, params[0])
-    image2 = background(image, params[1])
-    image3 = blur(image2, params[2])
-    im_bin = threshold(image3, params[3])
-    im_bin = object_filter(im_bin, params[4])
-    [cell_center, d_mat] = cell_centers(image3, im_bin, params[5])
-    markers = fg_markers(cell_center, im_bin, params[6], params[9])
-    im_edge = sobel_edges(image, params[7])
-    return watershed(markers, im_bin, im_edge, d_mat, params[8], params[9])
 
 # Batch Segmentation
 
 class BatchSegment(Widget):
+
     def __init__(self, images=None, params=None, frames=None, parallel=False, **kwargs):
         super().__init__(**kwargs)
 
@@ -191,13 +62,13 @@ class BatchSegment(Widget):
         self.pb.value += 1000/self.frames
 
     def segment_im(self, frame, dt):
-        self.labels[frame, :, :] = segment_image(self.params, self.images[frame, :, :])
+        self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.images[frame, :, :])
 
     def segment_parallel(self):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        labels = pool.map(partial(segment_image, self.params), [self.images[frame, :, :] for frame in range(self.frames)])
+        labels = pool.map(partial(segmentimages.segment_image, self.params), [self.images[frame, :, :] for frame in range(self.frames)])
         pool.close()
         pool.join()
 
@@ -298,8 +169,10 @@ class SegmentationUI(Widget):
         self.s3_label = Label(text='[color=000000]Image blur: ' + str(self.params[2]) + '[/color]', markup=True)
         self.s4_label = Label(text='[color=000000]Threshold: ' + str(self.params[3]) + '[/color]', markup=True)
         self.s5_label = Label(text='[color=000000]Smallest Object: ' + str(self.params[4]) + '[/color]', markup=True)
-        self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]', markup=True)
-        self.s7_label = Label(text='[color=000000]Separation Distance: ' + str(self.params[6]) + '[/color]', markup=True)
+        self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]',
+                              markup=True)
+        self.s7_label = Label(text='[color=000000]Separation Distance: ' + str(self.params[6]) + '[/color]',
+                              markup=True)
         self.s8_label = Label(text='[color=000000]Edge Blur: ' + str(self.params[7]) + '[/color]', markup=True)
         self.s9_label = Label(text='[color=000000]Watershed Ratio: ' + str(self.params[8]) + '[/color]', markup=True)
 
@@ -355,7 +228,7 @@ class SegmentationUI(Widget):
                     self.params[0] = val
                     self.s1_label.text = '[color=000000]Clipping Limit ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im1 = clipping(self.im, self.params[0])  # perform image analysis operation
+                self.im1 = segmentimages.clipping(self.im, self.params[0])  # perform image analysis operation
 
                 if state == 2:  # if state is equal to stage of segmentation update display image
                     self.im_disp.update_im(self.im1)
@@ -366,7 +239,7 @@ class SegmentationUI(Widget):
                     self.params[1] = val
                     self.s2_label.text = '[color=000000]Background blur: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im2 = background(self.im1, self.params[1])
+                self.im2 = segmentimages.background(self.im1, self.params[1])
 
                 if state == 3:
                     self.im_disp.update_im(self.im2)
@@ -377,7 +250,7 @@ class SegmentationUI(Widget):
                     self.params[2] = val
                     self.s3_label.text = '[color=000000]Image blur: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im3 = blur(self.im2, self.params[2])
+                self.im3 = segmentimages.blur(self.im2, self.params[2])
 
                 if state == 4:
                     self.im_disp.update_im(self.im3)
@@ -388,7 +261,7 @@ class SegmentationUI(Widget):
                     self.params[3] = val
                     self.s4_label.text = '[color=000000]Threshold: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im_bin_uf = threshold(self.im3, self.params[3])
+                self.im_bin_uf = segmentimages.threshold(self.im3, self.params[3])
 
                 if state == 5:
                     self.im_disp.update_im(self.im_bin_uf.astype(float))
@@ -399,7 +272,7 @@ class SegmentationUI(Widget):
                     self.params[4] = val
                     self.s5_label.text = '[color=000000]Smallest Object: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im_bin = object_filter(self.im_bin_uf, self.params[4])
+                self.im_bin = segmentimages.object_filter(self.im_bin_uf, self.params[4])
 
                 if state == 6:
                     self.im_disp.update_im(self.im_bin.astype(float))
@@ -410,7 +283,7 @@ class SegmentationUI(Widget):
                     self.params[5] = val
                     self.s6_label.text = '[color=000000]Distance to Intensity: ' + str(np.round(val, 2)) + '[/color]'
 
-                [self.cell_center, self.d_mat] = cell_centers(self.im3, self.im_bin, self.params[5])
+                [self.cell_center, self.d_mat] = segmentimages.cell_centers(self.im3, self.im_bin, self.params[5])
 
                 if state == 7:
                     self.im_disp.update_im(self.cell_center)
@@ -421,7 +294,7 @@ class SegmentationUI(Widget):
                     self.params[6] = val
                     self.s7_label.text = '[color=000000]Separation Distance: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.markers = fg_markers(self.cell_center, self.im_bin, self.params[6],self.params[9])
+                self.markers = segmentimages.fg_markers(self.cell_center, self.im_bin, self.params[6],self.params[9])
 
                 if state == 8:
                     self.im_disp.update_im(self.cell_center + (self.markers > 0))
@@ -432,7 +305,7 @@ class SegmentationUI(Widget):
                     self.params[7] = val
                     self.s8_label.text = '[color=000000]Edge Blur: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.im_edge = sobel_edges(self.im1, self.params[7])
+                self.im_edge = segmentimages.sobel_edges(self.im1, self.params[7])
 
                 if state == 1:
                     self.im_disp.update_im(self.im_edge)
@@ -442,7 +315,7 @@ class SegmentationUI(Widget):
                 self.params[8] = val
                 self.s9_label.text = '[color=000000]Watershed Ratio: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.labels = watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8], self.params[9])
+                self.labels = segmentimages.watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8], self.params[9])
 
 
                 self.im_disp.update_im(self.labels.astype(float))
@@ -470,14 +343,6 @@ class SegmentationUI(Widget):
         self.mov_disp.update_im(self.seg_channel[self.current_frame, :, :])
         self.parent.seg_channel = val
 
-    def remove(self):
-
-        # Remove segmentation ui widgets
-
-        self.layout2.clear_widgets()
-        self.s_layout.clear_widgets()
-        self.remove_widget(self.s_layout)
-
     def update_size(self, window, width, height):
 
         self.s_layout.width = width
@@ -504,8 +369,6 @@ class ViewSegment(Widget):
 
         self.s_layout.add_widget(self.view_button)
         self.s_layout.add_widget(self.export_button)
-
-
 
         im_temp = self.labels[0, :, :]
 
@@ -547,6 +410,7 @@ class ViewSegment(Widget):
             self.add_widget(self.s_layout)
 
     def make_folder(self, instance):
+
         os.makedirs(self.file_choose.path + '\\' + instance.text)
         self.folder_input.text = 'Directory made, re-enter present dir to view it'
 
@@ -605,7 +469,3 @@ class ViewSegment(Widget):
         self.s_layout.width = width
         self.s_layout.height = height
 
-    def remove(self):
-
-        self.s_layout.clear_widgets()
-        self.remove_widget(self.s_layout)
