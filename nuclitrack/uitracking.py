@@ -15,50 +15,28 @@ from kivy.uix.dropdown import DropDown
 
 from .Image_widget import ImDisplay, IndexedDisplay
 from .Graph import Graph, SmoothLinePlot
+from . import trackcells
 import tracking_c_tools
 
 class RunTracking(Widget):
 
-    ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
-    
-        Col3 = mitosis; Col4 = Track_id; Col5 = frame.
-    
-        Tracking parameters are; 0) distance penalty (smaller means
-        less penalty); 1) max distance searched in previous frame; 2 & 3) weighting for adding segments based
-        on probability of segments, p2*(s+1) - p3*(s); 4) mitosis penalty reduce the likelihood of mitosis,
-        negative values increase the likelihood; 5) weighting for gaps in tracking; 6) max gap'''
+    def __init__(self, features, track_param, frames, **kwargs):
 
-    def __init__(self, features=None, track_param=None, frames=None, **kwargs):
         super().__init__(**kwargs)
 
-        features[:, 18] = 1
-        self.frames = int(frames)
-
-        self.features = np.vstack((np.zeros((1, features.shape[1])), features))
-        self.track_param = track_param
-
-        self.states = np.zeros(self.features.shape[0], dtype=int)
-        self.tracks = np.zeros([1, 8])
-
-        self.d_mat = tracking_c_tools.distance_mat(self.features, self.frames, track_param)
-        self.d_mat = self.d_mat[self.d_mat[:, 2].argsort(), :]
-        self.d_mat = np.vstack((self.d_mat, np.zeros((1, self.d_mat.shape[1]))))
-        self.s_mat = tracking_c_tools.swaps_mat(self.d_mat, self.frames)
-
-        self.cum_score = 0.
-        self.count = 1
-
-        self.add_flag = True
-        self.min_score = 5
-        self.score = self.min_score + 1
-        self.optimise_count = 0
-        self.sweep = 0
+        self.tracking_object = trackcells.TrackCells(features=features, track_param=track_param, frames=frames)
 
         self.track_message = Label(text='[b][color=000000] Tracking cells [/b][/color]', markup=True,
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
         self.track_counter = Label(text='[b][color=000000] [/b][/color]', markup=True,
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .6})
         self.layout = FloatLayout(size=(Window.width, Window.height))
+
+        self.add_flag = True
+        self.optimise_flag = False
+        self.count = 0
+        self.optimise_count = 0
+        self.sweep = 0
 
         with self.canvas:
             self.add_widget(self.layout)
@@ -73,178 +51,56 @@ class RunTracking(Widget):
             self.track_counter.text = '[b][color=000000]' + str(self.optimise_count) + '[/b][/color]'
 
     def update_message(self, val):
+
         if val >= 0:
             self.track_message.text = '[b][color=000000]Optimising Tracks Sweep ' + str(
                 val) + ' [/b][/color]'
             self.tracking_state = val
 
         else:
-
             self.track_message.text = '[b][color=000000]Tracking Completed | Total segments: ' + \
                                               str(self.segment_count) + ' | Total double segments: ' + \
                                               str(self.double_segment) + '[/b][/color]'
 
     def add_track(self):
 
-        if self.score > self.min_score and self.add_flag:
-            self.score = self.add_cell(self.min_score)
-            return False
+        if self.add_flag:
 
-        if self.score <= self.min_score and self.add_flag:
-
-            self.add_flag = False
-            self.update_message(self.sweep + 1)
-
-            return False
-
-        if self.optimise_count < np.max(self.tracks[:, 4]) and not self.add_flag:
-            self.optimise(self.optimise_count)
-            self.optimise_count += 1
-            return False
-
-        if self.optimise_count >= np.max(self.tracks[:, 4]) and not self.add_flag:
-            self.optimise_count = 0
-
-            if self.sweep < 1:
-
-                self.sweep += 1
-                self.update_message(self.sweep + 1)
-
-                return False
-
-            else:
-                return True
-
-    def add_cell(self, min_score):
-
-        score_mat = tracking_c_tools.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
-        max_score = max(score_mat[:, 3])
-
-        if max_score > min_score:
-            self.cum_score += max_score
-            track_temp, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
-            track_temp[:, 4] = self.count
-
-            self.tracks, track_temp = tracking_c_tools.swap_test(self.tracks, track_temp, self.d_mat, self.count)
-
-            self.tracks = np.vstack((self.tracks, track_temp))
+            self.add_flag = self.tracking_object.addtrack()
             self.count += 1
 
-        return max_score
+            if not self.add_flag:
 
-    def optimise(self, i):
+                self.optimise_flag = True
+                self.update_message(self.sweep+1)
 
-            replace_mask = self.tracks[:, 4] == i
-            track_store = self.tracks[replace_mask, :]
+            return False
 
-            self.tracks = self.tracks[np.logical_not(replace_mask), :]
-            for j in range(track_store.shape[0]):  # Remove track
+        if self.optimise_flag:
 
-                self.states[int(track_store[j, 0])] -= 1
+            self.optimise_flag = self.tracking_object.optimisetrack()
+            self.optimise_count += 1
 
-                if j > 0:
-                    ind1 = track_store[j - 1, 0]
-                    ind2 = track_store[j, 0]
+            if not self.optimise_flag and self.sweep < 1:
 
-                    m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
-                    m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
-                    m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
-                    m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
+                self.optimise_count = 0
+                self.sweep += 1
+                self.update_message(self.sweep + 1)
+                self.optimise_flag = True
 
-                    if any(m1):
-                        self.s_mat[m1, 5] = 0
-                        self.s_mat[m1, 7] = 0
-                    if any(m2):
-                        self.s_mat[m2, 6] = 0
-                        self.s_mat[m2, 7] = 0
-                    if any(m3):
-                        self.s_mat[m3, 5] = 0
-                        self.s_mat[m3, 8] = 0
-                    if any(m4):
-                        self.s_mat[m4, 6] = 0
-                        self.s_mat[m4, 8] = 0
+            return False
 
-            score_mat = tracking_c_tools.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
-            max_score = max(score_mat[:, 3])
-            flag = False
+        if not self.add_flag and not self.optimise_flag:
 
-            if max_score > track_store[-1, 2]:
+            self.optimise_count = 0
+            self.tracks, self.features, self.segment_count, self.double_segment = self.tracking_object.get()
+            self.update_message(-1)
 
-                self.cum_score = self.cum_score + max_score - track_store[-1, 2]
-                track_replace, self.s_mat, self.states = tracking_c_tools.track_back(score_mat, self.states, self.s_mat)
-                track_replace[:, 4] = i
+            return True
 
-                self.tracks, track_replace = tracking_c_tools.swap_test(self.tracks, track_replace, self.d_mat, i)
-                self.tracks = np.vstack((self.tracks, track_replace))
-
-            else:
-                self.tracks = np.vstack((self.tracks, track_store))
-
-                for j in range(track_store.shape[0]):
-
-                    self.states[int(track_store[j, 0])] += 1
-
-                    if j > 0:
-
-                        ind1 = track_store[j - 1, 0]
-                        ind2 = track_store[j - 1, 0]
-
-                        m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
-                        m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
-                        m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
-                        m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
-
-                        if any(m1):
-                            self.s_mat[m1, 5] = 1
-                            self.s_mat[m1, 7] = 1
-                        if any(m2):
-                            self.s_mat[m2, 6] = 1
-                            self.s_mat[m2, 7] = 1
-                        if any(m3):
-                            self.s_mat[m3, 5] = 1
-                            self.s_mat[m3, 8] = 1
-                        if any(m4):
-                            self.s_mat[m4, 6] = 1
-                            self.s_mat[m4, 8] = 1
-
-    def finish_optimising(self):
-
-        self.tracks[:, 0] = self.tracks[:, 0] - 1
-        unique, counts = np.unique(self.tracks[:, 0], return_counts=True)
-
-        self.segment_count = len(counts)
-        self.double_segment = sum(counts > 1)
-
-        double_seg = unique[counts > 1]
-        for val in double_seg:
-            self.tracks = self.tracks[np.logical_not(self.tracks[:, 0] == val), :]
-
-    def finish_tracking(self):
-
-        self.finish_optimising()
-        self.update_message(-1)
-        self.features = self.features[1:, :]
-
-        # Color labels
-
-        r = np.round(252 * np.random.rand()) + 3
-        ind = self.tracks[0, 4]
-
-        for j in range(self.tracks.shape[0]):
-
-            if self.tracks[j, 4] != ind:
-                ind = self.tracks[j, 4]
-                r = np.round(252 * np.random.rand()) + 3
-
-            self.features[int(self.tracks[j, 0]), 18] = r
-
-            if self.tracks[j, 3] > 0:
-                self.features[int(self.tracks[j, 0]), 18] = 5
-
-        self.tracks[:, 0] = self.tracks[:, 0] + 1
+    def get(self):
 
         return self.tracks, self.features
-
 
 class CellMark(Widget):
 

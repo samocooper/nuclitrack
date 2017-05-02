@@ -2,7 +2,7 @@ import numpy as np
 from functools import partial
 
 from .uisegmentation import SegmentationUI, ViewSegment, BatchSegment
-from .Tracking_tools import TrackingUI, RunTracking
+from .uitracking import TrackingUI, RunTracking
 from .uitraining import TrainingUI, ClassifyCells
 from .uiloading import LoadingUI
 from .uifeatures import FeatureExtract
@@ -181,7 +181,7 @@ class UserInterface(Widget):
         if self.finish_flag:
 
             self.tracking_flag = False
-            self.tracks, self.fov['features'][...] = self.current_widget.finish_tracking()
+            self.tracks, self.fov['features'][...] = self.current_widget.get()
 
             # Delete if tracks already exists otherwise store extracted features
 
