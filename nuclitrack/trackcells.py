@@ -154,9 +154,10 @@ class TrackCells(object):
         for val in double_seg:
             self.tracks = self.tracks[np.logical_not(self.tracks[:, 0] == val), :]
 
-        self.features = self.features[1:, :]
-
         # Color labels
+
+        self.features = self.features[1:, :]
+        self.tracks[:, 0] = self.tracks[:, 0] + 1
 
         r = np.round(252 * np.random.rand()) + 3
         ind = self.tracks[0, 4]
@@ -172,7 +173,7 @@ class TrackCells(object):
             if self.tracks[j, 3] > 0:
                 self.features[int(self.tracks[j, 0]), 18] = 5
 
-        self.tracks[:, 0] = self.tracks[:, 0] + 1
+        self.features[0, :] = 0
 
         return self.tracks, self.features, self.segment_count, self.double_segment
 

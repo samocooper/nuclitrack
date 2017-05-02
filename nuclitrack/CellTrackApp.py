@@ -79,7 +79,6 @@ class UserInterface(Widget):
             self.current_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...],
                                                frames=self.frames, parallel=self.parallel)
             self.add_widget(self.current_widget)
-            print(self.dims)
             self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
 
             if self.parallel == True:

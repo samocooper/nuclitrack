@@ -229,7 +229,7 @@ class TrackingUI(Widget):
 
         im_temp = self.labels[0, :, :]
 
-        mapping = np.hstack((0, self.features[:, 18].astype(int)))
+        mapping = self.features[:, 18].astype(int)
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
         self.mov_disp.create_im(self.channel_im[0], 'PastelHeat')
@@ -403,7 +403,7 @@ class TrackingUI(Widget):
         im_temp = self.labels[int(val), :, :]
         self.frame_slider.value = val
 
-        mapping = np.hstack((0, self.features[:, 18].astype(int)))
+        mapping = self.features[:, 18].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
         self.mov_disp.update_im(self.channel_im[int(val)])
 
@@ -419,7 +419,7 @@ class TrackingUI(Widget):
 
         im_temp = self.labels[self.current_frame, :, :]
 
-        mapping = np.hstack((0, self.features[:, 18].astype(int)))
+        mapping = self.features[:, 18].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
         self.canvas.ask_update()
@@ -428,7 +428,7 @@ class TrackingUI(Widget):
         self.track_ids = self.tracks[mask2, 0].astype(int)
         self.track_frame_update()
 
-        self.map_ind = self.features[self.track_ids[0] - 1, 18]
+        self.map_ind = self.features[self.track_ids[0], 18]
 
         feats_temp1 = self.features[self.track_ids, self.show_feat[0]]
         feats_temp2 = self.features[self.track_ids, self.show_feat[1]]
@@ -500,8 +500,8 @@ class TrackingUI(Widget):
 
                         feat_id = frame_ids[mask2, 0]  # get unique id of segment in frame
 
-                        self.features[self.features[:, 0] == feat_id-1, 18] = 1
-                        self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
+                        self.features[self.features[:, 0] == feat_id, 18] = 1
+                        self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
 
                         self.tracks[self.tracks[:, 0] == feat_id, 0] = sel[0]
 
@@ -522,13 +522,13 @@ class TrackingUI(Widget):
 
                                 self.tracks = np.vstack(
                                     (self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                                self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
+                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
 
                             else:
 
                                 self.tracks = np.insert(self.tracks, i,
                                                         [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0], 0)
-                                self.features[self.features[:, 0] == sel[0]-1, 18] = self.map_ind
+                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
 
                     self.modify_update()
 
@@ -539,7 +539,7 @@ class TrackingUI(Widget):
                 self.track_btn3.state = 'normal'
 
                 if sum(mask) and min(d) < 50:
-                    self.features[self.features[:, 0] == sel[0] - 1, 18] = 1
+                    self.features[self.features[:, 0] == sel[0], 18] = 1
 
                     ind = np.where(mask)
                     self.tracks = np.delete(self.tracks, ind[0][0], 0)
@@ -583,11 +583,11 @@ class TrackingUI(Widget):
 
                     # update labels
 
-                    map_ind1 = self.features[int(swapped_1[0, 0]) - 1, 18]
-                    map_ind2 = self.features[int(swapped_2[0, 0]) - 1, 18]
+                    map_ind1 = self.features[int(swapped_1[0, 0]), 18]
+                    map_ind2 = self.features[int(swapped_2[0, 0]), 18]
 
-                    self.features[swapped_1[:, 0].astype(int) - 1, 18] = map_ind1
-                    self.features[swapped_2[:, 0].astype(int) - 1, 18] = map_ind2
+                    self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
+                    self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
 
                     self.modify_update()
 
@@ -605,7 +605,7 @@ class TrackingUI(Widget):
                     self.map_ind = r
 
                     self.tracks = np.vstack((self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                    self.features[self.features[:, 0] == sel[0]-1, 18] = r
+                    self.features[self.features[:, 0] == sel[0], 18] = r
 
                     self.modify_update()
 
@@ -709,7 +709,7 @@ class TrackingUI(Widget):
 
         im_temp = self.labels[self.current_frame, :, :]
 
-        mapping = np.hstack((0, self.features[:, 18].astype(int)))
+        mapping = self.features[:, 18].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
         self.canvas.ask_update()

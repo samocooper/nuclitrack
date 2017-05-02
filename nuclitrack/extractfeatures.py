@@ -6,7 +6,7 @@ def framefeatures(feature_images, feature_num, counter):
 
     features_temp = []
     for j in range(len(feature_images)-1):
-        features_temp.append(regionprops(feature_images[0], feature_images[j + 1]))
+        features_temp.append(regionprops(feature_images[0].astype(int), feature_images[j + 1]))
 
     feature_mat = np.zeros((len(features_temp[0]), feature_num))
     dims = feature_images[0].shape
