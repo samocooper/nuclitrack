@@ -13,8 +13,8 @@ from kivy.uix.label import Label
 from scipy.spatial import distance
 from kivy.uix.dropdown import DropDown
 
-from .Image_widget import ImDisplay, IndexedDisplay
-from .Graph import Graph, SmoothLinePlot
+from .imagewidget import ImDisplay, IndexedDisplay
+from .graph import Graph, SmoothLinePlot
 from . import trackcells
 import tracking_c_tools
 
@@ -728,168 +728,11 @@ class TrackingUI(Widget):
 
     def save_csv(self, instance):
 
-        ''' Create matrix and write to csv for features. Features are: Track_id, Frame, X_center, Y_center, Area,
-        Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
-        CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
-        if self.features.shape[1] == 20:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 6))))
-
-        if self.features.shape[1] == 23:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 3))))
-
-        feat_mat = np.zeros((1, 20))
-
-        for i in range(1, int(max(self.tracks[:, 4])) + 1):
-            if sum(self.tracks[:, 4] == i) > 0:
-
-                track_temp = self.tracks[self.tracks[:, 4] == i, :]
-
-                for j in range(track_temp.shape[0]):
-                    mask = self.features[:, 0] == track_temp[j, 0]
-                    fv = self.features[mask, :]
-                    feat_mat = np.vstack((feat_mat,
-                                          [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
-                                           fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
-                                           fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
-                                           track_temp[j, 0], 0]))
-
-        feat_mat = np.delete(feat_mat, 0, 0)
-
-        for i in range(feat_mat.shape[0]):
-
-            if feat_mat[i, 17] > 0:
-
-                mask = feat_mat[:, 18] == feat_mat[i, 17]
-                ind_change = feat_mat[mask, 0]
-
-                frame_change = feat_mat[mask, 1]
-                mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
-                if sum(mask_change) > 0:
-                    # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
-
-                    change_list = np.where(mask_change)
-                    feat_mat[change_list[0][0], 19] = ind_change
-                    feat_mat[i, 19] = ind_change
-
-        with open('Results.csv', 'wb') as f:
-            f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
-                    b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                    b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
-
-            feat_mat2 = np.delete(feat_mat, [17, 18], 1)
-            np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
-
-        if np.sum(self.features[:, 20:]) == 0:
-            self.features = self.features[:, :19]
-        if np.sum(self.features[:, 23:]) == 0:
-            self.features = self.features[:, :22]
-
-        '''
-        ### Data formatting for iscb benchmark dataset
-
-        for i in range(feat_mat.shape[0]):
-
-            if feat_mat[i,15] > 0:
-
-                mask = feat_mat[:, 16] == feat_mat[i, 15]
-                ind_change = feat_mat[mask, 0]
-
-                frame_change = feat_mat[mask, 1]
-                mask_change = np.logical_and(feat_mat[:,0] == ind_change, feat_mat[:,1] > frame_change)
-                if sum(mask_change)>0:
-                    feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1
-                    change_list = np.where(mask_change)
-                    feat_mat[change_list[0][0], 17] = ind_change
-                    feat_mat[i, 17] = ind_change
-
-        np.savetxt("Results2.csv", feat_mat, delimiter=",")
-
-        track_text = np.zeros((int(max(feat_mat[:,0])), 4))
-
-        for i in range(1, int(max(feat_mat[:,0])+1)):
-
-            track_temp = feat_mat[feat_mat[:,0]==i,:]
-            track_text[i-1, 0] = i
-            track_text[i-1, 1] = track_temp[0,1]
-            track_text[i-1, 2] = track_temp[-1,1]
-            track_text[i-1, 3] = track_temp[0,17]
-
-        np.savetxt("res_track.txt", track_text.astype(int),fmt='%i', delimiter=" ")
-
-        for i in range(self.frames):
-
-            im_temp = self.labels[i, :, :]
-            im_tracked = np.zeros(im_temp.shape)
-
-            l_temp = feat_mat[feat_mat[:, 1] == i,:]
-
-            for j in range(l_temp.shape[0]):
-                ind_seg = im_temp[int(l_temp[j, 3]), int(l_temp[j, 2])]
-                im_tracked[im_temp == ind_seg] = l_temp[j,0]
-
-            n = str(i)
-            n = n.zfill(2)
-            n = 'mask' + n + '.tif'
-            im_tracked = im_tracked.astype(np.uint16)
-            tifffile.imsave(n, im_tracked)
-        '''
+        trackcells.save_csv(self.features, self.tracks, self.parent.csv_file)
 
     def save_sel_csv(self, instance):
 
-        if self.features.shape[1] == 20:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 6))))
-
-        if self.features.shape[1] == 23:
-            self.features = np.hstack((self.features, np.zeros((self.features.shape[0], 3))))
-
-        feat_mat = np.zeros((1, 20))
-
-        for i in range(1, int(max(self.tracks[:, 4]))):
-            if self.parent.fov['tracks_stored'][i] == 1:
-                if sum(self.tracks[:, 4] == i) > 0:
-
-                    track_temp = self.tracks[self.tracks[:, 4] == i, :]
-
-                    for j in range(track_temp.shape[0]):
-                        mask = self.features[:, 0] == track_temp[j, 0]
-                        fv = self.features[mask, :]
-                        feat_mat = np.vstack((feat_mat,
-                                          [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
-                                           fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
-                                           fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
-                                           track_temp[j, 0], 0]))
-
-        feat_mat = np.delete(feat_mat, 0, 0)
-
-        for i in range(feat_mat.shape[0]):
-
-            if feat_mat[i, 17] > 0:
-
-                mask = feat_mat[:, 18] == feat_mat[i, 17]
-                ind_change = feat_mat[mask, 0]
-
-                frame_change = feat_mat[mask, 1]
-                mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
-                if sum(mask_change) > 0:
-                    # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
-
-                    change_list = np.where(mask_change)
-                    feat_mat[change_list[0][0], 19] = ind_change
-                    feat_mat[i, 19] = ind_change
-
-        with open('Selection_results.csv', 'wb') as f:
-
-            f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
-                    b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                    b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
-
-            feat_mat2 = np.delete(feat_mat, [17, 18], 1)
-            np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
-
-        if np.sum(self.features[:, 20:]) == 0:
-            self.features = self.features[:, :19]
-        if np.sum(self.features[:, 23:]) == 0:
-            self.features = self.features[:, :22]
+        trackcells.save_sel_csv(self.features, self.tracks, self.parent.fov['tracks_stored'],self.parent.sel_csv_file)
 
     def feat_change(self, flag, instance):
 

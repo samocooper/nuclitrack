@@ -11,7 +11,7 @@ from kivy.uix.label import Label
 from kivy.uix.dropdown import DropDown
 from kivy.core.window import Window
 
-from .Image_widget import IndexedDisplay, ImDisplay
+from .imagewidget import IndexedDisplay, ImDisplay
 from . import classifycells
 
 class ClassifyCells(Widget):

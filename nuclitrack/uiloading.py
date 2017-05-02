@@ -1,6 +1,7 @@
 import h5py
 import os
 from functools import partial
+import platform
 
 from kivy.uix.dropdown import DropDown
 from kivy.uix.widget import Widget
@@ -93,8 +94,17 @@ class LoadingUI(Widget):
             self.load_from_dir(file_name[0])
 
     def dir_change(self, val):
-            self.text_input_fov.text = self.file_choose.path + '/example_data.hdf5'
-            self.text_input_param.text = self.file_choose.path + '/example_params.hdf5'
+
+            if platform.system() == 'Windows':
+
+                self.text_input_fov.text = self.file_choose.path + '\\example_data.hdf5'
+                self.text_input_param.text = self.file_choose.path + '\\example_params.hdf5'
+
+            else:
+
+                self.text_input_fov.text = self.file_choose.path + '/example_data.hdf5'
+                self.text_input_param.text = self.file_choose.path + '/example_params.hdf5'
+
 
     def load_data(self, input_type, input_text):
 
@@ -103,10 +113,16 @@ class LoadingUI(Widget):
         if input_type == 'fov':
 
             self.parent.fov = h5py.File(input_text, "a")
+
             if len(input_text) < 20:
                 self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
             else:
                 self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text[-30:] + '[/b][/color]'
+
+            # Set path for saving csv files in future
+
+            self.parent.csv_file = input_text[:-5] + '.csv'
+            self.parent.sel_csv_file = input_text[:-5] + '_sel.csv'
 
             self.file_loaded[0] = True
 

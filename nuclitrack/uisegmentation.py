@@ -19,7 +19,7 @@ from kivy.uix.progressbar import ProgressBar
 from functools import partial
 
 from . import segmentimages
-from .Image_widget import ImDisplay
+from .imagewidget import ImDisplay
 
 
 # Batch Segmentation
