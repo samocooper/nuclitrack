@@ -6,6 +6,7 @@ from .uitracking import TrackingUI, RunTracking
 from .uitraining import TrainingUI, ClassifyCells
 from .uiloading import LoadingUI
 from .uifeatures import FeatureExtract
+
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout

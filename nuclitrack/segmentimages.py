@@ -1,4 +1,4 @@
-import segmentation_c_tools
+import ctoolsegmentation
 import numpy as np
 
 from skimage import filters
