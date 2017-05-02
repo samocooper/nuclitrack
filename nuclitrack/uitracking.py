@@ -16,7 +16,6 @@ from kivy.uix.dropdown import DropDown
 from .imagewidget import ImDisplay, IndexedDisplay
 from .graph import Graph, SmoothLinePlot
 from . import trackcells
-import tracking_c_tools
 
 class RunTracking(Widget):
 
