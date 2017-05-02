@@ -155,7 +155,6 @@ class LoadingUI(Widget):
             # Give user choice of how to load image series
 
             if flag:
-
                 self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.98, .05), pos_hint={'x': .01, 'y': .8})
 
                 btn1 = ToggleButton(text='Load from file names', group='load_type')
@@ -174,7 +173,6 @@ class LoadingUI(Widget):
 
 
     def load_imgs(self, load_type, obj):
-
         self.img_layout.clear_widgets()
 
         #########################################

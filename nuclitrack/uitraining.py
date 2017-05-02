@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.spatial import distance
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -8,47 +9,18 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
 from kivy.uix.dropdown import DropDown
-
 from kivy.core.window import Window
 
-from sklearn.ensemble import RandomForestClassifier
-from scipy.spatial import distance
 from .Image_widget import IndexedDisplay, ImDisplay
-
+from . import classifycells
 
 class ClassifyCells(Widget):
-    def __init__(self, features=None, training_data=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, features, training_data, **kwargs):
+        super().__init__(**kwargs)
 
         self.layout = FloatLayout(size=(Window.width, Window.height))
+        self.features = classifycells.classifycells(features, training_data)
 
-        training_data = np.delete(training_data, 0, 0)
-        clf = RandomForestClassifier(n_estimators=100)
-        mask = np.sum(training_data[:, 12:17], axis=0) > 0
-
-        if sum(mask) > 1:
-            inds = np.where(mask)[0]
-            clf = clf.fit(training_data[:, 5:10], training_data[:, 12 + inds].astype(bool))
-            probs = clf.predict_proba(features[:, 5:10])
-
-            i = 0
-            for p in probs:
-                if len(p[0]) == 1:
-                    p = np.hstack([np.asarray(p), np.zeros((len(p), 1))])
-                else:
-                    p = np.asarray(p)
-
-                features[:, 12 + inds[i]] = p[:, 1]
-                i += 1
-
-        if sum(mask) == 1:
-            ind = np.where(mask)[0]
-            features[:, 12 + ind] = 1
-
-        if sum(mask) == 0:
-            return
-
-        self.features = features
         self.class_label = Label(text='[b][color=000000]Cells Classified[/b][/color]', markup=True,
                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
         with self.canvas:

@@ -3,9 +3,9 @@ from functools import partial
 
 from .uisegmentation import SegmentationUI, ViewSegment, BatchSegment
 from .Tracking_tools import TrackingUI, RunTracking
-from .Training_tools import TrainingUI, ClassifyCells
+from .uitraining import TrainingUI, ClassifyCells
 from .uiloading import LoadingUI
-from .Feature_tools import FeatureExtract
+from .uifeatures import FeatureExtract
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.floatlayout import FloatLayout
