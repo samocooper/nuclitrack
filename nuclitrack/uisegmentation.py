@@ -85,10 +85,11 @@ class SegmentationUI(Widget):
     def __init__(self, images=None, frames=None, channels=None, params=None, **kwargs):
         super().__init__(**kwargs)
 
+        self.params = params
         self.current_frame = 0
         self.channels = channels
         self.frames = frames
-        self.seg_channel = images[0]
+        self.seg_channel = images[int(self.params[10])]
         self.ch_max = np.max(self.seg_channel.flatten())
         self.ch_min = np.min(self.seg_channel.flatten())
         self.state = 0
@@ -104,7 +105,6 @@ class SegmentationUI(Widget):
         self.im = self.seg_channel[0, :, :].copy()
         self.im_disp.create_im(self.im, 'PastelHeat')
         self.mov_disp.create_im(self.im, 'PastelHeat')
-        self.params = params
         if self.params[0] == 0:
             self.params[0] = self.ch_max
 
@@ -124,6 +124,10 @@ class SegmentationUI(Widget):
                                             size_hint=(.15, .04), pos_hint={'x': .53, 'y': .923}, markup=True)
         self.edge_button.bind(on_press=self.update_edge)
         self.s_layout.add_widget(self.edge_button)
+
+        if self.params[9] == 1:
+            self.edge_button.state = 'down'
+
 
         # Drop down menu for choosing which channel
         self.channel_choice = DropDown()
@@ -338,10 +342,10 @@ class SegmentationUI(Widget):
             self.params[9] = 0
     def change_channel(self, images, val, instance):
 
-        self.seg_channel = images[val]
+        self.seg_channel = images[int(val)]
         self.im_disp.update_im(self.seg_channel[self.current_frame, :, :])
         self.mov_disp.update_im(self.seg_channel[self.current_frame, :, :])
-        self.parent.seg_channel = val
+        self.params[10] = val
 
     def update_size(self, window, width, height):
 

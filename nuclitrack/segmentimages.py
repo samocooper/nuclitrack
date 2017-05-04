@@ -123,7 +123,6 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
 
 def segment_image(params, image):
-
     image = clipping(image, params[0])
     image2 = background(image, params[1])
     image3 = blur(image2, params[2])

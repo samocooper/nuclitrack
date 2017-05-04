@@ -20,7 +20,6 @@ class UserInterface(Widget):
         super().__init__(**kwargs)
 
         self.current_frame = 0
-        self.seg_channel = 0
         self.parallel = False
 
         self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
@@ -65,7 +64,7 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.params.require_dataset('seg_param', (10,), dtype='f')
+            self.params.require_dataset('seg_param', (11,), dtype='f')
             self.current_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
                                                  params=self.params['seg_param'][...])
 
@@ -77,7 +76,7 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.current_widget = BatchSegment(images=self.images[self.seg_channel], params=self.params['seg_param'][...],
+            self.current_widget = BatchSegment(images=self.images[int(self.params['seg_param'][10])], params=self.params['seg_param'][...],
                                                frames=self.frames, parallel=self.parallel)
             self.add_widget(self.current_widget)
             self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
@@ -116,7 +115,7 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.current_widget = FeatureExtract(images=self.images, labels=self.labels, frames=self.frames,
+            self.current_widget = FeatureExtract(images=self.images, labels=self.labels[...], frames=self.frames,
                                                  channels=self.channels, dims=self.dims)
             self.add_widget(self.current_widget)
             self.feature_flag = True
@@ -146,7 +145,7 @@ class UserInterface(Widget):
         if instance.state == 'down' and flag:
 
             self.remove_widget(self.current_widget)
-            self.current_widget = TrainingUI(images=self.images[self.seg_channel], labels=self.labels,
+            self.current_widget = TrainingUI(images=self.images[int(self.params['seg_param'][10])], labels=self.labels,
                                              features=self.fov['features'][...], frames=self.frames)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)

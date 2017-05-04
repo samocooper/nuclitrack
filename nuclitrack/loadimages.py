@@ -1,10 +1,8 @@
 from skimage.external import tifffile
 import numpy as np
 import os
-import platform
 
-
-def loadimages(file_list):
+def loadimages(file_list, label_flag=False):
 
     # Function to load images for one movie from list of channels/file names
 
@@ -28,8 +26,9 @@ def loadimages(file_list):
 
     # Standardise images such that intensities lie between 0 and 1
 
-    for i in range(len(ims)):
-        ims[i] /= np.max(ims[i].flatten())
+    if not label_flag:
+        for i in range(len(ims)):
+            ims[i] /= np.max(ims[i].flatten())
 
     return ims
 
@@ -58,63 +57,49 @@ def loadfilelist(fov):
     return file_list
 
 
-def filelistfromtext(text_file, full_name=False):
+def filelistfromtext(text_file):
 
-    if not full_name:
+    # Load file list where the text file is in the same directory as the image files
 
-        # Load file list where the text file is in the same directory as the image files
+    if os.path.isfile(text_file):
 
-        if os.path.isfile(text_file):
+        dir_name = os.path.dirname(text_file)
+        file_list = []
+        channel_list = []
+        prev = 1
+        label_list = []
+        with open(text_file) as f:
+            for line in f:
 
-            if platform.system() == 'Windows':
-                file_name_split = text_file.split('\\')
-                file_name_split = [s + '\\' for s in file_name_split]
-            else:
-                file_name_split = text_file.split('/')
-                file_name_split = [s + '/' for s in file_name_split]
+                if line[-1] == '\n':
+                    line = line[:-1]
 
-            dir_name = ''.join(file_name_split[:-1])
-            file_list = []
+                line_split = line.split(',')
+                if len(line_split) > 1:
 
-            with open(text_file) as f:
-                for line in f:
+                    if int(line_split[0]) == 0:
 
-                    if line[-1] == '\n':
-                        line = line[:-1]
-                    file_list.append(dir_name + line)
-            return [file_list]
+                        label_list.append(os.path.join(dir_name, line_split[1]))
 
-    else:
+                    else:
+                        if not int(line_split[0]) == prev:
+                            prev = int(line_split[0])
+                            file_list.append(channel_list)
+                            channel_list = []
+                        channel_list.append(os.path.join(dir_name, line_split[1]))
 
-        # Load file list where file path is also given
+                else:
+                    channel_list.append(dir_name + line)
 
-        if os.path.isfile(text_file):
-
-            file_list = []
-
-            with open(text_file) as f:
-                for line in f:
-
-                    if line[-1] == '\n':
-                        line = line[:-1]
-
-                    file_list.append(line)
-
-            return [file_list]
+        file_list.append(channel_list)
+        return file_list, label_list
 
 
 def filelistfromdir(file_name):
 
     # Record all file names within a directory
 
-    if platform.system() == 'Windows':
-        file_name_split = file_name.split('\\')
-        file_name_split = [s + '\\' for s in file_name_split]
-    else:
-        file_name_split = file_name.split('/')
-        file_name_split = [s + '/' for s in file_name_split]
-
-    dir_name = ''.join(file_name_split[:-1])
+    dir_name = os.path.dirname(file_name)
     dir_list = os.listdir(dir_name)
 
     file_name_split = file_name.split('.')

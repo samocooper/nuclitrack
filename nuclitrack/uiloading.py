@@ -1,7 +1,6 @@
 import h5py
 import os
 from functools import partial
-import platform
 
 from kivy.uix.dropdown import DropDown
 from kivy.uix.widget import Widget
@@ -15,7 +14,6 @@ from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.gridlayout import GridLayout
 
 from . import loadimages
-
 
 class LoadingUI(Widget):
 
@@ -95,15 +93,9 @@ class LoadingUI(Widget):
 
     def dir_change(self, val):
 
-            if platform.system() == 'Windows':
+        self.text_input_fov.text = os.path.join(self.file_choose.path, 'example_data.hdf5')
+        self.text_input_param.text = os.path.join(self.file_choose.path, 'example_params.hdf5')
 
-                self.text_input_fov.text = self.file_choose.path + '\\example_data.hdf5'
-                self.text_input_param.text = self.file_choose.path + '\\example_params.hdf5'
-
-            else:
-
-                self.text_input_fov.text = self.file_choose.path + '/example_data.hdf5'
-                self.text_input_param.text = self.file_choose.path + '/example_params.hdf5'
 
 
     def load_data(self, input_type, input_text):
@@ -320,8 +312,11 @@ class LoadingUI(Widget):
 
         if os.path.isfile(text_file):
 
-           file_list = loadimages.filelistfromtext(text_file)
-           self.load_movie(file_list)
+            file_list, label_list = loadimages.filelistfromtext(text_file)
+
+            self.load_movie(file_list)
+            if len(label_list) > 1:
+               self.load_labels(label_list)
 
         else:
             self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
@@ -453,8 +448,9 @@ class LoadingUI(Widget):
                     return
 
             # Load and save label images
-
-            labels = loadimages.loadimages(file_list)
+            print(file_list)
+            labels = loadimages.loadimages([file_list], label_flag=True)
+            labels = labels[0]
 
             for g in self.parent.fov:
                 if g == 'labels':
@@ -464,7 +460,7 @@ class LoadingUI(Widget):
 
             # initialise segmentation parameters with dummy variables for state progression
 
-            self.parent.params.require_dataset('seg_param', (9,), dtype='f')
+            self.parent.params.require_dataset('seg_param', (11,), dtype='f')
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
