@@ -5,44 +5,40 @@ import multiprocessing
 from multiprocessing import Pool
 from functools import partial
 
-from nuclitrack import loadimages
-from nuclitrack import extractfeatures
-from nuclitrack import classifycells
-from nuclitrack import segmentimages
-from nuclitrack import trackcells
+from . import loadimages
+from . import extractfeatures
+from . import classifycells
+from . import segmentimages
+from . import trackcells
 
-parser = argparse.ArgumentParser(description='Batch Analysis')
-parser.add_argument('--txtfile', dest = 'text_file')
-parser.add_argument('--paramfile', dest='param_file')
-parser.add_argument('--outputfile', dest='output_file')
-
-args = parser.parse_args()
-
-def batch_analyse(text_file=None, param_file=None, output_file=None):
+def batch_analyse(text_file, param_file, output_file):
 
     print('Loading Images')
     fov = h5py.File(output_file + '.hdf5', "a")
 
-    file_list = loadimages.filelistfromtext(text_file)
-    loadimages.savefilelist(file_list, fov)
+    file_list, label_files = loadimages.filelistfromtext(text_file)
 
+    loadimages.savefilelist(file_list, fov)
     images = loadimages.loadimages(file_list)
     channel_num = len(images)
     params = h5py.File(param_file, "a")
     s_params = params['seg_param'][...]
     frames = images[0].shape[0]
 
-    print('Segmenting Cells')
-    cpu_count = multiprocessing.cpu_count()
-    pool = Pool(cpu_count)
-    labels_list = pool.map(partial(segmentimages.segment_image, s_params), [images[0][frame, :, :] for frame in range(frames)])
-    pool.close()
-    pool.join()
+    if len(label_files) > 1:
+        labels = loadimages.loadimages([label_files], label_flag=True)
+    else:
+        print('Segmenting Cells')
+        cpu_count = multiprocessing.cpu_count()
+        pool = Pool(cpu_count)
+        labels_list = pool.map(partial(segmentimages.segment_image, s_params), [images[0][frame, :, :] for frame in range(frames)])
+        pool.close()
+        pool.join()
 
-    labels = np.zeros((frames, labels_list[0].shape[0], labels_list[0].shape[1]))
+        labels = np.zeros((frames, labels_list[0].shape[0], labels_list[0].shape[1]))
 
-    for i in range(len(labels_list)):
-        labels[i, :, :] = labels_list[i]
+        for i in range(len(labels_list)):
+            labels[i, :, :] = labels_list[i]
 
     print('Extracting features')
     feature_num = 20 + 3 * (channel_num - 1)
@@ -90,8 +86,6 @@ def batch_analyse(text_file=None, param_file=None, output_file=None):
     fov.create_dataset("tracks_stored", data=tracks_stored)
 
     trackcells.save_csv(features, tracks, output_file + '.csv')
-
-batch_analyse(text_file=args.text_file, param_file=args.param_file, output_file=args.output_file)
 
 
 
