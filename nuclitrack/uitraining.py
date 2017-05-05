@@ -248,17 +248,17 @@ class TrainingUI(Widget):
 
     def tracking_distance(self,instance, val):
 
-        self.parent.track_param[1] = val
+        self.parent.params['track_param'][1] = val
         self.txt_dist.text = '[color=000000]Search distance: ' + str(val) + '[/color]'
 
     def max_gap_change(self, instance, val):
 
-        self.parent.track_param[6] = val
+        self.parent.params['track_param'][6] = val
         self.txt_gap.text = '[color=000000]Max time gap: ' + str(val) + '[/color]'
 
     def mig_cost_change(self, instance, val):
 
-        self.parent.track_param[0] = val
+        self.parent.params['track_param'][0] = val
         self.txt_mig.text = '[color=000000]Migration cost: ' + str(val) + '[/color]'
 
     def remove(self):

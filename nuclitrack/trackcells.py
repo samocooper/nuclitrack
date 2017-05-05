@@ -189,12 +189,12 @@ def save_csv(features, tracks, file_name):
     Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
     CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
     if features.shape[1] == 20:
-        features = np.hstack((features, np.zeros((features.shape[0], 6))))
+        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 6)), features[:, -1]))
 
     if features.shape[1] == 23:
-        features = np.hstack((features, np.zeros((features.shape[0], 3))))
+        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 3)), features[:, -1]))
 
-    feat_mat = np.zeros((1, 20))
+    feat_mat = np.zeros((1, 21))
 
     for i in range(1, int(max(tracks[:, 4])) + 1):
         if sum(tracks[:, 4] == i) > 0:
@@ -208,7 +208,7 @@ def save_csv(features, tracks, file_name):
                                       [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
                                        fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
                                        fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
-                                       track_temp[j, 0], 0]))
+                                       track_temp[j, 0], 0, fv[0, -1]]))
 
     feat_mat = np.delete(feat_mat, 0, 0)
 
@@ -222,6 +222,7 @@ def save_csv(features, tracks, file_name):
             frame_change = feat_mat[mask, 1]
             mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
             if sum(mask_change) > 0:
+
                 # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
                 change_list = np.where(mask_change)
@@ -229,9 +230,11 @@ def save_csv(features, tracks, file_name):
                 feat_mat[i, 19] = ind_change
 
     with open(file_name, 'wb') as f:
+
         f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
                 b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
+                b'CH2 StdDev Intensity,  CH2 Floored Mean, CH3 Mean Intensity, CH3 StdDev Intensity,  '
+                b'CH3 Floored Mean, Parent Track ID, Event Flag \n')
 
         feat_mat2 = np.delete(feat_mat, [17, 18], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
@@ -290,12 +293,13 @@ def save_csv(features, tracks, file_name):
 def save_sel_csv(features, tracks, tracks_stored, file_name):
 
     if features.shape[1] == 20:
-        features = np.hstack((features, np.zeros((features.shape[0], 6))))
+        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 6)), features[:, -1]))
 
     if features.shape[1] == 23:
-        features = np.hstack((features, np.zeros((features.shape[0], 3))))
+        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 3)), features[:, -1]))
 
-    feat_mat = np.zeros((1, 20))
+
+    feat_mat = np.zeros((1, 21))
 
     for i in range(1, int(max(tracks[:, 4]))):
         if tracks_stored[i] == 1:
@@ -310,7 +314,7 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
                                           [i, track_temp[j, 5], fv[0, 2], fv[0, 3], fv[0, 5], fv[0, 6], fv[0, 7],
                                            fv[0, 8], fv[0, 9], fv[0, 10], fv[0, 11], fv[0, 20], fv[0, 21],
                                            fv[0, 22], fv[0, 23], fv[0, 24], fv[0, 25], track_temp[j, 3],
-                                           track_temp[j, 0], 0]))
+                                           track_temp[j, 0], 0, fv[0, -1]]))
 
     feat_mat = np.delete(feat_mat, 0, 0)
 
@@ -334,7 +338,8 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
         f.write(b'Track ID, Frame, X center, Y center, Area, Eccentricity, Solidity, Perimeter, '
                 b'CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                b'CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, Parent Track ID\n')
+                b'CH2 StdDev Intensity,  CH2 Floored Mean, CH3 Mean Intensity, CH3 StdDev Intensity,  '
+                b'CH3 Floored Mean, Parent Track ID, Event Flag \n')
 
         feat_mat2 = np.delete(feat_mat, [17, 18], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')

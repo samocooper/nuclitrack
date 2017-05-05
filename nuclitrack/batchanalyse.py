@@ -1,5 +1,4 @@
 import h5py
-import argparse
 import numpy as np
 import multiprocessing
 from multiprocessing import Pool
@@ -8,10 +7,10 @@ from functools import partial
 from . import loadimages
 from . import extractfeatures
 from . import classifycells
-from . import segmentimages
 from . import trackcells
+from .segmentimages import segment_image
 
-def batch_analyse(text_file, param_file, output_file):
+def batchanalyse(text_file, param_file, output_file):
 
     print('Loading Images')
     fov = h5py.File(output_file + '.hdf5', "a")
@@ -27,11 +26,12 @@ def batch_analyse(text_file, param_file, output_file):
 
     if len(label_files) > 1:
         labels = loadimages.loadimages([label_files], label_flag=True)
+
     else:
         print('Segmenting Cells')
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        labels_list = pool.map(partial(segmentimages.segment_image, s_params), [images[0][frame, :, :] for frame in range(frames)])
+        labels_list = pool.map(partial(segment_image, s_params), [images[int(s_params[10])][frame, :, :] for frame in range(frames)])
         pool.close()
         pool.join()
 
@@ -61,7 +61,7 @@ def batch_analyse(text_file, param_file, output_file):
 
     features = classifycells.classifycells(features, params['training_data'][...])
 
-    tracking_object = trackcells.TrackCells(features, frames, np.asarray([0.05, 50, 1, 5, 0, 1, 3]))
+    tracking_object = trackcells.TrackCells(features, frames, params['track_param'][...])
 
     print('Tracking cells')
     counter = 0
@@ -86,7 +86,5 @@ def batch_analyse(text_file, param_file, output_file):
     fov.create_dataset("tracks_stored", data=tracks_stored)
 
     trackcells.save_csv(features, tracks, output_file + '.csv')
-
-
 
 

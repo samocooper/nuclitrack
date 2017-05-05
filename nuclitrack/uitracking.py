@@ -14,7 +14,7 @@ from scipy.spatial import distance
 from kivy.uix.dropdown import DropDown
 
 from .imagewidget import ImDisplay, IndexedDisplay
-from .graph import Graph, SmoothLinePlot
+from .graph import Graph, SmoothLinePlot, LinePlot
 from . import trackcells
 
 class RunTracking(Widget):
@@ -159,26 +159,32 @@ class TrackingData(Widget):
 
 
 class Jump(Widget):
+    is_down = 0
     flag = 0
 
-    def jump(self, instance):
+    def jump(self, instance, flag):
 
         if instance.state == 'down':
-            self.flag = 1
+            self.is_down = 1
+            self.flag = flag
 
-    def k_jump(self, state):
+    def k_jump(self, state, flag):
 
         if state == 'down':
-            self.flag = 1
+            self.is_down = 1
+            self.flag = flag
         else:
-            self.flag = 0
+            self.is_down = 0
 
     def on_touch_down(self, touch):
 
-        if self.flag != 0:
-            self.flag = 0
+        if self.is_down != 0:
+            self.is_down = 0
             xpos = (touch.pos[0] - self.pos[0]) / self.size[0]
-            self.parent.parent.frame_select([], np.asarray([xpos]))
+            if self.flag == 0:
+                self.parent.parent.frame_select([], np.asarray([xpos]))
+            else:
+                self.parent.parent.add_event(xpos, self.flag)
 
 
 class TrackingUI(Widget):
@@ -265,7 +271,7 @@ class TrackingUI(Widget):
         self.track_btn2.bind(on_press=partial(self.tracking_window.state_change, state=2))
         self.track_btn3.bind(on_press=partial(self.tracking_window.state_change, state=3))
         self.track_btn4.bind(on_press=partial(self.tracking_window.state_change, state=4))
-        self.track_btn5.bind(on_press=self.jump_window.jump)
+        self.track_btn5.bind(on_press=partial(self.jump_window.jump, flag=0))
         self.track_btn6.bind(on_press=partial(self.tracking_window.state_change, state=5))
         self.track_btn7.bind(on_press=self.save_tracks)
         self.track_btn8.bind(on_press=self.load_tracks)
@@ -317,16 +323,36 @@ class TrackingUI(Widget):
         self.plot3.points = [(0, 0), (0, 0)]
         self.graph.add_plot(self.plot3)
 
+        self.plot4 = LinePlot(color=[1, 1, 0, 1])
+        self.plot4.points = [(0, 0), (0, 0)]
+        self.graph.add_plot(self.plot4)
+
+        self.plot5 = LinePlot(color=[0, 1, 1, 1])
+        self.plot5.points = [(0,0), (0,0)]
+        self.graph.add_plot(self.plot5)
+
+        self.plot6 = LinePlot(color=[1, 0, 1, 1])
+        self.plot6.points = [(0, 0), (0, 0)]
+        self.graph.add_plot(self.plot6)
+
         self.text_input1 = TextInput(text='Feat1',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .555, 'y': .919})
+                                     multiline=False, size_hint=(.08, .04), pos_hint={'x': .555, 'y': .94})
         self.text_input2 = TextInput(text='Feat2',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .64, 'y': .919})
+                                     multiline=False, size_hint=(.08, .04), pos_hint={'x': .64, 'y': .94})
         self.text_input3 = TextInput(text='Feat3',
-                                     multiline=False, size_hint=(.08, .05), pos_hint={'x': .725, 'y': .919})
+                                     multiline=False, size_hint=(.08, .04), pos_hint={'x': .725, 'y': .94})
 
         self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
         self.text_input2.bind(on_text_validate=partial(self.feat_change, 1))
         self.text_input3.bind(on_text_validate=partial(self.feat_change, 2))
+
+        self.event_flag1 = ToggleButton(text='Event 1', size_hint=(.08, .034), pos_hint={'x': .555, 'y': .905})
+        self.event_flag2 = ToggleButton(text='Event 2', size_hint=(.08, .034), pos_hint={'x': .64, 'y': .905})
+        self.event_flag3 = ToggleButton(text='Event 3', size_hint=(.08, .034), pos_hint={'x': .725, 'y': .905})
+
+        self.event_flag1.bind(on_press=partial(self.jump_window.jump, flag=1))
+        self.event_flag2.bind(on_press=partial(self.jump_window.jump, flag=2))
+        self.event_flag3.bind(on_press=partial(self.jump_window.jump, flag=3))
 
         # Drop down menu for choosing which channel
         self.channel_choice = DropDown()
@@ -346,6 +372,7 @@ class TrackingUI(Widget):
         self.track_ind = self.tracks[mask, 4]  # Set the selected track index
 
         with self.canvas:
+
             self.add_widget(self.tr_layout)
             self.add_widget(self.store_layout)
 
@@ -358,6 +385,10 @@ class TrackingUI(Widget):
             self.tr_layout.add_widget(self.text_input1)
             self.tr_layout.add_widget(self.text_input2)
             self.tr_layout.add_widget(self.text_input3)
+
+            self.tr_layout.add_widget(self.event_flag1)
+            self.tr_layout.add_widget(self.event_flag2)
+            self.tr_layout.add_widget(self.event_flag3)
 
             for i in range(len(stored_tracks)):
                 self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
@@ -386,6 +417,7 @@ class TrackingUI(Widget):
                     self.store_layout.children[count].draw_dot(cell_center, self.dims, 0., 0., 0., 80)
                     count += 1
 
+
     def frame_select(self, instance, val):
 
         if val >= self.frames:
@@ -411,8 +443,30 @@ class TrackingUI(Widget):
         self.frame_feats = self.features[mask, :]
 
         self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
-
         self.track_frame_update()
+
+    def add_event(self, xpos, val):
+
+        frame = np.round(self.frames*xpos)
+        mask2 = self.tracks[:, 4] == self.track_ind[0]
+        self.track_ids = self.tracks[mask2, 0].astype(int)
+        time_points = self.features[self.track_ids, 1]
+        event_ind = np.argmin(np.abs(time_points - frame))
+        event_ind = self.track_ids[event_ind]
+
+        if val == 1:
+            self.event_flag1.state = 'normal'
+            self.features[event_ind, -1] = 1
+
+        if val == 2:
+            self.event_flag2.state = 'normal'
+            self.features[event_ind, -1] = 2
+
+        if val == 3:
+            self.event_flag3.state = 'normal'
+            self.features[event_ind, -1] = 3
+
+        self.modify_update()
 
     def modify_update(self):
 
@@ -437,7 +491,29 @@ class TrackingUI(Widget):
         feats_temp2 = feats_temp2 / max(feats_temp2)
         feats_temp3 = feats_temp3 / max(feats_temp3)
 
-        t_temp = self.features[self.track_ids - 1, 1]
+        t_temp = self.features[self.track_ids, 1]
+        events_feat = self.features[self.track_ids, -1]
+
+        events_point1 = []
+        events_point2 = []
+        events_point3 = []
+
+        for i in range(len(events_feat)):
+
+            if events_feat[i] == 1:
+                events_point1.append((t_temp[i], -1))
+                events_point1.append((t_temp[i], 1))
+                events_point1.append((t_temp[i], -1))
+
+            if events_feat[i] == 2:
+                events_point2.append((t_temp[i], -1))
+                events_point2.append((t_temp[i], 1))
+                events_point2.append((t_temp[i], -1))
+
+            if events_feat[i] == 3:
+                events_point3.append((t_temp[i], -1))
+                events_point3.append((t_temp[i], 1))
+                events_point3.append((t_temp[i], -1))
 
         if t_temp.size > 1:
 
@@ -456,11 +532,29 @@ class TrackingUI(Widget):
             self.plot3.points = [(t_temp[i], feats_temp3[i]) for i in range(len(feats_temp3))]
             self.graph.add_plot(self.plot3)
 
+            self.graph.remove_plot(self.plot4)
+            self.plot4 = SmoothLinePlot(color=[1, 1, 0, 1])
+            self.plot4.points = events_point1
+            self.graph.add_plot(self.plot4)
+
+            self.graph.remove_plot(self.plot5)
+            self.plot5 = SmoothLinePlot(color=[0, 1, 1, 1])
+            self.plot5.points = events_point2
+            self.graph.add_plot(self.plot5)
+
+            self.graph.remove_plot(self.plot6)
+            self.plot6 = SmoothLinePlot(color=[1, 0, 1, 1])
+            self.plot6.points = events_point3
+            self.graph.add_plot(self.plot6)
+
         else:
 
             self.graph.remove_plot(self.plot1)
             self.graph.remove_plot(self.plot2)
             self.graph.remove_plot(self.plot3)
+            self.graph.remove_plot(self.plot4)
+            self.graph.remove_plot(self.plot5)
+            self.graph.remove_plot(self.plot6)
 
     def track_ammend(self, pos, flag):
 
@@ -688,7 +782,38 @@ class TrackingUI(Widget):
             else:
                 self.track_btn5.state = 'normal'
 
-            self.jump_window.k_jump(self.track_btn5.state)
+            self.jump_window.k_jump(self.track_btn5.state, flag=0)
+
+        if key == 'i':
+
+            if self.event_flag1.state == 'normal':
+                self.event_flag1.state = 'down'
+
+            else:
+                self.event_flag1.state = 'normal'
+
+            self.jump_window.k_jump(self.event_flag1.state, flag=1)
+
+        if key == 'o':
+
+            if self.event_flag2.state == 'normal':
+                self.event_flag2.state = 'down'
+
+            else:
+                self.event_flag2.state = 'normal'
+
+            self.jump_window.k_jump(self.event_flag2.state, flag=2)
+
+        if key == 'p':
+
+            if self.event_flag3.state == 'normal':
+                self.event_flag3.state = 'down'
+
+            else:
+                self.event_flag3.state = 'normal'
+
+            self.jump_window.k_jump(self.event_flag3.state, flag=3)
+
 
     def save_tracks(self, instance):
 
@@ -739,7 +864,7 @@ class TrackingUI(Widget):
             num = int(''.join([instance.text]))-1
 
             if 0 <= num < len(self.feat_inds):
-                print(self.feat_inds[num])
+
                 self.show_feat[flag] = self.feat_inds[num]
 
             self.modify_update()

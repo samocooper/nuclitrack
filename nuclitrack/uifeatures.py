@@ -22,7 +22,7 @@ class FeatureExtract(Widget):
         self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
 
-        self.feature_num = 20 + 3 * (self.channels - 1)
+        self.feature_num = 21 + 3 * (self.channels - 1)
         self.features = np.zeros([1, self.feature_num])
         self.counter = 1
 

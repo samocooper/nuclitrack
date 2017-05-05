@@ -22,7 +22,6 @@ class UserInterface(Widget):
         self.current_frame = 0
         self.parallel = False
 
-        self.track_param = np.asarray([0.05, 50, 1, 5, 0, 1, 3])
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
@@ -164,7 +163,9 @@ class UserInterface(Widget):
     def run_tracking(self, instance):
 
         self.remove_widget(self.current_widget)
-        self.current_widget = RunTracking(features=self.fov['features'][...], track_param=self.track_param, frames=self.frames)
+        self.current_widget = RunTracking(features=self.fov['features'][...],
+                                          track_param=self.params['track_param'][...], frames=self.frames)
+
         self.add_widget(self.current_widget)
         self.tracking_flag = True
 
@@ -200,7 +201,7 @@ class UserInterface(Widget):
 
     def tracking_ui(self, instance):
         if instance.state == 'down':
-
+            print(self.fov['features'][...].shape[1])
             self.remove_widget(self.current_widget)
             self.current_widget = TrackingUI(images=self.images, labels=self.labels, tracks=self.fov['tracks'][...],
                                              stored_tracks=self.fov['tracks_stored'][...],
@@ -274,6 +275,15 @@ class UserInterface(Widget):
             self.layout1.add_widget(btn6)
 
             self.progression[6] = 1
+
+            param_flag = True
+
+            for g in self.params:
+                if g == 'track_param':
+                    param_flag = False
+
+            if param_flag:
+                self.params.create_dataset('track_param', data=np.asarray([0.05, 50, 1, 5, 0, 1, 3]))
 
             for g in self.params:
                 if g == 'training_data':

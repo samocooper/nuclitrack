@@ -4,3 +4,5 @@ from . import loadimages
 from . import segmentimages
 from . import extractfeatures
 from . import classifycells
+from . import batchanalyse
+
