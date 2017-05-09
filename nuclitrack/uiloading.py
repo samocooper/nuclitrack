@@ -80,7 +80,7 @@ class LoadingUI(Widget):
     def file_name_val(self, input_type, obj):
         self.load_data(input_type, obj.text)
 
-    def dir_click(self,flag, val, file_name, touch):
+    def dir_click(self, flag, val, file_name, touch):
         if flag == 1:
             self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
             self.update_file_labels(file_name[0])

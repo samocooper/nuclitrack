@@ -15,10 +15,10 @@ ctypedef np.int_t DTYPE2_t
 @cython.wraparound(False)
 
 
-def distance_mat(np.ndarray[DTYPE1_t, ndim=2] data, int frames, np.ndarray[DTYPE1_t, ndim=1] param):
+def distance_mat(np.ndarray[DTYPE1_t, ndim=2] features, int frames, np.ndarray[DTYPE1_t, ndim=1] param):
 
-    cdef int hgt = data.shape[0]
-    cdef int wid = data.shape[1]
+    cdef int hgt = features.shape[0]
+    cdef int wid = features.shape[1]
 
     cdef int f, i, j, k, t
 
@@ -28,7 +28,7 @@ def distance_mat(np.ndarray[DTYPE1_t, ndim=2] data, int frames, np.ndarray[DTYPE
     cdef np.ndarray[DTYPE2_t, ndim=1] frame_count_cum = np.zeros( frames+1, dtype=DTYPE2)
 
     for i in range(hgt):
-        f = int(data[i,1])
+        f = int(features[i,1])
         frame_count[f] += 1
 
     cdef int cons
@@ -42,7 +42,7 @@ def distance_mat(np.ndarray[DTYPE1_t, ndim=2] data, int frames, np.ndarray[DTYPE
     for i in range(frames):
         frame_count_cum[i+1] = frame_count_cum[i] + frame_count[i]
 
-    # Calculate edges and assign edge data
+    # Calculate edges and assign edge features
 
     cdef np.ndarray[DTYPE1_t, ndim=2] edges = np.zeros([cons,5], dtype=DTYPE1)
     cdef int count = 0
@@ -64,12 +64,12 @@ def distance_mat(np.ndarray[DTYPE1_t, ndim=2] data, int frames, np.ndarray[DTYPE
             for k in range(f2):
                 for j in range(f1):
 
-                    d = sqrt((data[ind1A+k,3] - data[ind2A+j,3])**2 + (data[ind1A+k,2] - data[ind2A+j,2])**2)
+                    d = sqrt((features[ind1A+k,3] - features[ind2A+j,3])**2 + (features[ind1A+k,2] - features[ind2A+j,2])**2)
 
                     edges[count,0] = i # Frame of cell after movement
 
-                    edges[count,1] = data[ind2A+j,0]  # Index of the cell before movement
-                    edges[count,2] = data[ind1A+k,0]  # Index of the cell after movement
+                    edges[count,1] = features[ind2A+j,0]  # Index of the cell before movement
+                    edges[count,2] = features[ind1A+k,0]  # Index of the cell after movement
                     edges[count,3] = d  # Distance moved in pixels
                     edges[count,4] = t  # Movement gap
                     count += 1
@@ -96,6 +96,8 @@ def distance_mat(np.ndarray[DTYPE1_t, ndim=2] data, int frames, np.ndarray[DTYPE
 
             count += 1
 
+    edges_filtered = edges_filtered[edges_filtered[:, 2].argsort(), :]
+    edges_filtered = np.vstack((edges_filtered, np.zeros((1, edges_filtered.shape[1]))))
 
     return edges_filtered
 
@@ -157,9 +159,9 @@ def swaps_mat(np.ndarray[DTYPE1_t, ndim=2] edges, int frames):
 
     return s_mat[:count,:]
 
-def main_loop(np.ndarray[DTYPE1_t, ndim=2] scores, np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2] edges, np.ndarray[DTYPE1_t, ndim=2] swaps, np.ndarray[DTYPE2_t, ndim=1] states, np.ndarray[DTYPE1_t, ndim=1] param):
+def main_loop(np.ndarray[DTYPE1_t, ndim=2] scores, np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndim=2] edges, np.ndarray[DTYPE1_t, ndim=2] swaps, np.ndarray[DTYPE2_t, ndim=1] states, np.ndarray[DTYPE1_t, ndim=1] param):
 
-    cdef int hgt1 = data.shape[0]
+    cdef int hgt1 = features.shape[0]
     cdef int hgt2 = edges.shape[0]
     cdef int count2 = 0
     cdef int count_swap = 0
@@ -202,7 +204,7 @@ def main_loop(np.ndarray[DTYPE1_t, ndim=2] scores, np.ndarray[DTYPE1_t, ndim=2] 
 
         if s < 2:
 
-            add_score = scores[int(prev_id),3] + param[2]*data[count1,13+s] - param[3]*data[count1,12+s]
+            add_score = scores[int(prev_id),3] + param[2]*features[count1,13+s] - param[3]*features[count1,12+s]
 
         else:
 
@@ -277,9 +279,9 @@ def main_loop(np.ndarray[DTYPE1_t, ndim=2] scores, np.ndarray[DTYPE1_t, ndim=2] 
     return scores
 
 
-def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2] edges, np.ndarray[DTYPE1_t, ndim=2] swaps, np.ndarray[DTYPE2_t, ndim=1] states, np.ndarray[DTYPE1_t, ndim=1] param):
+def forward_pass(np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndim=2] edges, np.ndarray[DTYPE1_t, ndim=2] swaps, np.ndarray[DTYPE2_t, ndim=1] states, np.ndarray[DTYPE1_t, ndim=1] param):
 
-    cdef int hgt1 = data.shape[0]
+    cdef int hgt1 = features.shape[0]
     cdef int hgt2 = edges.shape[0]
 
     cdef np.ndarray[DTYPE1_t, ndim=2] scores = np.zeros([hgt1,7], dtype=DTYPE1)
@@ -291,14 +293,14 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2]
 
     ## First frame entry states ##
 
-    while data[count1, 1] == 0:
+    while features[count1, 1] == 0:
 
         s = states[count1]
 
         if s < 2:
 
-            scores[count1,3] = data[count1,13+s] - data[count1,12+s]
-            scores[count1,1] = data[count1,0]
+            scores[count1,3] = features[count1,13+s] - features[count1,12+s]
+            scores[count1,1] = features[count1,0]
 
         else:
 
@@ -317,14 +319,14 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2]
         scores[count3,1] = count3
 
         if s < 2:
-            temp_edge = 1-(param[0]*data[count3,4])**2 + data[count3,13+s] - data[count3,12+s]
+            temp_edge = 1-(param[0]*features[count3,4])**2 + features[count3,13+s] - features[count3,12+s]
 
             if temp_edge > -3.:
                 scores[count3,3] = temp_edge
             else:
                 scores[count3,3] = -3.
 
-            scores[count3,0] = data[count3,1]
+            scores[count3,0] = features[count3,1]
 
         else:
 
@@ -366,7 +368,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2]
 
             if s < 2:
 
-                add_score = param[2]*data[count4,13+s] - param[3]*data[count4,12+s]
+                add_score = param[2]*features[count4,13+s] - param[3]*features[count4,12+s]
 
             else:
 
@@ -378,7 +380,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2]
 
              # Mitosis Component
 
-            temp_score = temp_score + (data[previous_cell_id,15] + data[count4,16]) - param[4]
+            temp_score = temp_score + (features[previous_cell_id,15] + features[count4,16]) - param[4]
 
             if temp_score > max_score:
 
@@ -387,7 +389,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] data, np.ndarray[DTYPE1_t, ndim=2]
 
         count5 += 1
 
-    scores = main_loop(scores, data, edges, swaps, states, param)
+    scores = main_loop(scores, features, edges, swaps, states, param)
 
     return scores
 

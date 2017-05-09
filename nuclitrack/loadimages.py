@@ -28,6 +28,7 @@ def loadimages(file_list, label_flag=False):
 
     if not label_flag:
         for i in range(len(ims)):
+            ims[i] -= np.min(ims[i].flatten())
             ims[i] /= np.max(ims[i].flatten())
 
     return ims
@@ -110,7 +111,8 @@ def filelistfromdir(file_name):
     file_list = []
     for file in dir_list:
         if not (file.find(file_type) == -1):
-            file_list.append(dir_name + file)
+            file_list.append(os.path.join(dir_name, file))
+    file_list.sort()
 
     return [file_list]
 

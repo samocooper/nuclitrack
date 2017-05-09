@@ -146,10 +146,10 @@ class SegmentationUI(Widget):
 
         layout2 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
 
-        s0 = Slider(min=0, max=1, step=0.01, value=float(self.params[0]))
+        s0 = Slider(min=0, max=1, step=0.002, value=float(self.params[0]))
         s1 = Slider(min=0, max=300, step=5, value=float(self.params[1]))
         s2 = Slider(min=0, max=10, step=1, value=float(self.params[2]))
-        s3 = Slider(min=0, max=1, step=0.01, value=float(self.params[3]))
+        s3 = Slider(min=0, max=1, step=0.005, value=float(self.params[3]))
         s4 = Slider(min=0, max=200, step=10, value=float(self.params[4]))
         s5 = Slider(min=0, max=1, step=0.05, value=float(self.params[5]))
         s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]))

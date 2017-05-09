@@ -576,6 +576,7 @@ class TrackingUI(Widget):
                 if sum(mask) and min(d) < 50:
                     self.track_ind = self.tracks[mask, 4]  # Set the selected track index
                     self.modify_update()  # Display this as cell marked with black dot
+                    print(self.track_ind)
 
             # Add segment to cell track
 
@@ -853,6 +854,7 @@ class TrackingUI(Widget):
     def save_csv(self, instance):
 
         trackcells.save_csv(self.features, self.tracks, self.parent.csv_file)
+        #trackcells.save_iscb(self.features, self.tracks, self.parent.csv_file, self.labels, self.frames)
 
     def save_sel_csv(self, instance):
 

@@ -24,8 +24,10 @@ def background(im, val):
     if val != 0:
         im_temp = im_temp - ctoolsegmentation.fast_blur(im_temp, val)
 
-    return im_temp
+    im_temp -= np.min(im_temp.flatten())
+    im_temp /= np.max(im_temp.flatten())
 
+    return im_temp
 
 def blur(im, val):
 
@@ -40,7 +42,6 @@ def blur(im, val):
             im = filters.gaussian(im, (val / 2))
             im = filters.gaussian(im, (val / 2))
 
-    im /= np.max(im.flatten())
 
     return im
 
@@ -102,14 +103,15 @@ def sobel_edges(im, val):
 def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     k = morphology.octagon(2, 2)
+
+    im_bin = morphology.binary_dilation(im_bin, selem=k)
     im_bin = morphology.binary_dilation(im_bin, selem=k)
     im_bin = morphology.binary_dilation(im_bin, selem=k)
 
     markers_temp = markers + np.logical_not(im_bin)
-    im_bin = morphology.binary_dilation(im_bin, selem=k)
     shed_im = (1 - val) * im_edge - val * d_mat
 
-    labels = morphology.watershed(image=shed_im, markers=markers_temp, mask=im_bin)
+    labels = morphology.watershed(image=shed_im, markers=markers_temp)
     labels -= 1
     if edges == 1:
         edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
