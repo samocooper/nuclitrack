@@ -27,7 +27,7 @@ class TrackCells(object):
         self.s_mat = ctooltracking.swaps_mat(self.d_mat, frames)
 
         self.cum_score = 0.
-        self.count = 1
+        self.count = 5
         self.optimise_count = 0
         self.min_score = 1
         self.max_score = self.min_score+1
