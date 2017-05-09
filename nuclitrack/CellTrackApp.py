@@ -94,6 +94,7 @@ class UserInterface(Widget):
             self.remove_widget(self.current_widget)
             self.current_widget = ViewSegment(labels=self.labels, frames=self.frames)
             self.add_widget(self.current_widget)
+            Window.bind(on_resize=self.current_widget.update_size)
 
     def segment_parallel(self, dt):
 
