@@ -372,6 +372,8 @@ class UserInterface(Widget):
 
         self.m_layout.width = width
         self.m_layout.height = height
+        self.layout1.width = width
+        self.layout1.height = height / 10
 
 
 class CellTrackApp(App):
