@@ -448,7 +448,7 @@ class LoadingUI(Widget):
                     return
 
             # Load and save label images
-            print(file_list)
+
             labels = loadimages.loadimages([file_list], label_flag=True)
             labels = labels[0]
 

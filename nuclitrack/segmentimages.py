@@ -42,7 +42,6 @@ def blur(im, val):
     im -= np.min(im.flatten())
     im /= np.max(im.flatten())
 
-
     return im
 
 
