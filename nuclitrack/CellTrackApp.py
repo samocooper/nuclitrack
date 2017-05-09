@@ -202,7 +202,6 @@ class UserInterface(Widget):
 
     def tracking_ui(self, instance):
         if instance.state == 'down':
-            print(self.fov['features'][...].shape[1])
             self.remove_widget(self.current_widget)
             self.current_widget = TrackingUI(images=self.images, labels=self.labels, tracks=self.fov['tracks'][...],
                                              stored_tracks=self.fov['tracks_stored'][...],
