@@ -102,6 +102,10 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_param)
         self.ld_layout.add_widget(self.reload_btn)
         self.ld_layout.add_widget(self.file_choose)
+        self.file_loaded = [False, False]
+
+        self.loaded_fov.text ='[b][color=000000] [/b][/color]'
+        self.loaded_param.text = '[b][color=000000] [/b][/color]'
 
     def file_name_val(self, input_type, obj):
         self.load_data(input_type, obj.text)
