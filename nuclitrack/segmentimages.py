@@ -24,9 +24,6 @@ def background(im, val):
     if val != 0:
         im_temp = im_temp - ctoolsegmentation.fast_blur(im_temp, val)
 
-    im_temp -= np.min(im_temp.flatten())
-    im_temp /= np.max(im_temp.flatten())
-
     return im_temp
 
 def blur(im, val):
@@ -41,6 +38,9 @@ def blur(im, val):
             im = filters.gaussian(im, (val / 2))
             im = filters.gaussian(im, (val / 2))
             im = filters.gaussian(im, (val / 2))
+
+    im -= np.min(im.flatten())
+    im /= np.max(im.flatten())
 
 
     return im
