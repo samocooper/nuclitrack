@@ -41,7 +41,7 @@ def batchanalyse(text_file, param_file, output_file):
             labels[i, :, :] = labels_list[i]
 
     print('Extracting features')
-    feature_num = 20 + 3 * (channel_num - 1)
+    feature_num = 20 + 3 * (channel_num - 1) + 1
 
     counter = 1
     features = np.zeros((1, feature_num))
