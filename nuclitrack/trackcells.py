@@ -192,11 +192,12 @@ def save_csv(features, tracks, file_name):
     ''' Create matrix and write to csv for features. Features are: Track_id, Frame, X_center, Y_center, Area,
     Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
     CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
+
     if features.shape[1] == 21:
-        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 6)), features[:, -1]))
+        features = np.insert(features, [-1], np.zeros((features.shape[0], 6)), 1)
 
     if features.shape[1] == 24:
-        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 3)), features[:, -1]))
+        features = np.insert(features, [-1], np.zeros((features.shape[0], 3)), 1)
 
     feat_mat = np.zeros((1, 21))
 
@@ -247,10 +248,10 @@ def save_csv(features, tracks, file_name):
 def save_sel_csv(features, tracks, tracks_stored, file_name):
 
     if features.shape[1] == 21:
-        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 6)), features[:, -1]))
+        features = np.insert(features, [-1], np.zeros((features.shape[0], 6)), 1)
 
     if features.shape[1] == 24:
-        features = np.hstack((features[:, :-1], np.zeros((features.shape[0], 3)), features[:, -1]))
+        features = np.insert(features, [-1], np.zeros((features.shape[0], 3)), 1)
 
 
     feat_mat = np.zeros((1, 21))
