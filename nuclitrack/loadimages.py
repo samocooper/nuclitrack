@@ -90,7 +90,7 @@ def filelistfromtext(text_file):
                         channel_list.append(os.path.join(dir_name, line_split[1]))
 
                 else:
-                    channel_list.append(dir_name + line)
+                    channel_list.append(os.path.join(dir_name, line))
 
         file_list.append(channel_list)
         return file_list, label_list
