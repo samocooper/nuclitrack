@@ -59,60 +59,21 @@ class TrackCells(object):
 
             track_ind = self.optimise_count
             replace_mask = self.tracks[:, 4] == track_ind
-            track_store = self.tracks[replace_mask, :]
 
-            self.tracks = self.tracks[np.logical_not(replace_mask), :]
+            if np.count_nonzero(replace_mask) > 0:
 
-            for j in range(track_store.shape[0]):  # Remove track
+                track_store = self.tracks[replace_mask, :]
 
-                self.states[int(track_store[j, 0])] -= 1
+                self.tracks = self.tracks[np.logical_not(replace_mask), :]
 
-                if j > 0:
+                for j in range(track_store.shape[0]):  # Remove track
 
-                    ind1 = track_store[j - 1, 0]
-                    ind2 = track_store[j, 0]
-
-                    m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
-                    m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
-                    m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
-                    m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
-
-                    if any(m1):
-                        self.s_mat[m1, 5] = 0
-                        self.s_mat[m1, 7] = 0
-                    if any(m2):
-                        self.s_mat[m2, 6] = 0
-                        self.s_mat[m2, 7] = 0
-                    if any(m3):
-                        self.s_mat[m3, 5] = 0
-                        self.s_mat[m3, 8] = 0
-                    if any(m4):
-                        self.s_mat[m4, 6] = 0
-                        self.s_mat[m4, 8] = 0
-
-            score_mat = ctooltracking.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
-            max_score = max(score_mat[:, 3])
-
-            if max_score > track_store[-1, 2]:
-
-                self.cum_score = self.cum_score + max_score - track_store[-1, 2]
-                track_replace, self.s_mat, self.states = ctooltracking.track_back(score_mat, self.states, self.s_mat)
-                track_replace[:, 4] = track_ind
-
-                self.tracks, track_replace = ctooltracking.swap_test(self.tracks, track_replace, self.d_mat, track_ind)
-                self.tracks = np.vstack((self.tracks, track_replace))
-
-            else:
-                self.tracks = np.vstack((self.tracks, track_store))
-
-                for j in range(track_store.shape[0]):
-
-                    self.states[int(track_store[j, 0])] += 1
+                    self.states[int(track_store[j, 0])] -= 1
 
                     if j > 0:
 
                         ind1 = track_store[j - 1, 0]
-                        ind2 = track_store[j - 1, 0]
+                        ind2 = track_store[j, 0]
 
                         m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
                         m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
@@ -120,17 +81,59 @@ class TrackCells(object):
                         m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
 
                         if any(m1):
-                            self.s_mat[m1, 5] = 1
-                            self.s_mat[m1, 7] = 1
+                            self.s_mat[m1, 5] = 0
+                            self.s_mat[m1, 7] = 0
                         if any(m2):
-                            self.s_mat[m2, 6] = 1
-                            self.s_mat[m2, 7] = 1
+                            self.s_mat[m2, 6] = 0
+                            self.s_mat[m2, 7] = 0
                         if any(m3):
-                            self.s_mat[m3, 5] = 1
-                            self.s_mat[m3, 8] = 1
+                            self.s_mat[m3, 5] = 0
+                            self.s_mat[m3, 8] = 0
                         if any(m4):
-                            self.s_mat[m4, 6] = 1
-                            self.s_mat[m4, 8] = 1
+                            self.s_mat[m4, 6] = 0
+                            self.s_mat[m4, 8] = 0
+
+                score_mat = ctooltracking.forward_pass(self.features, self.d_mat, self.s_mat, self.states, self.track_param)
+                max_score = max(score_mat[:, 3])
+
+                if max_score > track_store[-1, 2]:
+
+                    self.cum_score = self.cum_score + max_score - track_store[-1, 2]
+                    track_replace, self.s_mat, self.states = ctooltracking.track_back(score_mat, self.states, self.s_mat)
+                    track_replace[:, 4] = track_ind
+
+                    self.tracks, track_replace = ctooltracking.swap_test(self.tracks, track_replace, self.d_mat, track_ind)
+                    self.tracks = np.vstack((self.tracks, track_replace))
+
+                else:
+                    self.tracks = np.vstack((self.tracks, track_store))
+
+                    for j in range(track_store.shape[0]):
+
+                        self.states[int(track_store[j, 0])] += 1
+
+                        if j > 0:
+
+                            ind1 = track_store[j - 1, 0]
+                            ind2 = track_store[j - 1, 0]
+
+                            m1 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 3] == ind2)
+                            m2 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 3] == ind2)
+                            m3 = np.logical_and(self.s_mat[:, 1] == ind1, self.s_mat[:, 4] == ind2)
+                            m4 = np.logical_and(self.s_mat[:, 2] == ind1, self.s_mat[:, 4] == ind2)
+
+                            if any(m1):
+                                self.s_mat[m1, 5] = 1
+                                self.s_mat[m1, 7] = 1
+                            if any(m2):
+                                self.s_mat[m2, 6] = 1
+                                self.s_mat[m2, 7] = 1
+                            if any(m3):
+                                self.s_mat[m3, 5] = 1
+                                self.s_mat[m3, 8] = 1
+                            if any(m4):
+                                self.s_mat[m4, 6] = 1
+                                self.s_mat[m4, 8] = 1
 
             self.optimise_count += 1
 
