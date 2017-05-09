@@ -15,6 +15,7 @@ from kivy.uix.gridlayout import GridLayout
 
 from . import loadimages
 
+
 class LoadingUI(Widget):
 
     def __init__(self, **kwargs):
@@ -39,19 +40,19 @@ class LoadingUI(Widget):
 
         # Label
         self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
-                               size_hint=(.48, .05), pos_hint={'x': .01, 'y': .95})
+                               size_hint=(.4, .05), pos_hint={'x': .01, 'y': .95})
         self.ld_layout.add_widget(self.label_fov)
 
         # Input
         self.text_input_fov = TextInput(text='', multiline=False,
-                                        size_hint=(.48, .05), pos_hint={'x': .01, 'y': .9})
+                                        size_hint=(.4, .05), pos_hint={'x': .01, 'y': .9})
         self.text_input_fov.bind(on_text_validate=partial(self.file_name_val, 'fov'))
         self.ld_layout.add_widget(self.text_input_fov)
 
         # Display loaded file
 
         self.loaded_fov = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                size_hint=(.49, .05), pos_hint={'x': .01, 'y': .85})
+                                size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
         self.ld_layout.add_widget(self.loaded_fov)
 
         # Info on file loading
@@ -63,19 +64,44 @@ class LoadingUI(Widget):
 
         # Label
         self.label_param = Label(text='[b][color=000000]Parameter Data File[/b][/color]', markup=True,
-                                 size_hint=(.48, .05), pos_hint={'x': .51, 'y': .95})
+                                 size_hint=(.4, .05), pos_hint={'x': .42, 'y': .95})
         self.ld_layout.add_widget(self.label_param)
 
         # Input
         self.text_input_param = TextInput(text='', multiline=False,
-                                          size_hint=(.48, .05), pos_hint={'x': .51, 'y': .9})
+                                          size_hint=(.4, .05), pos_hint={'x': .42, 'y': .9})
         self.text_input_param.bind(on_text_validate=partial(self.file_name_val, 'param'))
         self.ld_layout.add_widget(self.text_input_param)
 
         # Display loaded file
+
         self.loaded_param = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                  size_hint=(.48, .05), pos_hint={'x': .51, 'y': .85})
+                                  size_hint=(.4, .05), pos_hint={'x': .42, 'y': .85})
+
         self.ld_layout.add_widget(self.loaded_param)
+
+        # Reload button
+
+        self.reload_btn = Button(text='Reload Data', size_hint=(.16, .05), pos_hint={'x': .83, 'y': .9})
+        self.reload_btn.bind(on_release=self.reload)
+        self.ld_layout.add_widget(self.reload_btn)
+
+    def reload(self, instance):
+
+        self.parent.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.parent.layout1.clear_widgets()
+        self.parent.layout1.add_widget(self.parent.btn1)
+
+        self.ld_layout.clear_widgets()
+        self.ld_layout.add_widget(self.label_fov)
+        self.ld_layout.add_widget(self.text_input_fov)
+        self.ld_layout.add_widget(self.loaded_fov)
+        self.ld_layout.add_widget(self.ui_message)
+        self.ld_layout.add_widget(self.label_param)
+        self.ld_layout.add_widget(self.text_input_param)
+        self.ld_layout.add_widget(self.loaded_param)
+        self.ld_layout.add_widget(self.reload_btn)
+        self.ld_layout.add_widget(self.file_choose)
 
     def file_name_val(self, input_type, obj):
         self.load_data(input_type, obj.text)
@@ -95,8 +121,6 @@ class LoadingUI(Widget):
 
         self.text_input_fov.text = os.path.join(self.file_choose.path, 'example_data.hdf5')
         self.text_input_param.text = os.path.join(self.file_choose.path, 'example_params.hdf5')
-
-
 
     def load_data(self, input_type, input_text):
 

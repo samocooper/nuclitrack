@@ -15,6 +15,7 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 
+
 class UserInterface(Widget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,10 +28,10 @@ class UserInterface(Widget):
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
         self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
 
-        btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
-        btn1.bind(on_press=self.loading_ui)
-        btn1.bind(size=btn1.setter('text_size'))
-        self.layout1.add_widget(btn1)
+        self.btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
+        self.btn1.bind(on_press=self.loading_ui)
+        self.btn1.bind(size=self.btn1.setter('text_size'))
+        self.layout1.add_widget(self.btn1)
 
         # Progress bar widget
 
