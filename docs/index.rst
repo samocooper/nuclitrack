@@ -39,7 +39,7 @@ NucliTrack is also availale as a Python 3 package for development, and batch pro
 Loading time series images
 --------------------------
 
-To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual tiff files. There are then three options for loading the .tif image time series into NucliTrack.
+To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual single plane tiff files. There are then three options for loading the .tif image time series into NucliTrack.
 
 However, before loading you need to specify file names for the hdf5 files that will store your tracking data and parameters. You can either enter the location for these files directly into the text boxes and hit enter. Alternatively navigate to the desired folder, enter names for the files at the end of the directory path, and then hit enter.
 
@@ -142,6 +142,8 @@ Once you have achieved good segmentation it's now time to save the parameters. O
 To speed up the process you can opt to use multiprocessing. However, due to the workload on the CPUs, the GUI does not display a loading bar during this process.
 
 When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and click extract features.
+
+You can also export the label files at this point as single plane tifs. To do this create and empty directory by entering a name in the choose directory name text box and hitting enter. Re-enter the current folder and to see this directory then enter the directory and choose an output name for the label series. Hit enter and the series of labelled image will be saved.
 
 .. figure:: Nt02.jpg
    :scale: 80 %
