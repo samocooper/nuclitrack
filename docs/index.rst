@@ -53,7 +53,7 @@ Auto Load
 
 The autoloading interface allows you to load a .tif series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
 
-..::
+::
 
    somename_ch1_01.tif
    somename_ch1_02.tif
@@ -67,7 +67,7 @@ To load your videos navigate to the folder containing them, select the first ima
 
 You can now either hit the load images button, or alternativley load another channel as long as the image size and number of frames is the same. To do this choose a different channel from the drop down list, and repeat the above process. Once the first and last file names for all channels have been selected press the load images button:
 
-..::
+::
 
    somename_ch2_01.tif
    somename_ch2_02.tif
@@ -76,7 +76,44 @@ You can now either hit the load images button, or alternativley load another cha
    ...
 
    somename_ch2_99.tif
+   
+Finally you can also load a series of uniquely labelled images, where the use of external segmentation software is desired. Specifically, the label series must be the same length and dimensions as the image series, and within each labelled image, each segment must be uniquely labelled. Select the label option form the channel drop down button and then the first and last image in the label series to load the images in.
 
+
+Load from text
+^^^^^^^^^^^^^^
+
+Loading from text is perhaps the easiest way of loading multichannel images, and also is used by batch mode. Load from text requires you to create a text/csv file in which each image filename is specified relative to the text file in order. To specify multiple channels indicate the channel first then the file name seperated by a comma; set the channel to 0 to load in labels. For example where images are in a subdirectory 'ims' the text file would need to be formatted as follows:
+
+::
+   1, ims/somename_ch1_01.tif
+   1, ims/somename_ch1_02.tif
+
+   ...
+
+   1, ims/somename_ch1_98.tif
+   1, ims/somename_ch2_99.tif
+   2, ims/somename_ch2_01.tif
+   2, ims/somename_ch2_02.tif
+
+   ...
+   
+   2, ims/somename_ch2_98.tif
+   2, ims/somename_ch2_99.tif
+   0, ims/labels_01.tif
+   0, ims/labels_02.tif
+   
+   ...
+   
+   0, ims/labels_98.tif
+   0, ims/labels_99.tif
+
+Once you have created the text file, navigate to it in the file browser and double click to load.
+
+Load from dir
+^^^^^^^^^^^^^
+
+This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging a single image series, and double click the first image in the series, this will load all other images in the  directory.
 
 .. figure:: Nt01.jpg
 
