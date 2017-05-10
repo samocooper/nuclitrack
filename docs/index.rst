@@ -83,6 +83,7 @@ Load from text
 Loading from text is perhaps the easiest way of loading multichannel images, and also is used by batch mode. Load from text requires you to create a text/csv file in which each image filename is specified relative to the text file in order. To specify multiple channels indicate the channel first then the file name seperated by a comma; set the channel to 0 to load in labels. For example where images are in a subdirectory 'ims' the text file would need to be formatted as follows:
 
 ::
+
    1, ims/somename_ch1_01.tif
    1, ims/somename_ch1_02.tif
 
@@ -276,7 +277,7 @@ To run nuclitrack in batch mode which doesn't require the kivy library, create a
 	if __name__=='__main__':
     		nuclitrack.batchanalyse.batchanalyse('myfile.txt','myparams.hdf5','myoutput')
 		
-Here, 'myfile.txt' represents a text file for loading images, in the format described in section CDASC. The 'myparams.hdf5' file must be created by using the GUI on a reference movie, and contains the parameters selected for segmentation and tracking, as well as training data chosen in the training data GUI. Finally 'myoutput' is the name that both the 'output.hdf5' and 'output.csv' file will be saved as. The 'output.hdf5' file can then be loaded into the GUI and track correction and inspection carried out. Alternativley results can be directly analysed from the 'output.csv' file. 
+Here, 'myfile.txt' represents a text file for loading images, in the format described in the `Load from text`_ section. The 'myparams.hdf5' file must be created by using the GUI on a reference movie, and contains the parameters selected for segmentation and tracking, as well as training data chosen in the training data GUI. Finally 'myoutput' is the name that both the 'output.hdf5' and 'output.csv' file will be saved as. The 'output.hdf5' file can then be loaded into the GUI and track correction and inspection carried out. Alternativley results can be directly analysed from the 'output.csv' file. 
 
 To process multiple movies, the batchanalyse function can be called inside a loop where multiple text files are used to index different image series, with the output file name varied accordingly.
 
