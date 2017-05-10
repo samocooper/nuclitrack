@@ -7,16 +7,28 @@
 Getting started
 ===============
 
-NucliTrack is designed as an easy to use Python 3 Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
+NucliTrack is designed as an easy to use Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
 
-Alternativley check out the `online video guide <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
+Alternativley check out the `online video guides <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
 
 Installation
 ------------
 
-To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users.
+There are two ways to get started with nuclitrack.
 
-Once you've got Python3 up and running you will need packages called Cython and numpy. This is easily installed using the pip installer, from the terminal (linux/mac users) or anaconda command prompt (windows) type:
+Prebuilt Releases
+^^^^^^^^^^^^^^^^^
+
+If your looking to to have a first go and track a couple of movies of cells, we have prebuilt versions of nuclitrack available for OSX, Linux and Windows available at XYXYXY.
+
+No installation is required for the Applications just download and run them. Please note though, that whilst the OSX and Linux releases fire up straight away, it takes a minute or so to load everything up in Windows, please be patient and if you have any tips for how to get it to load up faster please let us know!
+
+Python Package
+^^^^^^^^^^^^^^
+
+If your looking to develop your own features, tracks hundreds of videos in batch, or contribute to the nuclitrack project you will need,  `Python3 <https://www.python.org/downloads/>`_ . we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for Windows users.
+
+Once you've got Python3 up and running you will need packages called Cython and Numpy (Anaconda already has them installed). These are easily installed using the pip installer, from the terminal type:
 ::
 	> pip install cython
 	> pip install numpy
@@ -31,7 +43,6 @@ Notes:
 *  On windows you will likely need to install kivy prior to nuclitrack, a guide for this can be found on the `kivy website <https://kivy.org/docs/installation/installation-windows.html>`_ . 
 
 From experience after installing the dependencies download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands:
-
 ::
 	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
 	
@@ -45,23 +56,24 @@ On more basic systems some dependencies may cause issues, on RHEL/Fedora linux I
 * RHEL/Fedora linux: Kivy may require xclip/xsel to import properly, install EPEL, then > yum install xclip,xsel
 * RHEL/Fedora linux: Kivy may require bzip to to import properly > yum install  bzip2-devel then configure and make python3.6 again
 
-Launching NucliTrack
---------------------
+The python NucliTrack package contains two functions that allow it to be run either as a GUI or in batch mode (discussed later). 
 
-To launch nuclitrack start Python3 up in your terminal
-::
-	> Python3
+To run nuclitrack using the GUI create a new python script, cut and paste the following code into it, and then run this script:
 
-Python should now be running. Import NucliTrack and this will load up the Pygame window:
-::
-	>> import nuclitrack
+.. code-block:: python
+	import nuclitrack
+	if __name__=='__main__':
+    		nuclitrack.main.run()
 
-Finally run the nuclitrack application
-::
-	>> nuclitrack.CellTrackApp().run()
+To run nuclitrack in batch mode which doesn't require the kivy library, create a new python script and paste the following into it.
 
-The application should be running now and you're ready to get going.
- 
+.. code-block:: python
+	import nuclitrack
+	if __name__=='__main__':
+    		nuclitrack.batchanalyse.batchanalyse('myfile.txt','example_params.hdf5','output')
+
+
+In both cases, asserting that the script is being called as main is vital for multithreading to work properly.
 
 Loading time series images
 --------------------------
