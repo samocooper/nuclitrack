@@ -17,7 +17,7 @@ from kivy.clock import Clock
 
 
 class UserInterface(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, parent_name, **kwargs):
         super().__init__(**kwargs)
 
         self.current_frame = 0
@@ -28,7 +28,7 @@ class UserInterface(Widget):
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
         self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
 
-        self.btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
+        self.btn1 = ToggleButton(text=parent_name, group='ui_choice', halign='center', valign='middle')
         self.btn1.bind(on_press=self.loading_ui)
         self.btn1.bind(size=self.btn1.setter('text_size'))
         self.layout1.add_widget(self.btn1)
@@ -378,9 +378,14 @@ class UserInterface(Widget):
 
 
 class CellTrackApp(App):
+
+    def __init__(self, parent_name, **kwargs):
+        self.parent_name = parent_name
+        super().__init__(**kwargs)
+
     def build(self):
 
-        ui = UserInterface()
+        ui = UserInterface(self.parent_name)
         Window.clearcolor = (.8, .8, .8, 1)
         Window.bind(on_resize=ui.update_size)
 

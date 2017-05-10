@@ -1,3 +1,3 @@
-def run():
+def run(parent_name):
     from .CellTrackApp import CellTrackApp
-    CellTrackApp().run()
+    CellTrackApp(parent_name).run()
