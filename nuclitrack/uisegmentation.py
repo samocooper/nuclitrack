@@ -415,7 +415,7 @@ class ViewSegment(Widget):
 
     def make_folder(self, instance):
 
-        os.makedirs(self.file_choose.path + '\\' + instance.text)
+        os.makedirs(os.path.join(self.file_choose.path, instance.text))
         self.folder_input.text = 'Directory made, re-enter present dir to view it'
 
     def export_files(self, instance):
@@ -426,7 +426,8 @@ class ViewSegment(Widget):
         for i in range(self.frames):
             num = str(i)
             num = num.zfill(digits)
-            tifffile.imsave(temp_path + '\\' + instance.text + '_' + num + '.tif', self.labels[i, :, :])
+            fname = os.path.join(temp_path, instance.text + '_' + num + '.tif')
+            tifffile.imsave(fname, self.labels[i, :, :])
 
         self.text_file_input.text = 'Images written, re-enter present dir to view them'
 
