@@ -16,8 +16,10 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
- .. figure:: kivy-Linux.png
-   :scale: 10 %
++---------------------------+----------------------------+----------------------------+
+| .. figure:: nt_osx.png    | .. figure:: nt_linux.png   | .. figure:: nt_windows.png |
++---------------------------+----------------------------+----------------------------+
+ 
    
 https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
 
