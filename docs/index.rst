@@ -14,11 +14,37 @@ Alternativley check out the `online video guides <https://www.youtube.com/watch?
 Installation
 ------------
 
-To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows available at XYXYXY. NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
+To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-No installation is required for the Applications, just download and run them. Please note though, that whilst the OSX and Linux releases fire up straight away, it takes a minute or so to load everything up in Windows, please be patient and if you have any tips for how to get it to load up faster please let us know!
+=====  =====  =======
+A      B      A and B
+=====  =====  =======
+False  False  False
+True   False  False
+False  True   False
+True   True   True
+=====  =====  =======
 
-Also you may need to update your graphics drivers, as NucliTrack requires OpenGL version 2.0 or higher.
+https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
+
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
+
+No installation is required for the Application, just download and run it, though there may be some issues:
+
+Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
+
+Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
+
+::
+	> sudo spctl --master-disable
+	
+Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
+
+::
+	> sudo spctl --master-enable
+
+OpenGL version is less than 2.0: Update your graphics drivers.
+
 
 Loading time series images
 --------------------------
