@@ -18,7 +18,8 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-.. image:: kivy-Linux.png
+.. image:: nt_linux.png
+
     :width: 50pt
    
 https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
@@ -31,12 +32,10 @@ Windows: It takes along time to load, please be patient, and if you have any sug
 
 Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
-::
 	> sudo spctl --master-disable
 	
 Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
 
-::
 	> sudo spctl --master-enable
 
 OpenGL version is less than 2.0: Update your graphics drivers.
@@ -54,28 +53,33 @@ Auto Load
 
 The autoloading interface allows you to load a .tif series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
 
-|	somename_ch1_01.tif
-|	somename_ch1_02.tif
-|	somename_ch1_03.tif
+..::
 
-	...
+   somename_ch1_01.tif
+   somename_ch1_02.tif
+   somename_ch1_03.tif
 
-	somename_ch1_99.tif
+   ...
+
+   somename_ch1_99.tif
 
 To load your videos navigate to the folder containing them, select the first image file toggle button and click the first image filename. Click the last image toggle button, and then either modify the filename in the text input bar or select the last image file.
 
 You can now either hit the load images button, or alternativley load another channel as long as the image size and number of frames is the same. To do this choose a different channel from the drop down list, and repeat the above process. Once the first and last file names for all channels have been selected press the load images button:
 
-|	somename_ch2_01.tif
-|	somename_ch2_02.tif
-|	somename_ch2_03.tif
+..::
 
-	...
+   somename_ch2_01.tif
+   somename_ch2_02.tif
+   somename_ch2_03.tif
 
-	somename_ch2_99.tif
+   ...
+
+   somename_ch2_99.tif
 
 
 .. figure:: Nt01.jpg
+
    :scale: 80 %
    :alt: Semgentation
 
@@ -223,6 +227,7 @@ The python NucliTrack package contains two functions that allow it to be run eit
 To run nuclitrack using the GUI create a new python script, cut and paste the following code into it, and then run the script:
 
 .. code-block:: python
+
 	import nuclitrack
 	if __name__=='__main__':
     		nuclitrack.main.run()
@@ -230,9 +235,10 @@ To run nuclitrack using the GUI create a new python script, cut and paste the fo
 To run nuclitrack in batch mode which doesn't require the kivy library, create a new python script and paste the following into it.
 
 .. code-block:: python
-  import nuclitrack
-  if __name__=='__main__':
-    nuclitrack.batchanalyse.batchanalyse('myfile.txt','myparams.hdf5','myoutput')
+
+	import nuclitrack
+	if __name__=='__main__':
+    		nuclitrack.batchanalyse.batchanalyse('myfile.txt','myparams.hdf5','myoutput')
 		
 Here, 'myfile.txt' represents a text file for loading images, in the format described in section CDASC. The 'myparams.hdf5' file must be created by using the GUI on a reference movie, and contains the parameters selected for segmentation and tracking, as well as training data chosen in the training data GUI. Finally 'myoutput' is the name that both the 'output.hdf5' and 'output.csv' file will be saved as. The 'output.hdf5' file can then be loaded into the GUI and track correction and inspection carried out. Alternativley results can be directly analysed from the 'output.csv' file. 
 
