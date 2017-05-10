@@ -182,6 +182,8 @@ class TrackCells(object):
             if self.tracks[j, 3] > 0:
                 self.features[int(self.tracks[j, 0]), 18] = 5
 
+        self.features[0,:] = 0
+
         return self.tracks, self.features, self.segment_count, self.double_segment
 
 
