@@ -11,18 +11,21 @@ NucliTrack is designed as an easy to use Application for tracking cell nuclei. W
 
 Alternativley check out the `online video guides <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
 
+A good set of videos to try the application out is the `benchmark dataset <http://ctc2015.gryf.fi.muni.cz/Public/FirstEdition/>`_ from the `first cell tracking challenge <http://www.codesolorzano.com/celltrackingchallenge/Cell_Tracking_Challenge/Results_First_CTC.html>`_.
+
 Installation
 ------------
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-+---------------------------+----------------------------+----------------------------+
-| .. figure:: nt_osx.png    | .. figure:: nt_linux.png   | .. figure:: nt_windows.png |
-+---------------------------+----------------------------+----------------------------+
+.. image:: kivy-Linux.png
+    :width: 50pt
+   
+https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
 
-No installation is required for the Application, just download and run it. 
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
 
-There may be some issues, hopefully the solutions below can help:
+No installation is required for the Application, just download and run it, though there may be some issues:
 
 Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
 
@@ -36,46 +39,41 @@ Enter your password on request, then launch the NucliTrack Application which sho
 ::
 	> sudo spctl --master-enable
 
-OpenGL version is less than 2.0: Update your graphics driver.
+OpenGL version is less than 2.0: Update your graphics drivers.
 
-NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
 
 Loading time series images
 --------------------------
 
-To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual tiff files, it doesn't matter how they're named but somewhere they must have zero padded time points e.g:
+To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual tiff files. There are then three options for loading the .tif image time series into NucliTrack.
+
+However, before loading you need to specify file names for the hdf5 files that will store your tracking data and parameters. You can either enter the location for these files directly into the text boxes and hit enter. Alternatively navigate to the desired folder, enter names for the files at the end of the directory path, and then hit enter.
+
+Auto Load
+^^^^^^^^^
+
+The autoloading interface allows you to load a .tif series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
 
 |	somename_ch1_01.tif
-|	somename_ch1_01.tif
-|	somename_ch1_01.tif
+|	somename_ch1_02.tif
+|	somename_ch1_03.tif
 
 	...
 
 	somename_ch1_99.tif
 
-Different channels can be loaded as long as the image size and number of frame is the same:
+To load your videos navigate to the folder containing them, select the first image file toggle button and click the first image filename. Click the last image toggle button, and then either modify the filename in the text input bar or select the last image file.
+
+You can now either hit the load images button, or alternativley load another channel as long as the image size and number of frames is the same. To do this choose a different channel from the drop down list, and repeat the above process. Once the first and last file names for all channels have been selected press the load images button:
 
 |	somename_ch2_01.tif
-|	somename_ch2_01.tif
-|	somename_ch2_01.tif
+|	somename_ch2_02.tif
+|	somename_ch2_03.tif
 
 	...
 
 	somename_ch2_99.tif
 
-A good set of videos to try the application out is the `benchmark dataset <http://ctc2015.gryf.fi.muni.cz/Public/FirstEdition/>`_ from the `first cell tracking challenge <http://www.codesolorzano.com/celltrackingchallenge/Cell_Tracking_Challenge/Results_First_CTC.html>`_.
-
-Select load data, and into the first box type a filename and press enter, this is where your tracking data will be saved. If you already have data in that file you can now load it by clicking load data.
-
-To load your videos navigate to the folder containing them. Double click the first image in the sequence then click the 'CH1 1st' button, then double click the last image in the sequence and click 'CH last'.
-
-You can now load the movie by clicking the load movie button. Alternatively, other channels can be loaded allowing data to be extracted from them, though only the first channel is used for segmentation. Finally if you have a file location copied to the clip board this can be pasted into the textboxes for file name and amended.
-
-Note: pasting into the text box requires a double click as opposed to keyboard shortcut.
-
-Finally choose a file name to store your parameters in hit enter, then click load data, this is separate to the tracking file so you can reuse parameters for future experiments.
-
-Click load data button again to minimise this window.
 
 .. figure:: Nt01.jpg
    :scale: 80 %
@@ -100,11 +98,13 @@ On the left hand side of the interface you should see a panel of sliders allowin
 *    Edge detection: this slider controls how blurry the image is prior to edges being marked, more blurry means edges are smoother though may match the shape less.
 *    Watershed: behind this slider is the watershed function which calculates where the local basins of attraction are in the image, like marking valleys in a mountainous terrain. The selected peak local maxima represent the bottom of the valleys, by adjusting the slider the lowest area is made larger or smaller, this like mining into the side of mountains to force the valley to be larger.
 
-Use the slider in the top left hand corner to navigate around the video and try out your segmentation parameters on other frames. Also other channel data can be visualised though these are not used for segmentation in the current edition.
+Use the slider in the top left hand corner to navigate around the video and try out your segmentation parameters on other frames. Also other channels can be selected for segmentaton using the dropdown list in the top right corner, also cell touching the border can be filtered out by selecting the filter edges toggle button.
 
-Once you have achieved good segmentation it's now time to save the parameters. Once this is done, minimise the segmentaiton window and click segment movie to apply your segmentation parameters to the entire image sequence. This may take a while depending on how fast your computer is and how large you movie is.
+Once you have achieved good segmentation it's now time to save the parameters. Once this is done, click segment movie to apply your segmentation parameters to the entire image sequence. This may take a while depending on how fast your computer is and how large you movie is.
 
-When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and minimise the view segment window.
+To speed up the process you can opt to use multiprocessing. However, due to the workload on the CPUs, the GUI does not display a loading bar during this process.
+
+When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and click extract features.
 
 .. figure:: Nt02.jpg
    :scale: 80 %
@@ -115,17 +115,17 @@ When segmentation is done a button will appear allowing you to visualise the res
 Training Data
 -------------
 
-The algorithm that tracks yours cell is probabilistic. Meaning, it will assign a probability to every segment giving it a measure of whether it is likely to be a single nuclei, a mitotic nuclei, on that has left mitosis recently, or an erroneous segmentation either, more than one nuclei or no nuclei.
+The algorithm that tracks your cells is probabilistic. Meaning, it will assign a probability to every segment giving it a measure of whether it is likely to be a single nuclei, a mitotic nuclei, on that has left mitosis recently, or an erroneous segmentation either, more than one nuclei or no nuclei.
 
 To calculate the probabilities features must be extracted from each segment. Click extract features to do this, again this step may take a few minutes.
 
 Now select the training data button, you will be presented with a window showing your segmented cells in gray.
 
-The buttons on the right allow you select training data for the probabilistic tracking algorithm. Click a button then select cells in the window to assign them as either 1 cell, a mitotic cell or a cell that has just left mitosis. You probably want to select around 10 to 20 examples of single cells, and then 3 or 4 mitotic cells and 5 or 6 cells that have left mitosis.
+The dropdown button in the top right corenr allows you to select a training data class for the probabilistic tracking algorithm. Choose a class then start clicking on the gray nuclei in the field of view. You probably want to select around 10 to 20 examples of single cells, and then 3 or 4 mitotic cells and 5 or 6 cells that have left mitosis.
 
 If allot of segmentation errors have been made consider selecting examples of these, but the algorithm usually works just fine without these examples.
 
-Three new sliders also exist in the top left hand corner along with text, generally the default value swill work though you may want to adjust these if tracking is particularly slow:
+Three new sliders also exist in the top left hand corner along with text, generally the default values will work though you may want to adjust these if tracking is particularly slow:
 
 * The furthest left of these sliders determines how far (in pixels) the algorithm will search in the previous frame, this should roughly correspond to the largest jump that nuclei are making between frames, however larger values will also mean tracking will take longer.
 * The middle of the three sliders determines the largest gap between frames that can occur in a track. Smaller values speed up tracking whilst larger values take longer.
@@ -133,7 +133,7 @@ Three new sliders also exist in the top left hand corner along with text, genera
 
 Once everything is selected, click save training. A button for classifying cells will now appear. Click this to assign probabilities to every cell in the image sequence.
 
-Everything is now ready for tracking, hit this button to begin tracking. A feed of cell scores will appear in the terminal after a short period of time, giving the total score of tracking. This will increase steadily as tracks are iteratively added.
+Everything is now ready for tracking, hit this button to begin tracking. 
 
 .. figure:: Nt03.jpg
    :scale: 80 %
@@ -157,7 +157,9 @@ Automated tracking is likely to make errors. Buttons on the left hand side let y
 
 If you want to export data on all the track click save all to CSV. Otherwise you can select individual tracks and export only these selections. To do this with a track selected click store track. It should now be marked with a black dot. Once you have selected all the tracks you want, then click export selected to csv.
 
-Finally you can change which features you want to visualise using the text boxes on the right. Here choose a number between one and 11, representing the features:
+Events can also be added. These are extremely useful if you want to computationally syncronise your cells to specific timepoints such as S-phase entry. There are three event options that you can choose. If you select one of these and then click on the graph window at the desired timepoint, you will see a Cyan, Yellow or Magenta line appear at this point marking the event. When you export your results to csv format, the final column will then contain the number (1, 2 or 3 depending on which event was chosen) at this time point.
+
+You can also change which features you want to visualise using the text boxes on the right. Here choose a number between one and 11, representing the features, the 'Floored Mean' feature is particularly useful for identifying PCNA foci a common fluoresecent label used to mark S-phase in cycling cells:
 
 * Area,
 * Eccentricity
@@ -167,9 +169,11 @@ Finally you can change which features you want to visualise using the text boxes
 * CH1 StdDev Intensity
 * CH1 Floored Mean
 * CH2 Mean Intensity
+* CH2 Floored Mean
 * CH2 StdDev Intensity
 * CH3 Mean Intensity
 * CH3 StdDev Intensity
+* CH3 Floored Mean
 
 .. figure:: Nt04.jpg
    :scale: 80 %
@@ -211,9 +215,12 @@ On more basic systems some dependencies may cause issues, on RHEL/Fedora linux I
 * RHEL/Fedora linux: Kivy may require xclip/xsel to import properly, install EPEL, then > yum install xclip,xsel
 * RHEL/Fedora linux: Kivy may require bzip to to import properly > yum install  bzip2-devel then configure and make python3.6 again
 
-The python NucliTrack package contains two functions that allow it to be run either as a GUI or in batch mode (discussed later). 
+Python Package Functions
+------------------------
 
-To run nuclitrack using the GUI create a new python script, cut and paste the following code into it, and then run this script:
+The python NucliTrack package contains two functions that allow it to be run either as a GUI or in batch mode (discussed later).  In both cases, asserting that the script is being called as main is vital for multithreading to work properly.
+
+To run nuclitrack using the GUI create a new python script, cut and paste the following code into it, and then run the script:
 
 .. code-block:: python
 	import nuclitrack
@@ -223,13 +230,13 @@ To run nuclitrack using the GUI create a new python script, cut and paste the fo
 To run nuclitrack in batch mode which doesn't require the kivy library, create a new python script and paste the following into it.
 
 .. code-block:: python
-	import nuclitrack
-	if __name__=='__main__':
-    		nuclitrack.batchanalyse.batchanalyse('myfile.txt','example_params.hdf5','output')
+  import nuclitrack
+  if __name__=='__main__':
+    nuclitrack.batchanalyse.batchanalyse('myfile.txt','myparams.hdf5','myoutput')
+		
+Here, 'myfile.txt' represents a text file for loading images, in the format described in section CDASC. The 'myparams.hdf5' file must be created by using the GUI on a reference movie, and contains the parameters selected for segmentation and tracking, as well as training data chosen in the training data GUI. Finally 'myoutput' is the name that both the 'output.hdf5' and 'output.csv' file will be saved as. The 'output.hdf5' file can then be loaded into the GUI and track correction and inspection carried out. Alternativley results can be directly analysed from the 'output.csv' file. 
 
-
-In both cases, asserting that the script is being called as main is vital for multithreading to work properly.
-
+To process multiple movies, the batchanalyse function can be called inside a loop where multiple text files are used to index different image series, with the output file name varied accordingly.
 
 Contribute
 ----------
