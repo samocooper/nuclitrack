@@ -16,14 +16,13 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
- .. figure:: kivy-Linux.png
-   :scale: 10 %
-   
-https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
++---------------------------+----------------------------+----------------------------+
+| .. figure:: nt_osx.png    | .. figure:: nt_linux.png   | .. figure:: nt_windows.png |
++---------------------------+----------------------------+----------------------------+
 
-NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
+No installation is required for the Application, just download and run it. 
 
-No installation is required for the Application, just download and run it, though there may be some issues:
+There may be some issues, hopefully the solutions below can help:
 
 Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
 
@@ -37,8 +36,9 @@ Enter your password on request, then launch the NucliTrack Application which sho
 ::
 	> sudo spctl --master-enable
 
-OpenGL version is less than 2.0: Update your graphics drivers.
+OpenGL version is less than 2.0: Update your graphics driver.
 
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
 
 Loading time series images
 --------------------------
@@ -62,18 +62,6 @@ Different channels can be loaded as long as the image size and number of frame i
 	...
 
 	somename_ch2_99.tif
-
-Finally the first and last time point must have different digits:
-
-|	somename_ch1_01.tif
-|	somename_ch1_39.tif
-
-is ok but:
-
-|	somename_ch1_01.tif
-|	somename_ch1_21.tif
-
-would not work properly. whilst you may end up missing one image, we feel this is a small price to pay for not having to faff around with complex naming conventions.
 
 A good set of videos to try the application out is the `benchmark dataset <http://ctc2015.gryf.fi.muni.cz/Public/FirstEdition/>`_ from the `first cell tracking challenge <http://www.codesolorzano.com/celltrackingchallenge/Cell_Tracking_Challenge/Results_First_CTC.html>`_.
 
