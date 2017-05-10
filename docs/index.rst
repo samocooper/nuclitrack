@@ -7,61 +7,38 @@
 Getting started
 ===============
 
-NucliTrack is designed as an easy to use Python 3 Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
+NucliTrack is designed as an easy to use Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
 
-Alternativley check out the `online video guide <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
+Alternativley check out the `online video guides <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
 
 Installation
 ------------
 
-To run NucliTrack you must have `Python3 <https://www.python.org/downloads/>`_ installed we recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for windows users.
+To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-Once you've got Python3 up and running you will need packages called Cython and numpy. This is easily installed using the pip installer, from the terminal (linux/mac users) or anaconda command prompt (windows) type:
-::
-	> pip install cython
-	> pip install numpy
+ .. figure:: kivy-Linux.png
+   :scale: 10 %
+   
+https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
 
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
 
-Now you're ready to install NucliTrack:
-::
-	> pip install nuclitrack
+No installation is required for the Application, just download and run it, though there may be some issues:
 
-Notes:
+Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
 
-*  On windows you will likely need to install kivy prior to nuclitrack, a guide for this can be found on the `kivy website <https://kivy.org/docs/installation/installation-windows.html>`_ . 
-
-From experience after installing the dependencies download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands:
+Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
 ::
-	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
+	> sudo spctl --master-disable
 	
-Here substitute in the location of the downloaded .whl file.
-	
-* If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
+Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
 
-On more basic systems some dependencies may cause issues, on RHEL/Fedora linux I have noted a few:
-
-* RHEL/Fedora linux: Kivy may require the openGL dev library to install properly > yum install mesa-libGL 
-* RHEL/Fedora linux: Kivy may require xclip/xsel to import properly, install EPEL, then > yum install xclip,xsel
-* RHEL/Fedora linux: Kivy may require bzip to to import properly > yum install  bzip2-devel then configure and make python3.6 again
-
-Launching NucliTrack
---------------------
-
-To launch nuclitrack start Python3 up in your terminal
 ::
-	> Python3
+	> sudo spctl --master-enable
 
-Python should now be running. Import NucliTrack and this will load up the Pygame window:
-::
-	>> import nuclitrack
+OpenGL version is less than 2.0: Update your graphics drivers.
 
-Finally run the nuclitrack application
-::
-	>> nuclitrack.CellTrackApp().run()
-
-The application should be running now and you're ready to get going.
- 
 
 Loading time series images
 --------------------------
@@ -211,6 +188,60 @@ Finally you can change which features you want to visualise using the text boxes
    :alt: Semgentation
 
    Step 4: Visualise and correct and export tacking data, image of the tracking visualisation and correction GUI
+   
+
+Python Package Installation
+---------------------------
+
+If your looking to develop your own features, tracks hundreds of videos in batch, or contribute to the nuclitrack project you will need,  `Python3 <https://www.python.org/downloads/>`_ . We recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for Windows users.
+
+Once you've got Python3 up and running you will need packages called Cython and Numpy (Anaconda already has them installed). These are easily installed using the pip installer, from the terminal type:
+::
+	> pip install cython
+	> pip install numpy
+
+
+Now you're ready to install NucliTrack:
+::
+	> pip install nuclitrack
+
+Notes:
+
+*  On windows you will likely need to install kivy prior to nuclitrack, a guide for this can be found on the `kivy website <https://kivy.org/docs/installation/installation-windows.html>`_ . 
+
+From experience after installing the dependencies download the latest wheel e.g. "python3.6, 64bit" from the kivy website then run the following commands:
+::
+	> python -m pip install C:\Kivy-1.9.1.dev-cp27-none-win_amd64.whl
+	
+Here substitute in the location of the downloaded .whl file.
+	
+* If Python2 is installed on your system, you will probably need to specify the pip installer to use e.g. pip3.6, to ensure everything works properly.
+
+On more basic systems some dependencies may cause issues, on RHEL/Fedora linux I have noted a few:
+
+* RHEL/Fedora linux: Kivy may require the openGL dev library to install properly > yum install mesa-libGL 
+* RHEL/Fedora linux: Kivy may require xclip/xsel to import properly, install EPEL, then > yum install xclip,xsel
+* RHEL/Fedora linux: Kivy may require bzip to to import properly > yum install  bzip2-devel then configure and make python3.6 again
+
+The python NucliTrack package contains two functions that allow it to be run either as a GUI or in batch mode (discussed later). 
+
+To run nuclitrack using the GUI create a new python script, cut and paste the following code into it, and then run this script:
+
+.. code-block:: python
+	import nuclitrack
+	if __name__=='__main__':
+    		nuclitrack.main.run()
+
+To run nuclitrack in batch mode which doesn't require the kivy library, create a new python script and paste the following into it.
+
+.. code-block:: python
+	import nuclitrack
+	if __name__=='__main__':
+    		nuclitrack.batchanalyse.batchanalyse('myfile.txt','example_params.hdf5','output')
+
+
+In both cases, asserting that the script is being called as main is vital for multithreading to work properly.
+
 
 Contribute
 ----------
