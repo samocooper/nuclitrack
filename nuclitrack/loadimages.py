@@ -43,6 +43,11 @@ def savefilelist(file_list, fov):
         file_list_bin.append([bytes(file, encoding='utf8') for file in channel])
 
     file_list_np = np.asarray(file_list_bin)
+
+    for g in fov:
+        if g =='file_list':
+            del fov['file_list']
+
     fov.create_dataset('file_list', data=file_list_np)
 
 

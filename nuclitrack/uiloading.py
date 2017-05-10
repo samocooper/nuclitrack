@@ -257,9 +257,9 @@ class LoadingUI(Widget):
             last_image.bind(on_press=partial(self.image_pos, 1))
             self.series_choice.add_widget(last_image)
 
-            last_image = Button(text='Load Images')
-            last_image.bind(on_press=self.auto_load)
-            self.series_choice.add_widget(last_image)
+            load_image = Button(text='Load Images')
+            load_image.bind(on_press=self.auto_load)
+            self.series_choice.add_widget(load_image)
 
             self.img_layout.add_widget(self.series_choice)
 
@@ -382,7 +382,7 @@ class LoadingUI(Widget):
         else:
             self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1][-29:] + '[/b][/color]'
 
-    def auto_load(self, obj):
+    def auto_load(self, instance):
 
         # Autoload all channels where both file names are given output file names to all_file list
         # Handle errors in file loading
