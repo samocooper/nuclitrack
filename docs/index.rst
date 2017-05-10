@@ -16,15 +16,9 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-=====  =====  =======
-A      B      A and B
-=====  =====  =======
-False  False  False
-True   False  False
-False  True   False
-True   True   True
-=====  =====  =======
-
+ .. figure:: kivy-Linux.png
+   :scale: 10 %
+   
 https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
 
 NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
