@@ -21,10 +21,6 @@ To get started with NucliTrack we have prebuilt versions available for OSX, Linu
 .. image:: nt_linux.png
 
     :width: 50pt
-   
-https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip
-
-NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see section XS for details of how to install Nuclitrack as a Python package.
 
 No installation is required for the Application, just download and run it, though there may be some issues:
 
@@ -40,6 +36,7 @@ Enter your password on request, then launch the NucliTrack Application which sho
 
 OpenGL version is less than 2.0: Update your graphics drivers.
 
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see the `Python Package Installation`_ section for details of how to install Nuclitrack as a Python package.
 
 Loading time series images
 --------------------------
@@ -222,9 +219,11 @@ You can also change which features you want to visualise using the text boxes on
 
    Step 4: Visualise and correct and export tacking data, image of the tracking visualisation and correction GUI
    
+   
+.. _Python:
 
 Python Package Installation
----------------------------
+----------------------------
 
 If your looking to develop your own features, tracks hundreds of videos in batch, or contribute to the nuclitrack project you will need,  `Python3 <https://www.python.org/downloads/>`_ . We recommend using the `Anaconda <https://www.continuum.io/downloads>`_ distribution for Windows users.
 
