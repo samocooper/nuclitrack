@@ -11,8 +11,6 @@ NucliTrack is designed as an easy to use Application for tracking cell nuclei. W
 
 Alternativley check out the `online video guides <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
 
-A good set of videos to try the application out is the `benchmark dataset <http://ctc2015.gryf.fi.muni.cz/Public/FirstEdition/>`_ from the `first cell tracking challenge <http://www.codesolorzano.com/celltrackingchallenge/Cell_Tracking_Challenge/Results_First_CTC.html>`_.
-
 Installation
 ------------
 
@@ -22,7 +20,7 @@ To get started with NucliTrack we have prebuilt versions available for OSX, Linu
 
     :width: 50pt
 
-No installation is required for the Application, just download and run it, though there may be some issues:
+No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
 Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
 
