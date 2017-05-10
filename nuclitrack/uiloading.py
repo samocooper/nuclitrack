@@ -324,9 +324,11 @@ class LoadingUI(Widget):
         self.load_from_dir(instance.text)
 
     def load_from_dir(self, dir_name):
-
-        file_list = loadimages.filelistfromdir(dir_name)
-        self.load_movie(file_list)
+        try:
+            file_list = loadimages.filelistfromdir(dir_name)
+            self.load_movie(file_list)
+        except:
+            self.ui_message.text = '[b][color=000000] File format incorrect [/b][/color]'
 
     ############################
     # TEXT FILE LOAD FUNCTIONS #
@@ -340,11 +342,15 @@ class LoadingUI(Widget):
 
         if os.path.isfile(text_file):
 
-            file_list, label_list = loadimages.filelistfromtext(text_file)
+            try:
+                file_list, label_list = loadimages.filelistfromtext(text_file)
 
-            self.load_movie(file_list)
-            if len(label_list) > 1:
-               self.load_labels(label_list)
+                self.load_movie(file_list)
+                if len(label_list) > 1:
+                    self.load_labels(label_list)
+            except:
+
+                self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
 
         else:
             self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
@@ -398,24 +404,26 @@ class LoadingUI(Widget):
         if not(len(self.file_names[0]) == len(self.file_names[1])):
             self.ui_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
             return
+        try:
+            images = []
 
-        images = []
+            for i in range(self.max_channel):
+                if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
+                    if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
+                        images.append(loadimages.autofilelist(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
 
-        for i in range(self.max_channel):
-            if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
-                if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
-                    images.append(loadimages.autofilelist(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
+            flag = self.load_movie(images)
 
-        flag = self.load_movie(images)
+            if flag:
 
-        if flag:
+                mx = self.max_channel
 
-            mx = self.max_channel
-
-            if (not self.file_names[mx * 2 + 0] == '') and (not self.file_names[mx * 2 + 1] == ''):
-                if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
-                    labels = loadimages.autofilelist(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
-                    self.load_labels(labels)
+                if (not self.file_names[mx * 2 + 0] == '') and (not self.file_names[mx * 2 + 1] == ''):
+                    if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
+                        labels = loadimages.autofilelist(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
+                        self.load_labels(labels)
+        except:
+            self.ui_message.text = '[b][color=000000] Error loading image sequence [/b][/color]'
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
