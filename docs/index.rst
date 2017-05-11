@@ -16,10 +16,10 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux (EL7) and Windows:
 
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                  |
-|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.zip |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                      |
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_Win.zip |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
                                                                                                           
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
