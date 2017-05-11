@@ -154,8 +154,8 @@ class TrackCells(object):
 
         double_seg = unique[counts > 1]
 
-        #for val in double_seg:
-            #self.tracks = self.tracks[np.logical_not(self.tracks[:, 0] == val), :]
+        for val in double_seg:
+            self.tracks = self.tracks[np.logical_not(self.tracks[:, 0] == val), :]
 
         # ISCB HACK
 
