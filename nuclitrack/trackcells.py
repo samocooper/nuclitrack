@@ -240,11 +240,15 @@ def save_csv(features, tracks, file_name):
 
                     mask_change = np.logical_and(mask1, mask2)
                     if np.count_nonzero(mask_change):
-                        # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+                        try:
+                            # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
-                        change_list = np.where(mask_change)
-                        feat_mat[change_list[0][0], 19] = ind_change
-                        feat_mat[i, 19] = ind_change
+                            change_list = np.where(mask_change)
+                            feat_mat[change_list[0][0], 19] = ind_change
+                            feat_mat[i, 19] = ind_change
+                        except:
+
+                            pass
 
     with open(file_name, 'wb') as f:
 
@@ -303,12 +307,15 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
                     mask_change = np.logical_and(mask1, mask2)
                     if np.count_nonzero(mask_change):
+                        try:
+                            # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
-                        # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+                            change_list = np.where(mask_change)
+                            feat_mat[change_list[0][0], 19] = ind_change
+                            feat_mat[i, 19] = ind_change
+                        except:
 
-                        change_list = np.where(mask_change)
-                        feat_mat[change_list[0][0], 19] = ind_change
-                        feat_mat[i, 19] = ind_change
+                            pass
 
     with open(file_name, 'wb') as f:
 
