@@ -14,15 +14,16 @@ Alternativley check out the `online video guides <https://www.youtube.com/watch?
 Installation
 ------------
 
-To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
+To get started with NucliTrack we have prebuilt versions available for OSX, Linux (EL7) and Windows:
 
-.. image:: nt_linux.png
-
-    :width: 50pt
-
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                  |
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.zip |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
+                                                                                                          
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
-Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
+Windows: Due to multiprocessing and loading issues, we have opted not to compile Nuclitrack into a single file executable. Please unzip the file following download, enter it and then double click NucliTrack.exe from within the file, this will launch a console which will then load NucliTrack.
 
 Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
@@ -42,6 +43,11 @@ Loading time series images
 To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual single plane tiff files. There are then three options for loading the .tif image time series into NucliTrack.
 
 However, before loading you need to specify file names for the hdf5 files that will store your tracking data and parameters. You can either enter the location for these files directly into the text boxes and hit enter. Alternatively navigate to the desired folder, enter names for the files at the end of the directory path, and then hit enter.
+
+.. figure:: nt1.png
+
+	Select locations to save data on the movie and parameters used.
+	
 
 Auto Load
 ^^^^^^^^^
@@ -112,9 +118,6 @@ Load from dir
 This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging a single image series, and double click the first image in the series, this will load all other images in the  directory.
 
 .. figure:: Nt01.jpg
-
-   :scale: 80 %
-   :alt: Semgentation
 
    Step 1: File loading, image of the file loading GUI
    
