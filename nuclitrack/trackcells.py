@@ -227,17 +227,24 @@ def save_csv(features, tracks, file_name):
         if feat_mat[i, 17] > 0:
 
             mask = feat_mat[:, 18] == feat_mat[i, 17]
-            ind_change = feat_mat[mask, 0]
 
-            frame_change = feat_mat[mask, 1]
-            mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
-            if sum(mask_change) > 0:
+            if np.count_nonzero(mask):
 
-                # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+                ind_change = feat_mat[mask, 0]
+                frame_change = feat_mat[mask, 1]
 
-                change_list = np.where(mask_change)
-                feat_mat[change_list[0][0], 19] = ind_change
-                feat_mat[i, 19] = ind_change
+                mask1 = feat_mat[:, 0] == ind_change
+                mask2 = feat_mat[:, 1] > frame_change
+
+                if np.count_nonzero(mask1) and np.count_nonzero(mask2):
+
+                    mask_change = np.logical_and(mask1, mask2)
+                    if np.count_nonzero(mask_change):
+                        # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+
+                        change_list = np.where(mask_change)
+                        feat_mat[change_list[0][0], 19] = ind_change
+                        feat_mat[i, 19] = ind_change
 
     with open(file_name, 'wb') as f:
 
@@ -283,16 +290,25 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
         if feat_mat[i, 17] > 0:
 
             mask = feat_mat[:, 18] == feat_mat[i, 17]
-            ind_change = feat_mat[mask, 0]
 
-            frame_change = feat_mat[mask, 1]
-            mask_change = np.logical_and(feat_mat[:, 0] == ind_change, feat_mat[:, 1] > frame_change)
-            if sum(mask_change) > 0:
-                # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+            if np.count_nonzero(mask):
 
-                change_list = np.where(mask_change)
-                feat_mat[change_list[0][0], 19] = ind_change
-                feat_mat[i, 19] = ind_change
+                ind_change = feat_mat[mask, 0]
+                frame_change = feat_mat[mask, 1]
+
+                mask1 = feat_mat[:, 0] == ind_change
+                mask2 = feat_mat[:, 1] > frame_change
+
+                if np.count_nonzero(mask1) and  np.count_nonzero(mask2):
+
+                    mask_change = np.logical_and(mask1, mask2)
+                    if np.count_nonzero(mask_change):
+
+                        # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+
+                        change_list = np.where(mask_change)
+                        feat_mat[change_list[0][0], 19] = ind_change
+                        feat_mat[i, 19] = ind_change
 
     with open(file_name, 'wb') as f:
 
