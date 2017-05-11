@@ -66,18 +66,14 @@ class BatchSegment(Widget):
 
     def segment_im(self, frame, dt):
 
-        im = tifffile.imread(self.file_list[frame])
-        im = im.astype(float)
-        im -= self.min_val
-        im /= self.max_val
-
-        self.labels[frame, :, :] = segmentimages.segment_image(self.params, im)
+        self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.min_val, self.max_val,
+                                                               self.file_list[int(frame)])
 
     def segment_parallel(self):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        labels = pool.map(partial(segmentimages.segment_image, self.params), [self.images[frame, :, :] for frame in range(self.frames)])
+        labels = pool.map(partial(segmentimages.segment_image, self.params, self.min_val, self.max_val), self.file_list)
         pool.close()
         pool.join()
 
@@ -121,9 +117,6 @@ class SegmentationUI(Widget):
 
         self.im_disp.create_im(self.im, 'PastelHeat')
         self.mov_disp.create_im(self.im, 'PastelHeat')
-
-        if self.params[0] == 0:
-            self.params[0] = self.max_vals[0]
 
         # Frame slider
 

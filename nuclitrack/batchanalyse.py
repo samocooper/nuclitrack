@@ -18,11 +18,12 @@ def batchanalyse(text_file, param_file, output_file):
     file_list, label_files = loadimages.filelistfromtext(text_file)
 
     loadimages.savefilelist(file_list, fov)
-    images = loadimages.loadimages(file_list)
-    channel_num = len(images)
+    dims, min_vals, max_vals = loadimages.loadimages(file_list)
+    channel_num = len(file_list)
     params = h5py.File(param_file, "a")
     s_params = params['seg_param'][...]
-    frames = images[0].shape[0]
+    frames = len(file_list[0])
+    seg_ch = int(s_params[10])
 
     if len(label_files) > 1:
         labels = loadimages.loadimages([label_files], label_flag=True)
@@ -31,7 +32,8 @@ def batchanalyse(text_file, param_file, output_file):
         print('Segmenting Cells')
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        labels_list = pool.map(partial(segment_image, s_params), [images[int(s_params[10])][frame, :, :] for frame in range(frames)])
+        labels_list = pool.map(partial(segment_image, s_params, min_vals[seg_ch],
+                                  max_vals[seg_ch]), file_list[seg_ch])
         pool.close()
         pool.join()
 
@@ -48,11 +50,12 @@ def batchanalyse(text_file, param_file, output_file):
 
     for i in range(frames):
 
-        feature_images = [labels[i, :, :]]
+        files = []
         for j in range(channel_num):
-            feature_images.append(images[j][i, :, :])
+            files.append(file_list[j][i])
 
-        feature_mat, labels[i, :, :], counter = extractfeatures.framefeatures(feature_images, feature_num, counter)
+        feature_mat, labels[i, :, :], counter = extractfeatures.framefeatures(files, labels[i, :, :],
+                                                                              feature_num, counter)
         feature_mat[:, 1] = i
         features = np.vstack((features, feature_mat))
 

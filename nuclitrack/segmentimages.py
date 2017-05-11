@@ -5,6 +5,7 @@ from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from scipy import ndimage
+from skimage.external import tifffile
 
 
 def clipping(im, val):
@@ -123,8 +124,14 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
     return labels
 
 
-def segment_image(params, image):
-    image = clipping(image, params[0])
+def segment_image(params, min_val, max_val, file_name):
+
+    im = tifffile.imread(file_name)
+    im = im.astype(float)
+    im -= min_val
+    im /= max_val
+
+    image = clipping(im, params[0])
     image2 = background(image, params[1])
     image3 = blur(image2, params[2])
     im_bin = threshold(image3, params[3])
