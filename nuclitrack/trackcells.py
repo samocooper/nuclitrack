@@ -206,10 +206,11 @@ def save_csv(features, tracks, file_name):
 
     feat_mat = np.zeros((1, 21))
 
-    for i in range(1, int(max(tracks[:, 4])) + 1):
-        if sum(tracks[:, 4] == i) > 0:
+    for i in range(1, int(np.max(tracks[:, 4])) + 1):
+        mask_i = tracks[:, 4] == i
+        if np.count_nonzero(mask_i) > 0:
 
-            track_temp = tracks[tracks[:, 4] == i, :]
+            track_temp = tracks[mask_i, :]
 
             for j in range(track_temp.shape[0]):
                 mask = features[:, 0] == track_temp[j, 0]
@@ -272,11 +273,13 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
     feat_mat = np.zeros((1, 21))
 
-    for i in range(1, int(max(tracks[:, 4]))):
+    for i in range(1, int(np.max(tracks[:, 4]))):
         if tracks_stored[i] == 1:
-            if sum(tracks[:, 4] == i) > 0:
 
-                track_temp = tracks[tracks[:, 4] == i, :]
+            mask_i = tracks[:, 4] == i
+            if np.count_nonzero(mask_i) > 0:
+
+                track_temp = tracks[mask_i, :]
 
                 for j in range(track_temp.shape[0]):
                     mask = features[:, 0] == track_temp[j, 0]
