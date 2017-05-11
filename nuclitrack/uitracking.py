@@ -662,8 +662,17 @@ class TrackingUI(Widget):
 
                     swap_ind = self.tracks[mask, 4]
 
+                    if swap_ind == self.track_ind[0]:
+                        return
+
                     swap_mask = self.tracks[:, 4] == swap_ind
+
+                    if not np.count_nonzero(swap_mask):
+                        return
+
                     swap_track = self.tracks[swap_mask, :]
+
+                    self.tracks = self.tracks[np.logical_not(np.logical_or(sel_mask, swap_mask)), :]
 
                     # perform swap
 
@@ -673,14 +682,26 @@ class TrackingUI(Widget):
                     swap1 = swap_track[swap_track[:, 5] < self.current_frame, :]
                     swap2 = swap_track[swap_track[:, 5] >= self.current_frame, :]
 
-                    swapped_1 = np.vstack((sel1, swap2))
+                    if np.count_nonzero(sel1) and np.count_nonzero(swap2):
+                        swapped_1 = np.vstack((sel1, swap2))
+                    else:
+                        if np.count_nonzero(sel1):
+                            swapped_1 = sel1
+                        if np.count_nonzero(swap2):
+                            swapped_1 = swap2
+
+                    if np.count_nonzero(swap1) and np.count_nonzero(sel2):
+                        swapped_2 = np.vstack((swap1, sel2))
+                    else:
+                        if np.count_nonzero(swap1):
+                            swapped_2 = swap1
+                        if np.count_nonzero(sel2):
+                            swapped_2 = sel2
 
                     if np.count_nonzero(sel1):
                         swapped_1[:, 4] = sel1[0, 4]
                     else:
                         swapped_1[:, 4] = sel2[0, 4]
-
-                    swapped_2 = np.vstack((swap1, sel2))
 
                     if np.count_nonzero(swap1):
                         swapped_2[:, 4] = swap1[0, 4]
@@ -688,16 +709,17 @@ class TrackingUI(Widget):
                         swapped_2[:, 4] = swap2[0, 4]
 
 
-                    self.tracks = self.tracks[np.logical_not(np.logical_or(sel_mask, swap_mask)), :]
-                    self.tracks = np.vstack((self.tracks, swapped_1, swapped_2))
-
                     # update labels
 
-                    map_ind1 = self.features[int(swapped_1[0, 0]), 18]
-                    map_ind2 = self.features[int(swapped_2[0, 0]), 18]
+                    if np.count_nonzero(swapped_1):
+                        self.tracks = np.vstack((self.tracks, swapped_1))
+                        map_ind1 = self.features[int(swapped_1[0, 0]), 18]
+                        self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
 
-                    self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
-                    self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
+                    if np.count_nonzero(swapped_2):
+                        self.tracks = np.vstack((self.tracks, swapped_2))
+                        map_ind2 = self.features[int(swapped_2[0, 0]), 18]
+                        self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
 
                     self.modify_update()
 
