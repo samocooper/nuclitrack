@@ -14,7 +14,7 @@ Alternativley check out the `online video guides <https://www.youtube.com/watch?
 Installation
 ------------
 
-To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
+To get started with NucliTrack we have prebuilt versions available for OSX, Linux (EL7) and Windows:
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | 
