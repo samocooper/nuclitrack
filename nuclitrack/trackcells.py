@@ -159,10 +159,10 @@ class TrackCells(object):
 
         # ISCB HACK
 
-        for val in double_seg:
-            inds = np.where(self.tracks[:, 0] == val)
-            inds = inds[0]
-            self.tracks = np.delete(self.tracks, inds[0], 0)
+        #for val in double_seg:
+        #    inds = np.where(self.tracks[:, 0] == val)
+        #    inds = inds[0]
+        #    self.tracks = np.delete(self.tracks, inds[0], 0)
 
         # Color labels
 

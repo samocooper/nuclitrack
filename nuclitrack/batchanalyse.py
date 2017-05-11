@@ -14,7 +14,6 @@ def batchanalyse(text_file, param_file, output_file):
 
     print('Loading Images')
     fov = h5py.File(output_file + '.hdf5', "a")
-
     file_list, label_files = loadimages.filelistfromtext(text_file)
 
     loadimages.savefilelist(file_list, fov)
