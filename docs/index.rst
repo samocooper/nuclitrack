@@ -16,10 +16,11 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux and Windows:
 
-.. image:: nt_linux.png
-
-    :width: 50pt
-
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| .. image:: nt_linux.png                                                                       | .. image:: nt_osx.png                                                                          | 
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
+                                                                                                          
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
 Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
