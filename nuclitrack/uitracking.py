@@ -701,15 +701,17 @@ class TrackingUI(Widget):
                         if np.count_nonzero(sel2):
                             swapped_2 = sel2
 
-                    if np.count_nonzero(sel1):
-                        swapped_1[:, 4] = sel1[0, 4]
-                    if np.count_nonzero(sel2):
-                        swapped_1[:, 4] = sel2[0, 4]
+                    if np.count_nonzero(swapped_1):
+                        if np.count_nonzero(sel1):
+                            swapped_1[:, 4] = sel1[0, 4]
+                        if np.count_nonzero(sel2):
+                            swapped_1[:, 4] = sel2[0, 4]
 
-                    if np.count_nonzero(swap1):
-                        swapped_2[:, 4] = swap1[0, 4]
-                    if np.count_nonzero(swap2):
-                        swapped_2[:, 4] = swap2[0, 4]
+                    if np.count_nonzero(swapped_2):
+                        if np.count_nonzero(swap1):
+                            swapped_2[:, 4] = swap1[0, 4]
+                        if np.count_nonzero(swap2):
+                            swapped_2[:, 4] = swap2[0, 4]
 
 
                     # update labels
