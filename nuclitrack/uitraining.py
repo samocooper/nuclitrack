@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
+from skimage.external import tifffile
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -83,10 +84,10 @@ class TrainingData(Widget):
 
 class TrainingUI(Widget):
 
-    def __init__(self, images=None, labels=None, features=None, frames=None, *args, **kwargs):
+    def __init__(self, file_list, labels, features, frames, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.seg_channel = images
+        self.file_list = file_list
         self.labels = labels
         self.features = features
         self.frames = frames
@@ -112,8 +113,11 @@ class TrainingUI(Widget):
 
         self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
-        mov_temp = self.seg_channel[0, :, :]
-        self.mov_disp.create_im(mov_temp, 'PastelHeat')
+
+        im = tifffile.imread(self.file_list[0])
+        im = im.astype(float)
+
+        self.mov_disp.create_im(im, 'PastelHeat')
 
         inds = self.features[:, 1]
         mask = inds == 0
@@ -196,8 +200,10 @@ class TrainingUI(Widget):
         self.im_disp.update_im(im_temp, mapping)
         self.label_disp.update_im(np.mod(im_temp, 64))
 
-        mov_temp = self.seg_channel[int(val), :, :]
-        self.mov_disp.update_im(mov_temp)
+        im = tifffile.imread(self.file_list[int(val)])
+        im = im.astype(float)
+        self.mov_disp.update_im(im)
+
         inds = self.features[:, 1]
         mask = inds == self.current_frame
 

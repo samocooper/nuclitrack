@@ -9,10 +9,10 @@ from . import extractfeatures
 
 class FeatureExtract(Widget):
 
-    def __init__(self, images=None, labels=None, frames=None, channels=None, dims=None, **kwargs):
+    def __init__(self, file_list, labels, frames, channels, dims, **kwargs):
         super().__init__(**kwargs)
 
-        self.images = images
+        self.file_list = file_list
         self.labels = labels
         self.frames = frames
         self.channels = channels
@@ -41,11 +41,12 @@ class FeatureExtract(Widget):
 
     def frame_features(self, frame, dt):
 
-        feature_images = [self.labels[frame, :, :]]
+        files = []
         for i in range(self.channels):
-            feature_images.append(self.images[i][frame, :, :])
+            files.append(self.file_list[i][frame])
 
-        feature_mat, new_labels, self.counter = extractfeatures.framefeatures(feature_images, self.feature_num, self.counter)
+        feature_mat, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :],
+                                                                              self.feature_num, self.counter)
         feature_mat[:, 1] = frame
         self.features = np.vstack((self.features, feature_mat))
         self.labels[frame, :, :] = new_labels

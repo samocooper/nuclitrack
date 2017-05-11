@@ -23,6 +23,11 @@ class UserInterface(Widget):
         self.current_frame = 0
         self.parallel = False
 
+        self.dims = []
+        self.min_vals = []
+        self.max_vals = []
+        self.file_list = []
+
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
         self.m_layout = FloatLayout(size=(Window.width, Window.height))
@@ -65,8 +70,9 @@ class UserInterface(Widget):
 
             self.remove_widget(self.current_widget)
             self.params.require_dataset('seg_param', (11,), dtype='f')
-            self.current_widget = SegmentationUI(images=self.images, frames=self.frames, channels=self.channels,
-                                                 params=self.params['seg_param'][...])
+            self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
+                                                 max_vals=self.max_vals, frames=self.frames,
+                                                 channels=self.channels, params=self.params['seg_param'][...])
 
             self.add_widget(self.current_widget)
             self.progression_state(3)
@@ -76,10 +82,20 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.current_widget = BatchSegment(images=self.images[int(self.params['seg_param'][10])], params=self.params['seg_param'][...],
-                                               frames=self.frames, parallel=self.parallel)
+            channel = int(self.params['seg_param'][10])
+
+            for g in self.fov:
+                if g == 'labels':
+                    del self.fov['labels']
+            self.labels = self.fov.create_dataset("labels", data=np.zeros((self.frames, self.dims[0], self.dims[1])))
+
+            self.current_widget = BatchSegment(file_list=self.file_list[channel],
+                                               min_val=self.min_vals[channel],
+                                               max_val=self.max_vals[channel],
+                                               params=self.params['seg_param'][...], frames=self.frames,
+                                               labels=self.labels,
+                                               parallel=self.parallel)
             self.add_widget(self.current_widget)
-            self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
 
             if self.parallel == True:
                 self.segment_flag_parallel = True
@@ -116,7 +132,7 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.current_widget = FeatureExtract(images=self.images, labels=self.labels[...], frames=self.frames,
+            self.current_widget = FeatureExtract(file_list=self.file_list, labels=self.labels[...], frames=self.frames,
                                                  channels=self.channels, dims=self.dims)
             self.add_widget(self.current_widget)
             self.feature_flag = True
@@ -146,7 +162,7 @@ class UserInterface(Widget):
         if instance.state == 'down' and flag:
 
             self.remove_widget(self.current_widget)
-            self.current_widget = TrainingUI(images=self.images[int(self.params['seg_param'][10])], labels=self.labels,
+            self.current_widget = TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])], labels=self.labels,
                                              features=self.fov['features'][...], frames=self.frames)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
@@ -204,7 +220,7 @@ class UserInterface(Widget):
     def tracking_ui(self, instance):
         if instance.state == 'down':
             self.remove_widget(self.current_widget)
-            self.current_widget = TrackingUI(images=self.images, labels=self.labels, tracks=self.fov['tracks'][...],
+            self.current_widget = TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'][...],
                                              stored_tracks=self.fov['tracks_stored'][...],
                                              features=self.fov['features'][...], frames=self.frames, dims=self.dims,
                                              channels=self.channels)

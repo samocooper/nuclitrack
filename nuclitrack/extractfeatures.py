@@ -1,15 +1,19 @@
 import numpy as np
 from skimage.measure import regionprops
+from skimage.external import tifffile
 
 
-def framefeatures(feature_images, feature_num, counter):
+def framefeatures(files, labels, feature_num, counter):
+    labels = labels.astype(int)
 
     features_temp = []
-    for j in range(len(feature_images)-1):
-        features_temp.append(regionprops(feature_images[0].astype(int), feature_images[j + 1]))
+    for j in range(len(files)):
+        im = tifffile.imread(files[j])
+        im = im.astype(float)
+        features_temp.append(regionprops(labels, im))
 
     feature_mat = np.zeros((len(features_temp[0]), feature_num))
-    dims = feature_images[0].shape
+    dims = labels.shape
     new_label = np.zeros((dims[0], dims[1]))
 
     for j in range(len(features_temp[0])):
@@ -38,7 +42,7 @@ def framefeatures(feature_images, feature_num, counter):
         features_vector[10] = np.std(im_temp)
         features_vector[11] = np.std(im_temp[im_temp > mu])
 
-        for k in range(1, len(feature_images)-1):
+        for k in range(1, len(files)):
 
             cell_temp = features_temp[k][j]
             mu = cell_temp.mean_intensity
@@ -51,7 +55,7 @@ def framefeatures(feature_images, feature_num, counter):
             features_vector[20 + (k - 1) * 3 + 2] = np.std(im_temp[im_temp > mu])
 
         feature_mat[j, :] = features_vector
-        new_label[feature_images[0] == cell_temp.label] = counter
+        new_label[labels == cell_temp.label] = counter
 
         counter += 1
 

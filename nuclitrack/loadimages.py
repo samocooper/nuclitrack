@@ -7,31 +7,32 @@ def loadimages(file_list, label_flag=False):
     # Function to load images for one movie from list of channels/file names
 
     frames = len(file_list[0])
-
     im_test = tifffile.imread(file_list[0][0])
     dims = im_test.shape
 
-    ims = []
+    min_vals = []
+    max_vals = []
 
-    for channel in file_list:
+    for j in range(len(file_list)):
 
-        channel_ims = np.zeros((frames, dims[0], dims[1]))
+        im_test = tifffile.imread(file_list[j][0])
+        max_val = np.max(im_test)
+        min_val = np.min(im_test)
 
-        for i in range(len(channel)):
-            im = tifffile.imread(channel[i])
+        for i in range(frames):
+
+            im = tifffile.imread(file_list[j][i])
             im = im.astype(float)
-            channel_ims[i, :, :] = im
 
-        ims.append(channel_ims)
+            if np.max(im) > max_val:
+                max_val = np.max(im)
+            if np.min(im) < min_val:
+                min_val = np.min(im)
 
-    # Standardise images such that intensities lie between 0 and 1
+        min_vals.append(min_val)
+        max_vals.append(max_val)
 
-    if not label_flag:
-        for i in range(len(ims)):
-            ims[i] -= np.min(ims[i].flatten())
-            ims[i] /= np.max(ims[i].flatten())
-
-    return ims
+    return dims, min_vals, max_vals
 
 
 def savefilelist(file_list, fov):

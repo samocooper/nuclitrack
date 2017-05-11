@@ -26,12 +26,15 @@ from .imagewidget import ImDisplay
 
 class BatchSegment(Widget):
 
-    def __init__(self, images=None, params=None, frames=None, parallel=False, **kwargs):
+    def __init__(self, file_list, min_val, max_val, labels, params, frames, parallel, **kwargs):
         super().__init__(**kwargs)
 
         self.frames = frames
-        self.images = images
-        self.labels = np.zeros(images.shape)
+        self.file_list = file_list
+        self.labels = labels
+        self.min_val = min_val
+        self.max_val = max_val
+
         self.params = params
         self.layout = FloatLayout(size=(Window.width, Window.height))
 
@@ -62,7 +65,13 @@ class BatchSegment(Widget):
         self.pb.value += 1000/self.frames
 
     def segment_im(self, frame, dt):
-        self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.images[frame, :, :])
+
+        im = tifffile.imread(self.file_list[frame])
+        im = im.astype(float)
+        im -= self.min_val
+        im /= self.max_val
+
+        self.labels[frame, :, :] = segmentimages.segment_image(self.params, im)
 
     def segment_parallel(self):
 
@@ -82,16 +91,19 @@ class BatchSegment(Widget):
 # Segmentation UI
 
 class SegmentationUI(Widget):
-    def __init__(self, images=None, frames=None, channels=None, params=None, **kwargs):
+    def __init__(self, file_list, min_vals, max_vals, frames, channels, params, **kwargs):
         super().__init__(**kwargs)
 
         self.params = params
         self.current_frame = 0
         self.channels = channels
         self.frames = frames
-        self.seg_channel = images[int(self.params[10])]
-        self.ch_max = np.max(self.seg_channel.flatten())
-        self.ch_min = np.min(self.seg_channel.flatten())
+
+        self.file_list = file_list
+        self.min_vals = min_vals
+        self.max_vals = max_vals
+
+        self.seg_channel = int(self.params[10])
         self.state = 0
 
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
@@ -102,11 +114,16 @@ class SegmentationUI(Widget):
         self.mov_disp = ImDisplay(size_hint=(.2, .2), pos_hint={'x': .78, 'y': .14})
         self.s_layout.add_widget(self.mov_disp)
 
-        self.im = self.seg_channel[0, :, :].copy()
+        self.im = tifffile.imread(file_list[self.seg_channel][0])
+        self.im = self.im.astype(float)
+        self.im -= self.min_vals[self.seg_channel]
+        self.im /= self.max_vals[self.seg_channel]
+
         self.im_disp.create_im(self.im, 'PastelHeat')
         self.mov_disp.create_im(self.im, 'PastelHeat')
+
         if self.params[0] == 0:
-            self.params[0] = self.ch_max
+            self.params[0] = self.max_vals[0]
 
         # Frame slider
 
@@ -134,7 +151,7 @@ class SegmentationUI(Widget):
 
         for i in range(self.channels):
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None)
-            channel_btn.bind(on_press=partial(self.change_channel, images, i))
+            channel_btn.bind(on_press=partial(self.change_channel, i))
             self.channel_choice.add_widget(channel_btn)
 
         self.main_button = Button(text=' Channel ', size_hint=(.15, .04), pos_hint={'x': .834, 'y': .923}, markup=True)
@@ -212,7 +229,12 @@ class SegmentationUI(Widget):
 
     def frame_select(self, instance, val):
         self.current_frame = int(val)
-        self.im = self.seg_channel[int(val), :, :].copy()
+
+        self.im = tifffile.imread(self.file_list[self.seg_channel][int(val)])
+        self.im = self.im.astype(float)
+        self.im -= self.min_vals[self.seg_channel]
+        self.im /= self.max_vals[self.seg_channel]
+
         self.im_disp.update_im(self.im)
         self.mov_disp.update_im(self.im)
         self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
@@ -340,11 +362,13 @@ class SegmentationUI(Widget):
             self.params[9] = 1
         else:
             self.params[9] = 0
-    def change_channel(self, images, val, instance):
+    def change_channel(self, val, instance):
 
-        self.seg_channel = images[int(val)]
-        self.im_disp.update_im(self.seg_channel[self.current_frame, :, :])
-        self.mov_disp.update_im(self.seg_channel[self.current_frame, :, :])
+        self.seg_channel = int(val)
+        self.im = tifffile.imread(self.file_list[self.seg_channel][self.current_frame])
+
+        self.im_disp.update_im(self.im)
+        self.mov_disp.update_im(self.im)
         self.params[10] = val
 
     def update_size(self, window, width, height):

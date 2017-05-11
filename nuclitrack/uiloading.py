@@ -177,12 +177,11 @@ class LoadingUI(Widget):
                     flag = False
 
                     file_list = loadimages.loadfilelist(self.parent.fov)
-                    images = loadimages.loadimages(file_list)
 
-                    self.parent.images = images
-                    self.parent.frames = len(images[0])
-                    self.parent.channels = len(images)
-                    self.parent.dims = images[0].shape[1:]
+                    self.parent.dims, self.parent.min_vals, self.parent.max_vals, = loadimages.loadimages(file_list)
+                    self.parent.file_list = file_list
+                    self.parent.frames = len(file_list[0])
+                    self.parent.channels = len(file_list)
 
                     self.parent.progression[0] = 1
                     self.parent.progression[1] = 1
@@ -448,13 +447,13 @@ class LoadingUI(Widget):
 
         # Load images save list of file names into hdf5 file
 
-        images = loadimages.loadimages(file_list)
+        self.parent.dims, self.parent.min_vals, self.parent.max_vals, = loadimages.loadimages(file_list)
+
         loadimages.savefilelist(file_list, self.parent.fov)
 
-        self.parent.images = images
         self.parent.frames = frames
-        self.parent.channels = len(images)
-        self.parent.dims = images[0].shape[1:]
+        self.parent.channels = len(file_list)
+        self.parent.file_list = file_list
 
         self.parent.progression[0] = 1
         self.parent.progression[1] = 1

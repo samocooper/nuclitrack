@@ -16,6 +16,8 @@ from kivy.uix.dropdown import DropDown
 from .imagewidget import ImDisplay, IndexedDisplay
 from .graph import Graph, SmoothLinePlot, LinePlot
 from . import trackcells
+from skimage.external import tifffile
+
 
 class RunTracking(Widget):
 
@@ -189,16 +191,16 @@ class Jump(Widget):
 
 class TrackingUI(Widget):
 
-    def __init__(self, images=None, labels=None, tracks=None, stored_tracks=None, features=None, frames=None,
-                 dims=None, channels=None, *args, **kwargs):
+    def __init__(self, file_list, labels, tracks, stored_tracks, features, frames,
+                 dims, channels, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.file_list = file_list
         self.channels = channels
         self.tracks = tracks
         self.features = features
         self.dims = dims
         self.labels = labels
-        self.channel_im = images[0]
 
         self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
         self.keyboard.bind(on_key_down=self.key_print)
@@ -237,7 +239,10 @@ class TrackingUI(Widget):
         mapping = self.features[:, 18].astype(int)
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
-        self.mov_disp.create_im(self.channel_im[0], 'PastelHeat')
+        self.channel = 0
+        im = tifffile.imread(self.file_list[self.channel][0])
+        im = im.astype(float)
+        self.mov_disp.create_im(im, 'PastelHeat')
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .1),
                                    pos_hint={'x': .145, 'y': .9})
@@ -359,7 +364,7 @@ class TrackingUI(Widget):
 
         for i in range(self.channels):
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None)
-            channel_btn.bind(on_press=partial(self.change_channel, images, i))
+            channel_btn.bind(on_press=partial(self.change_channel, i))
             self.channel_choice.add_widget(channel_btn)
 
         self.main_button = Button(text=' Channel ', size_hint=(.15, .04),
@@ -436,7 +441,10 @@ class TrackingUI(Widget):
 
         mapping = self.features[:, 18].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
-        self.mov_disp.update_im(self.channel_im[int(val)])
+
+        im = tifffile.imread(self.file_list[self.channel][int(val)])
+        im = im.astype(float)
+        self.mov_disp.update_im(im)
 
         inds = self.features[:, 1]
         mask = inds == self.current_frame
@@ -873,10 +881,12 @@ class TrackingUI(Widget):
             self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
             self.keyboard.bind(on_key_down=self.key_print)
 
-    def change_channel(self, images, val, instance):
+    def change_channel(self, val, instance):
 
-        self.channel_im = images[val]
-        self.mov_disp.update_im(self.channel_im[self.current_frame, :, :])
+        self.channel = int(val)
+        im = tifffile.imread(self.file_list[self.channel][self.current_frame])
+        im = im.astype(float)
+        self.mov_disp.update_im(im)
 
 
     def remove(self):
