@@ -682,6 +682,9 @@ class TrackingUI(Widget):
                     swap1 = swap_track[swap_track[:, 5] < self.current_frame, :]
                     swap2 = swap_track[swap_track[:, 5] >= self.current_frame, :]
 
+                    swapped_1 = np.zeros(1)
+                    swapped_2 = np.zeros(1)
+
                     if np.count_nonzero(sel1) and np.count_nonzero(swap2):
                         swapped_1 = np.vstack((sel1, swap2))
                     else:
@@ -700,12 +703,12 @@ class TrackingUI(Widget):
 
                     if np.count_nonzero(sel1):
                         swapped_1[:, 4] = sel1[0, 4]
-                    else:
+                    if np.count_nonzero(sel2):
                         swapped_1[:, 4] = sel2[0, 4]
 
                     if np.count_nonzero(swap1):
                         swapped_2[:, 4] = swap1[0, 4]
-                    else:
+                    if np.count_nonzero(swap2):
                         swapped_2[:, 4] = swap2[0, 4]
 
 
