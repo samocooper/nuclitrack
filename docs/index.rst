@@ -23,7 +23,7 @@ To get started with NucliTrack we have prebuilt versions available for OSX, Linu
                                                                                                           
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
-Windows: It takes along time to load, please be patient, and if you have any suggestions as to how to make it launch faster I would love to here them!
+Windows: Due to multiprocessing and loading issues, we have opted not to compile Nuclitrack into a single file executable. Please unzip the file following download, enter it and then double click NucliTrack.exe from within the file, this will launch a console which will then load NucliTrack.
 
 Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
