@@ -673,24 +673,26 @@ class TrackingUI(Widget):
                     swap1 = swap_track[swap_track[:, 5] < self.current_frame, :]
                     swap2 = swap_track[swap_track[:, 5] >= self.current_frame, :]
 
-                    swapped_1 = np.vstack((sel1, swap2))
-                    swapped_1[:, 4] = sel1[0, 4]
+                    if len(sel1) > 0 and len(sel2) > 0 and len(swap1) > 0 and len(swap2) > 0:
 
-                    swapped_2 = np.vstack((swap1, sel2))
-                    swapped_2[:, 4] = swap1[0, 4]
+                        swapped_1 = np.vstack((sel1, swap2))
+                        swapped_1[:, 4] = sel1[0, 4]
 
-                    self.tracks = self.tracks[np.logical_not(np.logical_or(sel_mask, swap_mask)), :]
-                    self.tracks = np.vstack((self.tracks, swapped_1, swapped_2))
+                        swapped_2 = np.vstack((swap1, sel2))
+                        swapped_2[:, 4] = swap1[0, 4]
 
-                    # update labels
+                        self.tracks = self.tracks[np.logical_not(np.logical_or(sel_mask, swap_mask)), :]
+                        self.tracks = np.vstack((self.tracks, swapped_1, swapped_2))
 
-                    map_ind1 = self.features[int(swapped_1[0, 0]), 18]
-                    map_ind2 = self.features[int(swapped_2[0, 0]), 18]
+                        # update labels
 
-                    self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
-                    self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
+                        map_ind1 = self.features[int(swapped_1[0, 0]), 18]
+                        map_ind2 = self.features[int(swapped_2[0, 0]), 18]
 
-                    self.modify_update()
+                        self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
+                        self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
+
+                        self.modify_update()
 
             # Create new track
 
