@@ -16,10 +16,10 @@ Installation
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux (EL7) and Windows:
 
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
-| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                  |
-|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.app.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack.zip |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                      |
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_Win.zip |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
                                                                                                           
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
@@ -46,7 +46,7 @@ However, before loading you need to specify file names for the hdf5 files that w
 
 .. figure:: nt1.png
 
-	Select locations to save data on the movie and parameters used.
+	**Figure 1** Select locations to save data on the movie and parameters used.
 	
 
 Auto Load
@@ -112,14 +112,14 @@ Loading from text is perhaps the easiest way of loading multichannel images, and
 
 Once you have created the text file, navigate to it in the file browser and double click to load.
 
+.. figure:: nt2.png
+
+	**Figure 2** Select first and last file for each channel to autoload images.
+
 Load from dir
 ^^^^^^^^^^^^^
 
 This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging a single image series, and double click the first image in the series, this will load all other images in the  directory.
-
-.. figure:: Nt01.jpg
-
-   Step 1: File loading, image of the file loading GUI
    
 Segmentation
 ------------
@@ -140,20 +140,29 @@ On the left hand side of the interface you should see a panel of sliders allowin
 
 Use the slider in the top left hand corner to navigate around the video and try out your segmentation parameters on other frames. Also other channels can be selected for segmentaton using the dropdown list in the top right corner, also cell touching the border can be filtered out by selecting the filter edges toggle button.
 
+
+.. figure:: nt3.png
+
+	**Figure 3** The segmentation GUI used for identifying nuclei within the movie.
+	
+
 Once you have achieved good segmentation it's now time to save the parameters. Once this is done, click segment movie to apply your segmentation parameters to the entire image sequence. This may take a while depending on how fast your computer is and how large you movie is.
 
 To speed up the process you can opt to use multiprocessing. However, due to the workload on the CPUs, the GUI does not display a loading bar during this process.
 
 When segmentation is done a button will appear allowing you to visualise the results of segmentation and decide whether you want to go back and adjust parameters or move forward. If you are happy go ahead and click extract features.
 
+.. figure:: nt4.png
+
+	**Figure 4** User interface for inspecting the quality of segmentation
+	
 You can also export the label files at this point as single plane tifs. To do this create and empty directory by entering a name in the choose directory name text box and hitting enter. Re-enter the current folder and to see this directory then enter the directory and choose an output name for the label series. Hit enter and the series of labelled image will be saved.
 
-.. figure:: Nt02.jpg
-   :scale: 80 %
-   :alt: Semgentation
 
-   Step 2: Choosing segmentation parameters, image of the segmentation GUI
+.. figure:: nt5.png
 
+	**Figure 5** Export of singeplane .tiff label images to new directory.
+	
 Training Data
 -------------
 
@@ -177,11 +186,9 @@ Once everything is selected, click save training. A button for classifying cells
 
 Everything is now ready for tracking, hit this button to begin tracking. 
 
-.. figure:: Nt03.jpg
-   :scale: 80 %
-   :alt: Semgentation
+.. figure:: nt6.png
 
-   Step 3: Selecting training data, image of the training data selection GUI
+	**Figure 6** Selection of training data used for classifying nuclei into classes prior to tracking
 
 Correcting and storing tracks
 -----------------------------
@@ -217,12 +224,10 @@ You can also change which features you want to visualise using the text boxes on
 * CH3 StdDev Intensity
 * CH3 Floored Mean
 
-.. figure:: Nt04.jpg
-   :scale: 80 %
-   :alt: Semgentation
 
-   Step 4: Visualise and correct and export tacking data, image of the tracking visualisation and correction GUI
-   
+.. figure:: nt7.png
+
+	**Figure 7** User interface for inspecting and ammending tracked nuclei
    
 .. _Python:
 
