@@ -342,15 +342,17 @@ class LoadingUI(Widget):
     def load_from_textfile(self, text_file):
 
         if os.path.isfile(text_file):
+            try:
+                file_list, label_list = loadimages.filelistfromtext(text_file)
+                print(label_list)
 
-            file_list, label_list = loadimages.filelistfromtext(text_file)
-            print(label_list)
+                self.load_movie(file_list)
+                if len(label_list) > 1:
+                    self.load_labels(label_list)
 
-            self.load_movie(file_list)
-            if len(label_list) > 1:
-                self.load_labels(label_list)
+            except:
 
-            self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
+                self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
 
         else:
             self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
