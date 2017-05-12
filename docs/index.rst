@@ -13,7 +13,7 @@ Alternativley check out the online video guides:
 
 `Tutorial 1 <https://youtu.be/k2V-Jw8mDes>`_
 
-Requires HL60 example data, distributed with permission from David Svoboda, `Example Data 1 <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/HL60SIM_Example.zip>`_
+Requires HL60 example data, distributed with permission from `David Svoboda <http://cbia.fi.muni.cz/staff.html>1_, `Example Data 1 <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/HL60SIM_Example.zip>`_
 
 `Tutorial 2 <https://youtu.be/QwYm_Enfx8Q>`_
 
