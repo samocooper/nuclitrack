@@ -302,7 +302,7 @@ class UserInterface(Widget):
 
                     # Load labels
 
-                    self.labels = self.fov.require_dataset("labels", (self.frames, self.dims[0], self.dims[1]), dtype='i')
+                    self.labels = self.fov['labels']
 
                     state = 4
 

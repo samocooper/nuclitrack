@@ -343,15 +343,14 @@ class LoadingUI(Widget):
 
         if os.path.isfile(text_file):
 
-            try:
-                file_list, label_list = loadimages.filelistfromtext(text_file)
+            file_list, label_list = loadimages.filelistfromtext(text_file)
+            print(label_list)
 
-                self.load_movie(file_list)
-                if len(label_list) > 1:
-                    self.load_labels(label_list)
-            except:
+            self.load_movie(file_list)
+            if len(label_list) > 1:
+                self.load_labels(label_list)
 
-                self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
+            self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
 
         else:
             self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
@@ -486,8 +485,7 @@ class LoadingUI(Widget):
 
             # Load and save label images
 
-            labels = loadimages.loadimages([file_list], label_flag=True)
-            labels = labels[0]
+            labels = loadimages.loadlabels(file_list)
 
             for g in self.parent.fov:
                 if g == 'labels':

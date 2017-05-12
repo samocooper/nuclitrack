@@ -25,7 +25,7 @@ def batchanalyse(text_file, param_file, output_file):
     seg_ch = int(s_params[10])
 
     if len(label_files) > 1:
-        labels = loadimages.loadimages([label_files], label_flag=True)
+        labels = loadimages.loadlabels(label_files)
 
     else:
         print('Segmenting Cells')
