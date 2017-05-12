@@ -9,7 +9,6 @@ from .uifeatures import FeatureExtract
 
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
@@ -23,22 +22,34 @@ class UserInterface(Widget):
         self.current_frame = 0
         self.parallel = False
 
+        # Set of values that are used by file loading function to store data on image series,
+        # Prevents need to load images into RAM
+
         self.dims = []
         self.min_vals = []
         self.max_vals = []
         self.file_list = []
 
+        # Progression state defines how many steps the user has gone through
+        # Automatically updates on loading of HDF5 file
+
         self.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
-        self.m_layout = FloatLayout(size=(Window.width, Window.height))
+        # Layout for binding progression buttons
+
         self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
+
+        # Add first button for loading data
 
         self.btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
         self.btn1.bind(on_press=self.loading_ui)
         self.btn1.bind(size=self.btn1.setter('text_size'))
         self.layout1.add_widget(self.btn1)
 
-        # Progress bar widget
+        # Flags for performing work using scheduler. System works by scheduling a small section of work then updating
+        # progress bar. A flag is set to true, work is performed and the flag set to false. On the next kivy frame the
+        # loading bar  updates and this sets the flag to True. This appears to provide a very effective lock on
+        # preventing more work being scheduled, and blocking loading bar update.
 
         self.segment_flag = False
         self.segment_flag_parallel = False
@@ -46,16 +57,21 @@ class UserInterface(Widget):
         self.tracking_flag = False
         self.finish_flag = False
 
-        self.iterations = 2
+        # On each kivy frame test if work needs to be performed.
+
         Clock.schedule_interval(self.do_work, 0)
+
+        # Attach the first UI for loading data. Current widget is used for all of the main UIs,
+        # This allows easy clearing of the previous UI
 
         self.current_widget = LoadingUI()
         Window.bind(on_resize=self.current_widget.update_size)
 
         with self.canvas:
-            self.add_widget(self.m_layout)
             self.add_widget(self.layout1)
             self.add_widget(self.current_widget)
+
+    # Load image data from files, modified such that only file list is loaded to reduce RAM load.
 
     def loading_ui(self, instance):
         if instance.state == 'down':
@@ -64,6 +80,8 @@ class UserInterface(Widget):
             self.current_widget = LoadingUI()
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
+
+    # UI for choosing segmentation parameters, these are stored in params['seg_param'] HDF5 file
 
     def segment_ui(self, instance):
         if instance.state == 'down':
@@ -77,6 +95,8 @@ class UserInterface(Widget):
             self.add_widget(self.current_widget)
             self.progression_state(3)
             Window.bind(on_resize=self.current_widget.update_size)
+
+    # Widget for segmenting images, includes loading bar and schedules segmentation fucntion
 
     def segment_movie(self, instance):
         if instance.state == 'down':
@@ -97,6 +117,8 @@ class UserInterface(Widget):
                                                parallel=self.parallel)
             self.add_widget(self.current_widget)
 
+            # Set segmentation flags to True to start performing work
+
             if self.parallel == True:
                 self.segment_flag_parallel = True
 
@@ -105,13 +127,7 @@ class UserInterface(Widget):
                 self.count_completed = 0
                 self.segment_flag = True
 
-    def view_segments(self, instance):
-        if instance.state == 'down':
-
-            self.remove_widget(self.current_widget)
-            self.current_widget = ViewSegment(labels=self.labels, frames=self.frames)
-            self.add_widget(self.current_widget)
-            Window.bind(on_resize=self.current_widget.update_size)
+    # Function to schedule parallel segmentation and collect results from segmentation widget
 
     def segment_parallel(self, dt):
 
@@ -121,12 +137,26 @@ class UserInterface(Widget):
         self.progression_state(4)
         self.progression_state(5)
 
+    # Function that gets labels from segmentation widget
+
     def finish_segmentation(self, dt):
 
         self.labels[...] = self.current_widget.get()
 
         self.progression_state(4)
         self.progression_state(5)
+
+    # UI for visualising segmentation results and exporting labels to series of .tif images
+
+    def view_segments(self, instance):
+        if instance.state == 'down':
+
+            self.remove_widget(self.current_widget)
+            self.current_widget = ViewSegment(labels=self.labels, frames=self.frames)
+            self.add_widget(self.current_widget)
+            Window.bind(on_resize=self.current_widget.update_size)
+
+    # Widget that bings up loading bar for feature extraction
 
     def extract_features(self, instance):
         if instance.state == 'down':
@@ -139,11 +169,13 @@ class UserInterface(Widget):
             self.count_scheduled = 0
             self.count_completed = 0
 
+    # Collect results of feature extraction and save them to HDF5 file overwriting any previous results.
+
     def save_features(self, dt):
 
         [features, self.labels[...]] = self.current_widget.get()
 
-        # Delete if features already exists otherwise store extracted features as number of segments may change
+        # Delete if features already exists otherwise store extracted features as number of segments may change.
 
         for g in self.fov:
             if g == 'features':
@@ -151,6 +183,8 @@ class UserInterface(Widget):
 
         self.fov.create_dataset("features", data=features)
         self.progression_state(6)
+
+    # UI for selecting training classes from segmented cells
 
     def training_ui(self, instance):
 
@@ -167,6 +201,8 @@ class UserInterface(Widget):
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
 
+    # UI for classifying cells based upon training data
+
     def classify_cells(self, instance):
         if instance.state == 'down':
 
@@ -177,6 +213,8 @@ class UserInterface(Widget):
             self.fov['features'][...] = self.current_widget.get()
 
             self.progression_state(8)
+
+    # Widget that performs tracing and loads up display to show number of tracked cells.
 
     def run_tracking(self, instance):
 
@@ -190,6 +228,8 @@ class UserInterface(Widget):
     def add_tracks(self, dt):
 
         self.finish_flag = self.current_widget.add_track()
+
+    # Functions that schedules updates to the tracking Widget display and at the end collects results and saves them
 
     def update_count(self, dt):
 
@@ -217,6 +257,8 @@ class UserInterface(Widget):
             self.fov.create_dataset("tracks_stored", data=tracks_stored)
             self.progression_state(9)
 
+    # UI for inspecting and ammening tracks
+
     def tracking_ui(self, instance):
         if instance.state == 'down':
             self.remove_widget(self.current_widget)
@@ -226,6 +268,10 @@ class UserInterface(Widget):
                                              channels=self.channels)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
+
+    # Function that determines how far the user has proceeded. When this function is called with the next number the
+    # next button is added to the progression button layout. On loading of the HDF5 data and parameter files, this
+    # function determines how far the user has progressed and returns them to that state.
 
     def progression_state(self, state):
 
@@ -387,8 +433,6 @@ class UserInterface(Widget):
 
     def update_size(self, window, width, height):
 
-        self.m_layout.width = width
-        self.m_layout.height = height
         self.layout1.width = width
         self.layout1.height = height / 10
 
