@@ -9,17 +9,20 @@ Getting started
 
 NucliTrack is designed as an easy to use Application for tracking cell nuclei. We're glad you have chosen to try our software out, please follow the following steps to track your first video.
 
-Alternativley check out the `online video guides <https://www.youtube.com/watch?v=J6e0D9F-qSU>`_.
+Alternativley check out the online video guides:
+
+`Tutorial 1 <https://youtu.be/k2V-Jw8mDes>`_
+`Tutorial 2 <https://youtu.be/QwYm_Enfx8Q>`_
 
 Installation
 ------------
 
 To get started with NucliTrack we have prebuilt versions available for OSX, Linux (EL7) and Windows:
 
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                      |
-|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_WIN.zip |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
++-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| .. image:: nt_linux.png                                                                             | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                      |
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_WIN.zip |
++-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
                                                                                                           
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
 
