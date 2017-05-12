@@ -18,7 +18,7 @@ To get started with NucliTrack we have prebuilt versions available for OSX, Linu
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | .. image:: nt_linux.png                                                                       | .. image:: nt_mac.png                                                                          | .. image:: nt_windows.png                                                                      |
-|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_Win.zip |
+|   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/NucliTrack_WIN.zip |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
                                                                                                           
 No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
@@ -27,11 +27,11 @@ Windows: Due to multiprocessing and loading issues, we have opted not to compile
 
 Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
-	> sudo spctl --master-disable
+	> sudo spctl \--master-disable
 	
 Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
 
-	> sudo spctl --master-enable
+	> sudo spctl \--master-enable
 
 OpenGL version is less than 2.0: Update your graphics drivers.
 
