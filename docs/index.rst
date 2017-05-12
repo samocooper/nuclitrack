@@ -41,7 +41,7 @@ Enter your password on request, then launch the NucliTrack Application which sho
 
 	> sudo spctl \--master-enable
 	
-Linux: We have had issues with graphics drivers, an alternate release with less dependency on up to date graphics drivers is also available, this was also built on Ubuntu rather than enterprise linux. Download this `here <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX_NOGL.zip>`_.
+Linux: We have had issues with graphics drivers, an alternate release with less dependency on up to date graphics drivers is also available, this was also built on Ubuntu rather than Enterprise Linux. Download this `here <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX_NOGL.zip>`_.
 
 OpenGL version is less than 2.0: Update your graphics drivers.
 
