@@ -27,11 +27,11 @@ Windows: Due to multiprocessing and loading issues, we have opted not to compile
 
 Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
 
-	> sudo spctl --master-disable
+	> sudo spctl \--master-disable
 	
 Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
 
-	> sudo spctl --master-enable
+	> sudo spctl \--master-enable
 
 OpenGL version is less than 2.0: Update your graphics drivers.
 
