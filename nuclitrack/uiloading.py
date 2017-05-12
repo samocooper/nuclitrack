@@ -102,6 +102,8 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_param)
         self.ld_layout.add_widget(self.reload_btn)
         self.ld_layout.add_widget(self.file_choose)
+        self.file_choose.bind(on_entries_cleared=self.dir_change)
+
         self.file_loaded = [False, False]
 
         self.loaded_fov.text ='[b][color=000000] [/b][/color]'

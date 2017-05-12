@@ -14,7 +14,7 @@ from scipy.spatial import distance
 from kivy.uix.dropdown import DropDown
 
 from .imagewidget import ImDisplay, IndexedDisplay
-from .graph import Graph, SmoothLinePlot, LinePlot
+from .graph import Graph, SmoothLinePlot
 from . import trackcells
 from skimage.external import tifffile
 
@@ -328,17 +328,21 @@ class TrackingUI(Widget):
         self.plot3.points = [(0, 0), (0, 0)]
         self.graph.add_plot(self.plot3)
 
-        self.plot4 = LinePlot(color=[1, 1, 0, 1])
+        self.plot4 = SmoothLinePlot(color=[1, 1, 0, 1])
         self.plot4.points = [(0, 0), (0, 0)]
         self.graph.add_plot(self.plot4)
 
-        self.plot5 = LinePlot(color=[0, 1, 1, 1])
+        self.plot5 = SmoothLinePlot(color=[0, 1, 1, 1])
         self.plot5.points = [(0,0), (0,0)]
         self.graph.add_plot(self.plot5)
 
-        self.plot6 = LinePlot(color=[1, 0, 1, 1])
+        self.plot6 = SmoothLinePlot(color=[1, 0, 1, 1])
         self.plot6.points = [(0, 0), (0, 0)]
         self.graph.add_plot(self.plot6)
+
+        self.plotT = SmoothLinePlot(color=[0, 0, 0, 1])
+        self.plotT.points = [(0, -1), (0, 1), (0, -1)]
+        self.graph.add_plot(self.plotT)
 
         self.text_input1 = TextInput(text='Feat1',
                                      multiline=False, size_hint=(.08, .04), pos_hint={'x': .555, 'y': .94})
@@ -368,10 +372,14 @@ class TrackingUI(Widget):
             self.channel_choice.add_widget(channel_btn)
 
         self.main_button = Button(text=' Channel ', size_hint=(.15, .04),
-                                  pos_hint={'x': .83, 'y': .923}, markup=True)
+                                  pos_hint={'x': .83, 'y': .94}, markup=True)
         self.main_button.bind(on_release=self.channel_choice.open)
         self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
         self.tr_layout.add_widget(self.main_button)
+
+        self.clear_button = Button(text=' Clear Events ', size_hint=(.15, .035),
+                                  pos_hint={'x': .83, 'y': .905}, markup=True)
+        self.clear_button.bind(on_press=self.clear_events)
 
         mask = self.tracks[:, 0] == self.tracks[0, 0]  # Test if selection is in track array and identify it
         self.track_ind = self.tracks[mask, 4]  # Set the selected track index
@@ -394,6 +402,7 @@ class TrackingUI(Widget):
             self.tr_layout.add_widget(self.event_flag1)
             self.tr_layout.add_widget(self.event_flag2)
             self.tr_layout.add_widget(self.event_flag3)
+            self.tr_layout.add_widget(self.clear_button)
 
             for i in range(len(stored_tracks)):
                 self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
@@ -452,6 +461,20 @@ class TrackingUI(Widget):
 
         self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
         self.track_frame_update()
+
+        self.graph.remove_plot(self.plotT)
+        self.plotT = SmoothLinePlot(color=[0, 0, 0, 1])
+        self.plotT.points = [(val, -1), (val, 1), (val, -1)]
+        self.graph.add_plot(self.plotT)
+
+    def clear_events(self, instance):
+
+        mask2 = self.tracks[:, 4] == self.track_ind[0]
+        self.track_ids = self.tracks[mask2, 0].astype(int)
+        self.features[self.track_ids, -1] = 0
+
+        self.modify_update()
+
 
     def add_event(self, xpos, val):
 
