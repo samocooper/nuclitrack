@@ -303,10 +303,10 @@ class TrackingUI(Widget):
 
         self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
 
-        if self.features.shape[1] == 23:
+        if self.features.shape[1] == 24:
             self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22]
 
-        if self.features.shape[1] == 26:
+        if self.features.shape[1] == 27:
             self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 24, 25]
 
         self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
@@ -344,11 +344,11 @@ class TrackingUI(Widget):
         self.plotT.points = [(0, -1), (0, 1), (0, -1)]
         self.graph.add_plot(self.plotT)
 
-        self.text_input1 = TextInput(text='Feat1',
+        self.text_input1 = TextInput(text='1',
                                      multiline=False, size_hint=(.08, .04), pos_hint={'x': .555, 'y': .94})
-        self.text_input2 = TextInput(text='Feat2',
+        self.text_input2 = TextInput(text='2',
                                      multiline=False, size_hint=(.08, .04), pos_hint={'x': .64, 'y': .94})
-        self.text_input3 = TextInput(text='Feat3',
+        self.text_input3 = TextInput(text='3',
                                      multiline=False, size_hint=(.08, .04), pos_hint={'x': .725, 'y': .94})
 
         self.text_input1.bind(on_text_validate=partial(self.feat_change, 0))
