@@ -29,25 +29,10 @@ To get started with NucliTrack we have prebuilt versions available for OSX, Linu
 |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX.tar.gz |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_OSX.zip |   :target: https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_WIN.zip |
 +-----------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------+
                                                                                                           
-No installation is required for the Application, though we have encountered some issues with different operating systems and computers:
+No installation is required for the Application though on Windows you will need to enter the NucliTrack directory and run the .exe file, if you have any issues getting NucliTrack up and Running please see the see the `Installation Issues`_ section:
 
-Windows: Due to multiprocessing and loading issues, we have opted not to compile Nuclitrack into a single file executable. Please unzip the file following download, enter it and then double click NucliTrack.exe from within the file, this will launch a console which will then load NucliTrack.
 
-Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
-
-	> sudo spctl \--master-disable
-	
-Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
-
-	> sudo spctl \--master-enable
-	
-Linux: We have had issues with graphics drivers, an alternate release with less dependency on up to date graphics drivers is also available, this was also built on Ubuntu rather than Enterprise Linux. Download this `here <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX_NOGL.zip>`_.
-
-OpenGL version is less than 2.0: Update your graphics drivers.
-
-NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see the `Python Package Installation`_ section for details of how to install Nuclitrack as a Python package.
-
-Loading time series images
+Loading Time Series Images
 --------------------------
 
 To get started you need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual single plane tiff files. There are then three options for loading the .tif image time series into NucliTrack.
@@ -59,7 +44,7 @@ However, before loading you need to specify file names for the hdf5 files that w
 	**Figure 1** Select locations to save data on the movie and parameters used.
 	
 
-Auto Load
+Auto load
 ^^^^^^^^^
 
 The autoloading interface allows you to load a .tif series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
@@ -126,8 +111,8 @@ Once you have created the text file, navigate to it in the file browser and doub
 
 	**Figure 2** Select first and last file for each channel to autoload images.
 
-Load from dir
-^^^^^^^^^^^^^
+Load from directory
+^^^^^^^^^^^^^^^^^^^
 
 This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging a single image series, and double click the first image in the series, this will load all other images in the  directory.
    
@@ -200,7 +185,7 @@ Everything is now ready for tracking, hit this button to begin tracking.
 
 	**Figure 6** Selection of training data used for classifying nuclei into classes prior to tracking
 
-Correcting and storing tracks
+Correcting and Storing Tracks
 -----------------------------
 
 With tracking complete you can now inspect the results of automated tracking by scrolling backwards and forwards through the video. For single frame movements you can also use the keyboard hotkeys (a) and (d).
@@ -298,6 +283,26 @@ To run nuclitrack in batch mode which doesn't require the kivy library, create a
 Here, 'myfile.txt' represents a text file for loading images, in the format described in the `Load from text`_ section. The 'myparams.hdf5' file must be created by using the GUI on a reference movie, and contains the parameters selected for segmentation and tracking, as well as training data chosen in the training data GUI. Finally 'myoutput' is the name that both the 'output.hdf5' and 'output.csv' file will be saved as. The 'output.hdf5' file can then be loaded into the GUI and track correction and inspection carried out. Alternativley results can be directly analysed from the 'output.csv' file. 
 
 To process multiple movies, the batchanalyse function can be called inside a loop where multiple text files are used to index different image series, with the output file name varied accordingly.
+
+Installation Issues
+-------------------
+
+Windows: Due to multiprocessing and loading issues, we have opted not to compile Nuclitrack into a single file executable. Please unzip the file following download, enter it and then double click NucliTrack.exe from within the file, this will launch a console which will then load NucliTrack.
+
+Mac OSX: error 67062, this is to do with gatekeeper interfering with the terminal launch as the App is not trusted. To solve this error, launch terminal and enter the following command:
+
+	> sudo spctl \--master-disable
+	
+Enter your password on request, then launch the NucliTrack Application which should now work. The App will now be trusted so you can re-enable gatekeeper with the following command, and it will continue to work.
+
+	> sudo spctl \--master-enable
+	
+Linux: We have had issues with graphics drivers, an alternate release with less dependency on up to date graphics drivers is also available, this was also built on Ubuntu rather than Enterprise Linux. Download this `here <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX_NOGL.zip>`_.
+
+OpenGL version is less than 2.0: Update your graphics drivers.
+
+NucliTrack is also availale as a Python 3 package for development, and batch processing of image, see the `Python Package Installation`_ section for details of how to install Nuclitrack as a Python package.
+
 
 Contribute
 ----------
