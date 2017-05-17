@@ -80,38 +80,40 @@ def filelistfromtext(text_file):
 
     # Load file list where the text file is in the same directory as the image files
 
-    if os.path.isfile(text_file):
+    dir_name = os.path.dirname(text_file)
+    file_list = []
+    channel_list = []
+    prev = 1
+    label_list = []
 
-        dir_name = os.path.dirname(text_file)
-        file_list = []
-        channel_list = []
-        prev = 1
-        label_list = []
-        with open(text_file) as f:
-            for line in f:
+    with open(text_file) as f:
+        for line in f:
 
-                if line[-1] == '\n':
-                    line = line[:-1]
+            line = line.strip()
+            line_split = line.split(',')
 
-                line_split = line.split(',')
-                if len(line_split) > 1:
+            if len(line_split) > 1:
 
-                    if int(line_split[0]) == 0:
+                line_split[0] = line_split[0].strip()
+                line_split[1] = line_split[1].strip()
 
-                        label_list.append(os.path.join(dir_name, line_split[1]))
-
-                    else:
-                        if not int(line_split[0]) == prev:
-                            prev = int(line_split[0])
-                            file_list.append(channel_list)
-                            channel_list = []
-                        channel_list.append(os.path.join(dir_name, line_split[1]))
+                if int(line_split[0]) == 0:
+                    label_list.append(os.path.join(dir_name, line_split[1]))
 
                 else:
-                    channel_list.append(os.path.join(dir_name, line))
+                    if not int(line_split[0]) == prev:
+                        prev = int(line_split[0])
+                        file_list.append(channel_list)
+                        channel_list = []
 
-        file_list.append(channel_list)
-        return file_list, label_list
+                    channel_list.append(os.path.join(dir_name, line_split[1]))
+
+            else:
+                channel_list.append(os.path.join(dir_name, line))
+
+    file_list.append(channel_list)
+
+    return file_list, label_list
 
 
 def filelistfromdir(file_name):

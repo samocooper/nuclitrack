@@ -11,6 +11,8 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.label import Label
+from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 from kivy.clock import Clock
 
@@ -73,6 +75,13 @@ class UserInterface(Widget):
 
     # Load image data from files, modified such that only file list is loaded to reduce RAM load.
 
+    def error_message(self, message):
+
+        error_msg = Popup(title='Error message',
+                          content=Label(text=message),
+                          size_hint=(0.6, 0.3))
+        error_msg.open()
+
     def loading_ui(self, instance):
         if instance.state == 'down':
 
@@ -85,6 +94,9 @@ class UserInterface(Widget):
 
     def segment_ui(self, instance):
         if instance.state == 'down':
+
+            if self.params['seg_param'][10] >= self.channels:
+                self.params['seg_param'][10] = 0
 
             self.remove_widget(self.current_widget)
             self.params.require_dataset('seg_param', (11,), dtype='f')

@@ -12,7 +12,6 @@ from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.gridlayout import GridLayout
-
 from . import loadimages
 
 
@@ -28,7 +27,7 @@ class LoadingUI(Widget):
 
         self.img_layout = FloatLayout(size=(Window.width, Window.height))
         self.add_widget(self.img_layout)
-
+        self.choose_type = 0
         # Assign/Load HDF5 file for storing data from the current field of view.
 
         # Record whether both files are loaded
@@ -82,17 +81,19 @@ class LoadingUI(Widget):
 
         # Reload button
 
-        self.reload_btn = Button(text='Reload Data', size_hint=(.16, .05), pos_hint={'x': .83, 'y': .9})
+        self.reload_btn = Button(text='Reload Data', size_hint=(.16, .04), pos_hint={'x': .83, 'y': .9})
         self.reload_btn.bind(on_release=self.reload)
         self.ld_layout.add_widget(self.reload_btn)
 
-    def reload(self, instance):
+    def reload(self, instance, erase_flag=False):
 
         self.parent.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.parent.layout1.clear_widgets()
         self.parent.layout1.add_widget(self.parent.btn1)
 
         self.ld_layout.clear_widgets()
+        self.img_layout.clear_widgets()
+
         self.ld_layout.add_widget(self.label_fov)
         self.ld_layout.add_widget(self.text_input_fov)
         self.ld_layout.add_widget(self.loaded_fov)
@@ -102,25 +103,29 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_param)
         self.ld_layout.add_widget(self.reload_btn)
         self.ld_layout.add_widget(self.file_choose)
+
+        self.choose_type = 0
         self.file_choose.bind(on_entries_cleared=self.dir_change)
 
-        self.file_loaded = [False, False]
+        if not erase_flag:
 
-        self.loaded_fov.text ='[b][color=000000] [/b][/color]'
-        self.loaded_param.text = '[b][color=000000] [/b][/color]'
+            self.file_loaded = [False, False]
+            self.loaded_fov.text ='[b][color=000000] [/b][/color]'
+            self.loaded_param.text = '[b][color=000000] [/b][/color]'
 
     def file_name_val(self, input_type, obj):
         self.load_data(input_type, obj.text)
 
-    def dir_click(self, flag, val, file_name, touch):
-        if flag == 1:
+    def dir_click(self, val, file_name, touch):
+
+        if self.choose_type == 1:
             self.file_names[self.channel * 2 + self.img_pos] = file_name[0]
             self.update_file_labels(file_name[0])
 
-        if flag == 2:
+        if self.choose_type == 2:
             self.load_from_textfile(file_name[0])
 
-        if flag == 3:
+        if self.choose_type == 3:
             self.load_from_dir(file_name[0])
 
     def dir_change(self, val):
@@ -128,13 +133,27 @@ class LoadingUI(Widget):
         self.text_input_fov.text = os.path.join(self.file_choose.path, 'example_data.hdf5')
         self.text_input_param.text = os.path.join(self.file_choose.path, 'example_params.hdf5')
 
+    def erase_data(self, instance):
+
+        self.reload(instance, erase_flag=True)
+
+        for g in self.parent.fov:
+            del self.parent.fov[g]
+
+        self.load_data('', '')
+
     def load_data(self, input_type, input_text):
 
         # Display loaded files
 
         if input_type == 'fov':
 
-            self.parent.fov = h5py.File(input_text, "a")
+            try:
+                self.parent.fov = h5py.File(input_text, "a")
+
+            except OSError:
+                self.parent.error_message('File could not be created, permission may be denied')
+                return
 
             if len(input_text) < 20:
                 self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
@@ -149,7 +168,14 @@ class LoadingUI(Widget):
             self.file_loaded[0] = True
 
         if input_type == 'param':
-            self.parent.params = h5py.File(input_text, "a")
+
+            try:
+                self.parent.params = h5py.File(input_text, "a")
+
+            except OSError:
+                self.parent.error_message('File could not be created, permission may be denied')
+                return
+
             if len(input_text) < 20:
                 self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
             else:
@@ -161,9 +187,16 @@ class LoadingUI(Widget):
         # FILE LOADING OPTIONS #
         ########################
 
+        if self.file_loaded[0]:
+
+            self.erase_btn = Button(text='Erase FOV', size_hint=(.16, .04), pos_hint={'x': .83, 'y': .95})
+            self.erase_btn.bind(on_release=self.erase_data)
+            self.ld_layout.add_widget(self.erase_btn)
+
         if self.file_loaded[0] and self.file_loaded[1]:
 
             self.file_choose.unbind(on_entries_cleared=self.dir_change)
+            self.file_choose.bind(on_submit=self.dir_click)
 
             # Inform user if data already exists in file
 
@@ -208,8 +241,8 @@ class LoadingUI(Widget):
 
                 self.ld_layout.add_widget(self.load_choice)
 
-
     def load_imgs(self, load_type, obj):
+
         self.img_layout.clear_widgets()
 
         #########################################
@@ -276,7 +309,7 @@ class LoadingUI(Widget):
 
             # File browser widget for choosing file
 
-            self.file_choose.bind(on_submit=partial(self.dir_click, 1))
+            self.choose_type = 1
 
             # Text input for selecting image location
 
@@ -293,7 +326,7 @@ class LoadingUI(Widget):
 
             # File browser widget for choosing file
 
-            self.file_choose.bind(on_submit=partial(self.dir_click, 2))
+            self.choose_type = 2
 
             # Text input for selecting image location
 
@@ -308,7 +341,7 @@ class LoadingUI(Widget):
 
         if load_type == 'dir':
 
-            self.file_choose.bind(on_submit=partial(self.dir_click, 3))
+            self.choose_type = 3
 
             # Text input for selecting image location
 
@@ -328,8 +361,11 @@ class LoadingUI(Widget):
         try:
             file_list = loadimages.filelistfromdir(dir_name)
             self.load_movie(file_list)
-        except:
-            self.ui_message.text = '[b][color=000000] File format incorrect [/b][/color]'
+
+        except ValueError:
+            self.parent.error_message('File selected is invalid or ot tiff')
+        except FileNotFoundError:
+            self.parent.error_message('File not found')
 
     ############################
     # TEXT FILE LOAD FUNCTIONS #
@@ -341,22 +377,19 @@ class LoadingUI(Widget):
 
     def load_from_textfile(self, text_file):
 
-        if os.path.isfile(text_file):
-            try:
-                file_list, label_list = loadimages.filelistfromtext(text_file)
-                print(label_list)
+        try:
 
-                self.load_movie(file_list)
-                if len(label_list) > 1:
-                    self.load_labels(label_list)
+            file_list, label_list = loadimages.filelistfromtext(text_file)
+            flag = self.load_movie(file_list)
+            if len(label_list) > 1 and flag:
+                self.load_labels(label_list)
 
-            except:
-
-                self.ui_message.text = '[b][color=000000] Text file format incorrect [/b][/color]'
-
-        else:
-            self.ui_message.text = '[b][color=000000] Text filename is incorrect [/b][/color]'
-            return
+        except UnicodeDecodeError:
+            self.parent.error_message('File is not a text file')
+        except ValueError:
+            self.parent.error_message('File is incorrect format')
+        except FileNotFoundError:
+            self.parent.error_message('File not found')
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -396,22 +429,24 @@ class LoadingUI(Widget):
         # Handle errors in file loading
 
         if self.file_names[0] == '' or self.file_names[1] == '':
-            self.ui_message.text = '[b][color=000000]Select two channel 1 files [/b][/color]'
+            self.parent.error_message('Select two files')
             return
 
         if self.file_names[0] == self.file_names[1]:
-            self.ui_message.text = '[b][color=000000]Select two different files [/b][/color]'
+            self.parent.error_message('Select two different files')
             return
 
         if not(len(self.file_names[0]) == len(self.file_names[1])):
-            self.ui_message.text = '[b][color=000000] Names must be of equal length [/b][/color]'
+            self.parent.error_message('Names must be of equal length')
             return
+
+        images = []
+
         try:
-            images = []
 
             for i in range(self.max_channel):
                 if (not self.file_names[i * 2 + 0] == '') and (not self.file_names[i * 2 + 1] == ''):
-                    if not (self.file_names[i * 2 + 0] ==  self.file_names[i * 2 + 1]):
+                    if not (self.file_names[i * 2 + 0] == self.file_names[i * 2 + 1]):
                         images.append(loadimages.autofilelist(self.file_names[i * 2 + 0], self.file_names[i * 2 + 1]))
 
             flag = self.load_movie(images)
@@ -424,8 +459,9 @@ class LoadingUI(Widget):
                     if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
                         labels = loadimages.autofilelist(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
                         self.load_labels(labels)
-        except:
-            self.ui_message.text = '[b][color=000000] Error loading image sequence [/b][/color]'
+
+        except ValueError:
+            self.parent.error_message('Invalid time series naming format')
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
@@ -440,13 +476,13 @@ class LoadingUI(Widget):
         for channel in file_list:
 
             if not (frames == len(channel)):
-                self.ui_message.text = '[b][color=000000] Channels not same length [/b][/color]'
-                return
+                self.parent.error_message('Channels not same length')
+                return False
 
             for f in channel:
                 if not os.path.isfile(f):
-                    self.ui_message.text = '[b][color=000000]Missing file: ' + f + '[/b][/color]'
-                    return
+                    self.parent.error_message('Missing File: ' + f)
+                    return False
 
         # Load images save list of file names into hdf5 file
 
@@ -473,16 +509,12 @@ class LoadingUI(Widget):
             frames = self.parent.frames
 
             if not (frames == len(file_list)):
-                self.ui_message.text = '[b][color=000000] Labels not same length [/b][/color]'
-                return
-
-            if not (frames == len(file_list)):
-                self.ui_message.text = '[b][color=000000] Labels not same length [/b][/color]'
+                self.parent.error_message('Labels not same length')
                 return
 
             for f in file_list:
                 if not os.path.isfile(f):
-                    self.ui_message.text = '[b][color=000000]Missing label file: ' + f + '[/b][/color]'
+                    self.parent.error_message('Missing label file: ' + f)
                     return
 
             # Load and save label images
