@@ -16,11 +16,11 @@ from .imagewidget import IndexedDisplay, ImDisplay
 from . import classifycells
 
 class ClassifyCells(Widget):
-    def __init__(self, features, training_data, **kwargs):
+    def __init__(self, features, training, **kwargs):
         super().__init__(**kwargs)
 
         self.layout = FloatLayout(size=(Window.width, Window.height))
-        self.features = classifycells.classifycells(features, training_data)
+        self.features = classifycells.classifycells(features, training)
 
         self.class_label = Label(text='[b][color=000000]Cells Classified[/b][/color]', markup=True,
                                  size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
@@ -109,7 +109,7 @@ class TrainingUI(Widget):
             self.training['tracking'] = np.vstack((self.training['tracking'], features['tracking'][mask, :]))
             for i in range(1,self.training['tracking'].shape[0]):
                 val = features['tracking'][mask[i-1], 5]
-                self.training['tracking'][i, 4 + val] = 1
+                self.training['tracking'][i, int(4 + val)] = 1
 
         self.layout = FloatLayout(size=(Window.width, Window.height))
 
@@ -285,21 +285,20 @@ class TrainingUI(Widget):
         self.canvas.ask_update()
 
     def save_training(self, instance):
+        if self.training['data'].shape[0] > 1:
 
-        # Delete if features already exists otherwise store extracted features
+            # Delete if features already exists otherwise store extracted features
 
-        for g in self.parent.params:
-            if g == 'training':
-                del self.parent.params['training']
+            for g in self.parent.params:
+                if g == 'training':
+                    del self.parent.params['training']
 
-        print(self.training['tracking'].astype(int))
+            self.training_hdf5 = self.parent.params.create_group('training')
+            self.training_hdf5.create_dataset("data", data=self.training['data'])
+            self.training_hdf5.create_dataset("tracking", data=self.training['tracking'])
 
-        self.training_hdf5 = self.parent.params.create_group('training')
-        self.training_hdf5.create_dataset("data", data=self.training['data'])
-        self.training_hdf5.create_dataset("tracking", data=self.training['tracking'])
-
-        self.data_message.text ='[color=000000]Data stored[/color]'
-        self.parent.progression_state(7)
+            self.data_message.text ='[color=000000]Data stored[/color]'
+            self.parent.progression_state(7)
 
     def tracking_distance(self,instance, val):
 

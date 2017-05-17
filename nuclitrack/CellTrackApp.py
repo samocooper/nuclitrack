@@ -211,7 +211,7 @@ class UserInterface(Widget):
         if instance.state == 'down' and flag:
             store = False
             for g in self.params:
-                if g == 'training_data':
+                if g == 'training':
                     store = True
 
             self.remove_widget(self.current_widget)
@@ -227,10 +227,9 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            self.training_data = self.params['training_data'][:, :]
-            self.current_widget = ClassifyCells(features=self.fov['features'][...], training_data=self.training_data)
+            self.current_widget = ClassifyCells(features=self.fov['features'], training=self.params['training'])
             self.add_widget(self.current_widget)
-            self.fov['features'][...] = self.current_widget.get()
+            self.features = self.current_widget.get()
 
             self.progression_state(8)
 
@@ -374,7 +373,8 @@ class UserInterface(Widget):
 
             for g in self.params:
                 if g == 'training':
-                    state = 7
+                    if self.params['training']['data'].shape[0] > 1:
+                        state = 7
 
         if state == 7 and self.progression[7] == 0:
 
