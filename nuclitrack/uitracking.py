@@ -31,7 +31,7 @@ class RunTracking(Widget):
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
         self.track_counter = Label(text='[b][color=000000] [/b][/color]', markup=True,
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .6})
-        self.cancel_btn = Button(text='[b][color=000000]Cancel[/b][/color]', markup=True,
+        self.cancel_btn = Button(text='Cancel', markup=True,
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .5})
         self.cancel_btn.bind(on_release=self.cancel_tracking)
         self.layout = FloatLayout(size=(Window.width, Window.height))
@@ -47,12 +47,15 @@ class RunTracking(Widget):
             self.add_widget(self.layout)
             self.layout.add_widget(self.track_counter)
             self.layout.add_widget(self.track_message)
+            self.layout.add_widget(self.cancel_btn)
 
-    def cancel_tracking(self):
+    def cancel_tracking(self, instance):
+
         self.add_flag = False
         self.optimise_flag = False
         self.cancel_flag = True
-        self.cancel_btn.text = '[b][color=000000]Tracking Canceled[/b][/color]'
+        self.parent.cancel_flag = True
+        self.cancel_btn.text = 'Tracking Canceled'
 
     def update_count(self):
         if self.add_flag:
@@ -257,14 +260,22 @@ class TrackingUI(Widget):
         im = im.astype(float)
         self.mov_disp.create_im(im, 'PastelHeat')
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .1),
-                                   pos_hint={'x': .145, 'y': .9})
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
+                                   pos_hint={'x': .145, 'y': .94})
         self.frame_slider.bind(value=self.frame_select)
 
-        self.frame_text = Label(text='[color=000000]<<a  Frame  d>>: ' + str(0) + '[/color]',
-                                size_hint=(.3, .04), pos_hint={'x': .145, 'y': .9}, markup=True)
+        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
+                                size_hint=(.15, .04), pos_hint={'x': .22, 'y': .9}, markup=True)
+        self.frame_minus = Button(text='(a) <<',
+                                  size_hint=(.07, .03), pos_hint={'x': .145, 'y': .905}, markup=True)
+        self.frame_plus = Button(text='>> (d)',
+                                 size_hint=(.07, .03), pos_hint={'x': .375, 'y': .905}, markup=True)
+        self.frame_minus.bind(on_press=self.frame_backward)
+        self.frame_plus.bind(on_press=self.frame_forward)
 
         self.tr_layout.add_widget(self.frame_slider)
+        self.tr_layout.add_widget(self.frame_plus)
+        self.tr_layout.add_widget(self.frame_minus)
         self.tr_layout.add_widget(self.frame_text)
 
         self.tracking_window = TrackingData(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
@@ -420,6 +431,14 @@ class TrackingUI(Widget):
             for i in range(len(stored_tracks)):
                 self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
 
+    def frame_forward(self, instance):
+        if self.frame_slider.value < self.frames - 1:
+            self.frame_slider.value += 1
+
+    def frame_backward(self, instance):
+        if self.frame_slider.value > 0:
+            self.frame_slider.value -= 1
+
     def track_frame_update(self):
 
         if self.track_ids.any:
@@ -472,7 +491,7 @@ class TrackingUI(Widget):
         mask = inds == self.current_frame
         self.frame_feats = self.features[mask, :]
 
-        self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
         self.track_frame_update()
 
         self.graph.remove_plot(self.plotT)

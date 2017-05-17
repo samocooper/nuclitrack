@@ -36,11 +36,16 @@ class LoadingUI(Widget):
         self.file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
         self.ld_layout.add_widget(self.file_choose)
         self.file_choose.bind(on_entries_cleared=self.dir_change)
+        self.file_choose.bind(on_submit=self.dir_click)
 
         # Label
         self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
-                               size_hint=(.4, .05), pos_hint={'x': .01, 'y': .95})
+                               size_hint=(.245, .05), pos_hint={'x': .01, 'y': .95})
         self.ld_layout.add_widget(self.label_fov)
+
+        self.select_fov = ToggleButton(text='Select Existing', size_hint=(.145, .04), pos_hint={'x': .26, 'y': .955})
+        self.ld_layout.add_widget(self.select_fov)
+        self.select_fov.bind(on_press=self.toggle_fov)
 
         # Input
         self.text_input_fov = TextInput(text='', multiline=False,
@@ -55,6 +60,7 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_fov)
 
         # Info on file loading
+
         self.ui_message = Label(text='[b][color=000000][/b][/color]', markup=True,
                                 size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
         self.ld_layout.add_widget(self.ui_message)
@@ -63,8 +69,12 @@ class LoadingUI(Widget):
 
         # Label
         self.label_param = Label(text='[b][color=000000]Parameter Data File[/b][/color]', markup=True,
-                                 size_hint=(.4, .05), pos_hint={'x': .42, 'y': .95})
+                                 size_hint=(.245, .05), pos_hint={'x': .42, 'y': .95})
         self.ld_layout.add_widget(self.label_param)
+
+        self.select_param = ToggleButton(text='Select Existing', size_hint=(.145, .04), pos_hint={'x': .67, 'y': .955})
+        self.ld_layout.add_widget(self.select_param)
+        self.select_param.bind(on_press=self.toggle_param)
 
         # Input
         self.text_input_param = TextInput(text='', multiline=False,
@@ -85,6 +95,22 @@ class LoadingUI(Widget):
         self.reload_btn.bind(on_release=self.reload)
         self.ld_layout.add_widget(self.reload_btn)
 
+    def toggle_fov(self, instance):
+
+        if instance.state == 'down':
+            self.prev_choose = self.choose_type
+            self.choose_type = 4
+        else:
+            self.choose_type = self.prev_choose
+
+    def toggle_param(self, instance):
+
+        if instance.state == 'down':
+            self.prev_choose = self.choose_type
+            self.choose_type = 5
+        else:
+            self.choose_type = self.prev_choose
+
     def reload(self, instance, erase_flag=False):
 
         self.parent.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -99,6 +125,7 @@ class LoadingUI(Widget):
         self.ld_layout.add_widget(self.loaded_fov)
         self.ld_layout.add_widget(self.ui_message)
         self.ld_layout.add_widget(self.label_param)
+        self.ld_layout.add_widget(self.select_param)
         self.ld_layout.add_widget(self.text_input_param)
         self.ld_layout.add_widget(self.loaded_param)
         self.ld_layout.add_widget(self.reload_btn)
@@ -128,6 +155,14 @@ class LoadingUI(Widget):
         if self.choose_type == 3:
             self.load_from_dir(file_name[0])
 
+        if self.choose_type == 4:
+            self.select_fov.state = 'normal'
+            self.load_data('fov', file_name[0])
+
+        if self.choose_type == 5:
+            self.select_param.state = 'normal'
+            self.load_data('param', file_name[0])
+
     def dir_change(self, val):
 
         self.text_input_fov.text = os.path.join(self.file_choose.path, 'example_data.hdf5')
@@ -152,7 +187,8 @@ class LoadingUI(Widget):
                 self.parent.fov = h5py.File(input_text, "a")
 
             except OSError:
-                self.parent.error_message('File could not be created, permission may be denied')
+                self.parent.error_message('File could not be created or opened\n'
+                                          'Invalid data format or permission may be denied')
                 return
 
             if len(input_text) < 20:
@@ -196,7 +232,6 @@ class LoadingUI(Widget):
         if self.file_loaded[0] and self.file_loaded[1]:
 
             self.file_choose.unbind(on_entries_cleared=self.dir_change)
-            self.file_choose.bind(on_submit=self.dir_click)
 
             # Inform user if data already exists in file
 

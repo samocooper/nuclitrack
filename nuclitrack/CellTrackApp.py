@@ -206,10 +206,15 @@ class UserInterface(Widget):
                 flag = True
 
         if instance.state == 'down' and flag:
+            store = False
+            for g in self.params:
+                if g == 'training_data':
+                    store = True
 
             self.remove_widget(self.current_widget)
-            self.current_widget = TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])], labels=self.labels,
-                                             features=self.fov['features'][...], frames=self.frames)
+            self.current_widget = TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])],
+                                             labels=self.labels, features=self.fov['features'][...],
+                                             frames=self.frames, params=self.params['track_param'][...], stored=store)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
 
@@ -236,41 +241,43 @@ class UserInterface(Widget):
 
         self.add_widget(self.current_widget)
         self.tracking_flag = True
+        self.cancel_flag = False
 
     def add_tracks(self, dt):
-
-        self.finish_flag = self.current_widget.add_track()
+        if not self.cancel_flag:
+            self.finish_flag = self.current_widget.add_track()
 
     # Functions that schedules updates to the tracking Widget display and at the end collects results and saves them
 
     def update_count(self, dt):
+        if not self.cancel_flag:
 
-        self.current_widget.update_count()
-        self.tracking_flag = True
+            self.current_widget.update_count()
+            self.tracking_flag = True
 
-        if self.finish_flag:
+            if self.finish_flag:
 
-            self.tracking_flag = False
-            cancel = self.current_widget.test_cancel()
+                self.tracking_flag = False
+                cancel = self.current_widget.test_cancel()
 
-            if not cancel:
-                self.tracks, self.fov['features'][...] = self.current_widget.get()
+                if not cancel:
+                    self.tracks, self.fov['features'][...] = self.current_widget.get()
 
-                # Delete if tracks already exists otherwise store extracted features
+                    # Delete if tracks already exists otherwise store extracted features
 
-                for g in self.fov:
-                    if g == 'tracks':
-                        del self.fov['tracks']
+                    for g in self.fov:
+                        if g == 'tracks':
+                            del self.fov['tracks']
 
-                for g in self.fov:
-                    if g == 'tracks_stored':
-                        del self.fov['tracks_stored']
+                    for g in self.fov:
+                        if g == 'tracks_stored':
+                            del self.fov['tracks_stored']
 
-                self.fov.create_dataset("tracks", data=self.tracks)
+                    self.fov.create_dataset("tracks", data=self.tracks)
 
-                tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
-                self.fov.create_dataset("tracks_stored", data=tracks_stored)
-                self.progression_state(9)
+                    tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
+                    self.fov.create_dataset("tracks_stored", data=tracks_stored)
+                    self.progression_state(9)
 
     # UI for inspecting and ammening tracks
 

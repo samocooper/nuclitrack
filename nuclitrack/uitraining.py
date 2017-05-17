@@ -84,8 +84,8 @@ class TrainingData(Widget):
 
 class TrainingUI(Widget):
 
-    def __init__(self, file_list, labels, features, frames, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, file_list, labels, features, frames, params, stored,  **kwargs):
+        super().__init__(**kwargs)
 
         self.file_list = file_list
         self.labels = labels
@@ -127,22 +127,33 @@ class TrainingUI(Widget):
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1)
         self.frame_slider.bind(value=self.training_frame)
-        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]', markup=True)
 
-        self.track_dist = Slider(min=0, max=100, value=50, step=1)
+        self.sublayout = GridLayout(cols=3, padding=4)
+        self.frame_text = Label(text='[color=000000]' + str(0) + '[/color]', markup=True)
+        self.frame_minus = Button(text='<<')
+        self.frame_plus = Button(text='>>')
+
+        self.sublayout.add_widget(self.frame_minus)
+        self.sublayout.add_widget(self.frame_text)
+        self.sublayout.add_widget(self.frame_plus)
+
+        self.frame_minus.bind(on_press=self.frame_backward)
+        self.frame_plus.bind(on_press=self.frame_forward)
+
+        self.track_dist = Slider(min=0, max=100, value=float(params[1]), step=1)
         self.track_dist.bind(value=self.tracking_distance)
-        self.txt_dist = Label(text='[color=000000]Search distance: ' + str(50) + '[/color]', markup=True)
+        self.txt_dist = Label(text='[color=000000]Search distance: ' + str(float(params[1])) + '[/color]', markup=True)
 
-        self.max_gap = Slider(min=0, max=6, value=3, step=1)
+        self.max_gap = Slider(min=0, max=6, value=float(params[6]), step=1)
         self.max_gap.bind(value=self.max_gap_change)
-        self.txt_gap = Label(text='[color=000000]Max time gap: ' + str(3) + '[/color]', markup=True)
+        self.txt_gap = Label(text='[color=000000]Max time gap: ' + str(float(params[6])) + '[/color]', markup=True)
 
-        self.mig_cost = Slider(min=0, max=0.1, value=0.05, step=0.001)
+        self.mig_cost = Slider(min=0, max=0.1, value=float(params[0]), step=0.001)
         self.mig_cost.bind(value=self.mig_cost_change)
-        self.txt_mig = Label(text='[color=000000]Migration cost: ' + str(0.05) + '[/color]', markup=True)
+        self.txt_mig = Label(text='[color=000000]Migration cost: ' + str(float(params[0])) + '[/color]', markup=True)
 
         self.training_window = TrainingData(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
-        self.layout3 = GridLayout(rows=2, cols=5, padding=2, size_hint=(.98, .12), pos_hint={'x': .01, 'y': .87})
+        self.layout3 = GridLayout(rows=3, cols=5, padding=2, size_hint=(.98, .12), pos_hint={'x': .01, 'y': .81})
 
         # Drop down menu for choosing which type of segment
 
@@ -155,6 +166,7 @@ class TrainingUI(Widget):
         btn5 = ToggleButton(text='Mitex Cell', group='type', size_hint_y=None)
 
         btn6 = Button(text='Save Training')
+        self.data_message = Label(text='[color=000000][/color]', markup=True)
 
         btn1.bind(on_press=self.training_window.assign_no_cell)
         btn2.bind(on_press=self.training_window.assign_1_cell)
@@ -179,10 +191,14 @@ class TrainingUI(Widget):
         self.layout3.add_widget(self.max_gap)
         self.layout3.add_widget(self.mig_cost)
         self.layout3.add_widget(btn6)
-        self.layout3.add_widget(self.frame_text)
+        self.layout3.add_widget(self.sublayout)
         self.layout3.add_widget(self.txt_dist)
         self.layout3.add_widget(self.txt_gap)
         self.layout3.add_widget(self.txt_mig)
+        self.layout3.add_widget(self.data_message)
+
+        if stored:
+            self.data_message.text = '[color=000000]Data stored[/color]'
 
 
         with self.canvas:
@@ -190,6 +206,14 @@ class TrainingUI(Widget):
             self.add_widget(self.layout)
             self.layout.add_widget(self.training_window)
             self.layout.add_widget(self.layout3)
+
+    def frame_forward(self, instance):
+        if self.frame_slider.value < self.frames - 1:
+            self.frame_slider.value += 1
+
+    def frame_backward(self, instance):
+        if self.frame_slider.value > 0:
+            self.frame_slider.value -= 1
 
     def training_frame(self, instance, val):
 
@@ -210,7 +234,7 @@ class TrainingUI(Widget):
         if sum(mask.astype(int)) > 0:
             self.frame_feats = self.features[mask, :]
 
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
+        self.frame_text.text = '[color=000000]' + str(int(val)) + '[/color]'
 
     def update_training(self, pos, val):
 
@@ -250,6 +274,7 @@ class TrainingUI(Widget):
                 del self.parent.params['training_data']
 
         self.parent.params.create_dataset("training_data", data=self.training_data)
+        self.data_message.text ='[color=000000]Data stored[/color]'
         self.parent.progression_state(7)
 
     def tracking_distance(self,instance, val):
