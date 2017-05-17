@@ -31,6 +31,9 @@ class RunTracking(Widget):
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
         self.track_counter = Label(text='[b][color=000000] [/b][/color]', markup=True,
                                    size_hint=(.2, .05), pos_hint={'x': .4, 'y': .6})
+        self.cancel_btn = Button(text='[b][color=000000]Cancel[/b][/color]', markup=True,
+                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .5})
+        self.cancel_btn.bind(on_release=self.cancel_tracking)
         self.layout = FloatLayout(size=(Window.width, Window.height))
 
         self.add_flag = True
@@ -38,11 +41,18 @@ class RunTracking(Widget):
         self.count = 0
         self.optimise_count = 0
         self.sweep = 0
+        self.cancel_flag = False
 
         with self.canvas:
             self.add_widget(self.layout)
             self.layout.add_widget(self.track_counter)
             self.layout.add_widget(self.track_message)
+
+    def cancel_tracking(self):
+        self.add_flag = False
+        self.optimise_flag = False
+        self.cancel_flag = True
+        self.cancel_btn.text = '[b][color=000000]Tracking Canceled[/b][/color]'
 
     def update_count(self):
         if self.add_flag:
@@ -92,15 +102,18 @@ class RunTracking(Widget):
             return False
 
         if not self.add_flag and not self.optimise_flag:
+            if not self.cancel_flag:
 
-            self.optimise_count = 0
-            self.tracks, self.features, self.segment_count, self.double_segment = self.tracking_object.get()
-            self.update_message(-1)
+                self.optimise_count = 0
+                self.tracks, self.features, self.segment_count, self.double_segment = self.tracking_object.get()
+                self.update_message(-1)
 
-            return True
+                return True
+
+    def test_cancel(self):
+        return self.cancel_flag
 
     def get(self):
-
         return self.tracks, self.features
 
 class CellMark(Widget):

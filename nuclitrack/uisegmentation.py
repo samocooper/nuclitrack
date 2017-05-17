@@ -221,6 +221,7 @@ class SegmentationUI(Widget):
             self.s_layout.add_widget(self.layout2)
 
     def frame_select(self, instance, val):
+
         self.current_frame = int(val)
 
         self.im = tifffile.imread(self.file_list[self.seg_channel][int(val)])
@@ -355,10 +356,15 @@ class SegmentationUI(Widget):
             self.params[9] = 1
         else:
             self.params[9] = 0
+
     def change_channel(self, val, instance):
 
         self.seg_channel = int(val)
+
         self.im = tifffile.imread(self.file_list[self.seg_channel][self.current_frame])
+        self.im = self.im.astype(float)
+        self.im -= self.min_vals[self.seg_channel]
+        self.im /= self.max_vals[self.seg_channel]
 
         self.im_disp.update_im(self.im)
         self.mov_disp.update_im(self.im)

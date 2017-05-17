@@ -119,7 +119,7 @@ class UserInterface(Widget):
             for g in self.fov:
                 if g == 'labels':
                     del self.fov['labels']
-            self.labels = self.fov.create_dataset("labels", data=np.zeros((self.frames, self.dims[0], self.dims[1])))
+            self.labels = self.fov.create_dataset("labels", (self.frames, self.dims[0], self.dims[1]))
 
             self.current_widget = BatchSegment(file_list=self.file_list[channel],
                                                min_val=self.min_vals[channel],
@@ -251,23 +251,26 @@ class UserInterface(Widget):
         if self.finish_flag:
 
             self.tracking_flag = False
-            self.tracks, self.fov['features'][...] = self.current_widget.get()
+            cancel = self.current_widget.test_cancel()
 
-            # Delete if tracks already exists otherwise store extracted features
+            if not cancel:
+                self.tracks, self.fov['features'][...] = self.current_widget.get()
 
-            for g in self.fov:
-                if g == 'tracks':
-                    del self.fov['tracks']
+                # Delete if tracks already exists otherwise store extracted features
 
-            for g in self.fov:
-                if g == 'tracks_stored':
-                    del self.fov['tracks_stored']
+                for g in self.fov:
+                    if g == 'tracks':
+                        del self.fov['tracks']
 
-            self.fov.create_dataset("tracks", data=self.tracks)
+                for g in self.fov:
+                    if g == 'tracks_stored':
+                        del self.fov['tracks_stored']
 
-            tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
-            self.fov.create_dataset("tracks_stored", data=tracks_stored)
-            self.progression_state(9)
+                self.fov.create_dataset("tracks", data=self.tracks)
+
+                tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
+                self.fov.create_dataset("tracks_stored", data=tracks_stored)
+                self.progression_state(9)
 
     # UI for inspecting and ammening tracks
 
