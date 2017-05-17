@@ -1,8 +1,6 @@
 import ctooltracking
 import numpy as np
 
-#uncomment for ISCB results
-#from skimage.external import tifffile
 
 ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
     Col3 = mitosis; Col4 = Track_id; Col5 = frame.
@@ -247,9 +245,11 @@ def save_csv(features, tracks, file_name):
                             change_list = np.where(mask_change)
                             feat_mat[change_list[0][0], 19] = ind_change
                             feat_mat[i, 19] = ind_change
-                        except:
-
+                        except IndexError:
                             pass
+                        except ValueError:
+                            pass
+
 
     with open(file_name, 'wb') as f:
 
@@ -311,13 +311,16 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
                     mask_change = np.logical_and(mask1, mask2)
                     if np.count_nonzero(mask_change):
                         try:
+
                             # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
 
                             change_list = np.where(mask_change)
                             feat_mat[change_list[0][0], 19] = ind_change
                             feat_mat[i, 19] = ind_change
-                        except:
 
+                        except IndexError:
+                            pass
+                        except ValueError:
                             pass
 
     with open(file_name, 'wb') as f:
@@ -332,7 +335,7 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
 
 def save_iscb(features, tracks, file_name, labels, frames):
-
+    from skimage.external import tifffile
     ''' Create matrix and write to csv for features. Features are: Track_id, Frame, X_center, Y_center, Area,
     Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
     CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
@@ -363,7 +366,7 @@ def save_iscb(features, tracks, file_name, labels, frames):
 
         mask = tracks[:, 4] == i
 
-        if np.sum(mask) == 1:
+        if np.count_nonzero(mask) == 1:
 
             ind = tracks[mask, 0]
             val = tracks[mask, 4]
@@ -382,7 +385,7 @@ def save_iscb(features, tracks, file_name, labels, frames):
     feat_mat = np.zeros((1, 18))
 
     for i in range(1,int(np.max(tracks[:, 4])) + 1):
-        if np.any(tracks[:, 4] == i):
+        if np.count_nonzero(tracks[:, 4] == i) > 0:
 
             track_temp = tracks[tracks[:, 4] == i, :]
             feat_mat_temp = np.zeros((track_temp.shape[0], 18))
@@ -422,7 +425,7 @@ def save_iscb(features, tracks, file_name, labels, frames):
     track_text = np.zeros((int(np.max(feat_mat[:, 0])), 4))
 
     for i in range(1, int(np.max(feat_mat[:, 0])+1)):
-        if np.any(feat_mat[:, 0] == i) > 0:
+        if np.count_nonzero(feat_mat[:, 0] == i) > 0:
             track_temp = feat_mat[feat_mat[:, 0] == i, :]
             track_text[i-1, 0] = i
             track_text[i-1, 1] = track_temp[0, 1]
