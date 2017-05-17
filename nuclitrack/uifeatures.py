@@ -22,8 +22,10 @@ class FeatureExtract(Widget):
         self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
 
-        self.feature_num = 21 + 3 * (self.channels - 1)
-        self.features = np.zeros([1, self.feature_num])
+        self.features = dict()
+        self.features['tracking'] = np.zeros([1, 15])
+        self.features['data'] = np.zeros([1, 13])
+
         self.counter = 1
 
         self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
@@ -45,17 +47,19 @@ class FeatureExtract(Widget):
         for i in range(self.channels):
             files.append(self.file_list[i][frame])
 
-        feature_mat, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :],
-                                                                              self.feature_num, self.counter)
-        feature_mat[:, 1] = frame
-        self.features = np.vstack((self.features, feature_mat))
+        features_temp, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :], self.counter)
+        features_temp['tracking'][:, 1] = frame
+        self.features['tracking'] = np.vstack((self.features['tracking'], features_temp['tracking']))
+        self.features['data'] = np.vstack((self.features['data'], features_temp['data']))
+
         self.labels[frame, :, :] = new_labels
 
     def get(self):
 
         self.feat_message.text = '[b][color=000000]Features Extracted[/b][/color]'
-
-        self.features[1:, 17:19] = 1
-        self.features = self.features[np.argsort(self.features[:, 0]), :]
+        inds = np.argsort(self.features['tracking'][:, 0])
+        self.features['tracking'] = self.features['tracking'][inds, :]
+        self.features['data'] = self.features['data'][inds, :]
+        self.features['tracking'][1:, 5] = 1.
 
         return [self.features, self.labels]

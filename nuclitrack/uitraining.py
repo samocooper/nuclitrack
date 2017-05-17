@@ -89,18 +89,32 @@ class TrainingUI(Widget):
 
         self.file_list = file_list
         self.labels = labels
-        self.features = features
-        self.frames = frames
 
+        self.features = dict()
+        self.features['tracking'] = features['tracking']
+        self.features['data'] = features['data']
+
+        self.frames = frames
         self.dims = labels[0, :, :].shape
-        self.feature_number = features.shape[1]
         self.current_frame = 0
-        self.training_data = np.zeros([1, self.feature_number])
+
+        self.training = dict()
+        self.training['data'] = np.zeros([1, features['data'].shape[1]])
+        self.training['tracking'] = np.zeros([1, features['tracking'].shape[1]])
+
+        mask = np.where(features['tracking'][:, 5] > 1)[0]
+        if np.count_nonzero(mask):
+            print(np.count_nonzero(mask))
+            self.training['data'] = np.vstack((self.training['data'], features['data'][mask, :]))
+            self.training['tracking'] = np.vstack((self.training['tracking'], features['tracking'][mask, :]))
+            for i in range(1,self.training['tracking'].shape[0]):
+                val = features['tracking'][mask[i-1], 5]
+                self.training['tracking'][i, 4 + val] = 1
 
         self.layout = FloatLayout(size=(Window.width, Window.height))
 
         im_temp = self.labels[0, :, :].astype(float)
-        mapping = self.features[:, 17].astype(int)
+        mapping = self.features['tracking'][:, 5].astype(int)
 
         self.im_disp = IndexedDisplay(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
         self.layout.add_widget(self.im_disp)
@@ -118,12 +132,11 @@ class TrainingUI(Widget):
         im = im.astype(float)
 
         self.mov_disp.create_im(im, 'PastelHeat')
+        inds = self.features['tracking'][:, 1]
 
-        inds = self.features[:, 1]
-        mask = inds == 0
-
-        if sum(mask.astype(int)) > 0:
-            self.frame_feats = self.features[mask, :]
+        mask = inds == self.current_frame
+        if np.count_nonzero(mask):
+            self.frame_inds = np.where(mask)[0]
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1)
         self.frame_slider.bind(value=self.training_frame)
@@ -220,7 +233,7 @@ class TrainingUI(Widget):
         self.current_frame = int(val)
         im_temp = self.labels[int(val), :, :]
 
-        mapping = self.features[:, 17].astype(int)
+        mapping = self.features['tracking'][:, 5].astype(int)
         self.im_disp.update_im(im_temp, mapping)
         self.label_disp.update_im(np.mod(im_temp, 64))
 
@@ -228,40 +241,46 @@ class TrainingUI(Widget):
         im = im.astype(float)
         self.mov_disp.update_im(im)
 
-        inds = self.features[:, 1]
-        mask = inds == self.current_frame
+        inds = self.features['tracking'][:, 1]
 
-        if sum(mask.astype(int)) > 0:
-            self.frame_feats = self.features[mask, :]
+        mask = inds == self.current_frame
+        if np.count_nonzero(mask):
+            self.frame_inds = np.where(mask)[0]
 
         self.frame_text.text = '[color=000000]' + str(int(val)) + '[/color]'
 
     def update_training(self, pos, val):
 
         pos = np.asarray([pos[0] * self.dims[1], pos[1] * self.dims[0]])
-        d = distance.cdist(self.frame_feats[:, [2, 3]], [pos])
+        d = distance.cdist(self.features['tracking'][self.frame_inds, 2:4], [pos])
 
-        sel = self.frame_feats[np.argmin(d), :].copy()
+        selected_loc = self.frame_inds[np.argmin(d)]
+        selected_ind = self.features['tracking'][selected_loc, 0]
 
         if min(d) < 50:
 
-            mask = self.training_data[:, 0] == sel[0]
+            mask = self.training['tracking'][:, 0] == selected_ind
 
             if np.any(mask):
 
-                ind = np.nonzero(self.training_data[:, 0] == sel[0])
-                self.training_data = np.delete(self.training_data, ind, 0)
-                self.features[int(sel[0]), 17] = 1.
+                ind = np.nonzero(mask)
+                self.training['data'] = np.delete(self.training['data'], ind, 0)
+                self.training['tracking'] = np.delete(self.training['tracking'], ind, 0)
+                self.features['tracking'][int(selected_ind), 5] = 1.
 
             else:
+                sel_data = self.features['data'][int(selected_ind), :].copy()
+                sel_tracking = self.features['tracking'][int(selected_ind), :].copy()
+                sel_tracking[6:11] = 0
+                sel_tracking[5 + val] = 1
 
-                sel[12:17] = 0
-                sel[11 + val] = 1
-                self.training_data = np.vstack((self.training_data, sel))
-                self.features[int(sel[0]), 17] = 1.0 + val
+                self.training['data'] = np.vstack((self.training['data'], sel_data))
+                self.training['tracking'] = np.vstack((self.training['tracking'], sel_tracking))
+
+                self.features['tracking'][int(selected_ind), 5] = 1.0 + val
 
         im_temp = self.labels[self.current_frame, :, :]
-        mapping = self.features[:, 17].astype(int)
+        mapping = self.features['tracking'][:, 5].astype(int)
         self.im_disp.update_im(im_temp, mapping)
         self.canvas.ask_update()
 
@@ -270,10 +289,15 @@ class TrainingUI(Widget):
         # Delete if features already exists otherwise store extracted features
 
         for g in self.parent.params:
-            if g == 'training_data':
-                del self.parent.params['training_data']
+            if g == 'training':
+                del self.parent.params['training']
 
-        self.parent.params.create_dataset("training_data", data=self.training_data)
+        print(self.training['tracking'].astype(int))
+
+        self.training_hdf5 = self.parent.params.create_group('training')
+        self.training_hdf5.create_dataset("data", data=self.training['data'])
+        self.training_hdf5.create_dataset("tracking", data=self.training['tracking'])
+
         self.data_message.text ='[color=000000]Data stored[/color]'
         self.parent.progression_state(7)
 

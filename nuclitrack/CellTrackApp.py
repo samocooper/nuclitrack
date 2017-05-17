@@ -95,11 +95,12 @@ class UserInterface(Widget):
     def segment_ui(self, instance):
         if instance.state == 'down':
 
+            self.params.require_dataset('seg_param', (11,), dtype='f')
+
             if self.params['seg_param'][10] >= self.channels:
                 self.params['seg_param'][10] = 0
 
             self.remove_widget(self.current_widget)
-            self.params.require_dataset('seg_param', (11,), dtype='f')
             self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
                                                  max_vals=self.max_vals, frames=self.frames,
                                                  channels=self.channels, params=self.params['seg_param'][...])
@@ -193,7 +194,10 @@ class UserInterface(Widget):
             if g == 'features':
                 del self.fov['features']
 
-        self.fov.create_dataset("features", data=features)
+        self.features = self.fov.create_group('features')
+        self.features.create_dataset("tracking", data=features['tracking'])
+        self.features.create_dataset("data", data=features['data'])
+
         self.progression_state(6)
 
     # UI for selecting training classes from segmented cells
@@ -204,7 +208,6 @@ class UserInterface(Widget):
         for g in self.fov:
             if g == 'features':
                 flag = True
-
         if instance.state == 'down' and flag:
             store = False
             for g in self.params:
@@ -213,8 +216,8 @@ class UserInterface(Widget):
 
             self.remove_widget(self.current_widget)
             self.current_widget = TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])],
-                                             labels=self.labels, features=self.fov['features'][...],
-                                             frames=self.frames, params=self.params['track_param'][...], stored=store)
+                                             labels=self.labels, features=self.fov['features'], frames=self.frames,
+                                             params=self.params['track_param'][...], stored=store)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)
 
@@ -321,11 +324,9 @@ class UserInterface(Widget):
 
             for g in self.fov:
                 if g == 'labels':
-
                     # Load labels
 
                     self.labels = self.fov['labels']
-
                     state = 4
 
         if state == 4 and self.progression[4] == 0:
@@ -348,6 +349,7 @@ class UserInterface(Widget):
 
             for g in self.fov:
                 if g == 'features':
+                    self.features = self.fov['features']
                     state = 6
 
 
@@ -371,7 +373,7 @@ class UserInterface(Widget):
                 self.params.create_dataset('track_param', data=np.asarray([0.05, 50, 1, 5, 0, 1, 3]))
 
             for g in self.params:
-                if g == 'training_data':
+                if g == 'training':
                     state = 7
 
         if state == 7 and self.progression[7] == 0:
@@ -381,17 +383,11 @@ class UserInterface(Widget):
             btn7.bind(size=btn7.setter('text_size'))
 
             self.layout1.add_widget(btn7)
-
             self.progression[7] = 1
+            cl = self.features['tracking'][:, 11:14]
 
-            for g in self.fov:
-                if g == 'features':
-
-                    cl = self.fov['features'][:, 12:15]
-
-                    if sum(cl.flatten()) > 0:
-
-                        state = 8
+            if sum(cl.flatten()) > 0:
+                state = 8
 
         if state == 8 and self.progression[8] == 0:
             btn8 = ToggleButton(text='Track\nCells', group='ui_choice', halign='center', valign='middle')
