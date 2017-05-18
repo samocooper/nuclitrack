@@ -122,6 +122,7 @@ class LoadingUI(Widget):
 
         self.ld_layout.add_widget(self.label_fov)
         self.ld_layout.add_widget(self.text_input_fov)
+        self.ld_layout.add_widget(self.select_fov)
         self.ld_layout.add_widget(self.loaded_fov)
         self.ld_layout.add_widget(self.ui_message)
         self.ld_layout.add_widget(self.label_param)

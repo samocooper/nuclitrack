@@ -29,7 +29,8 @@ def classifycells(features, training):
             i += 1
 
     if sum(mask) == 1:
-        ind = np.where(mask)[0]
+        ind = np.where(mask)[0][0]
+        print(ind)
         features['tracking'][:, 6 + ind] = 1
 
     return features
