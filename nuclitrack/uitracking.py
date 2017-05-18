@@ -122,13 +122,14 @@ class RunTracking(Widget):
 class CellMark(Widget):
 
     def draw_dot(self, cell_center, dims, r, g, b, d):
+
         self.d = d
         cell_center[0] = cell_center[0] / dims[1]
         cell_center[1] = (1 - cell_center[1] / dims[0])
 
         self.cell_center = cell_center
 
-        ds = self.height / self.d
+        ds = (self.d / self.height)*100
         xpos = (cell_center[0] * self.width) + self.pos[0] - ds / 2
         ypos = (cell_center[1] * self.height) + self.pos[1] - ds / 2
 
@@ -139,7 +140,8 @@ class CellMark(Widget):
         self.bind(pos=self.update_im, size=self.update_im)
 
     def update_im(self, *args):
-        ds = self.height / self.d
+
+        ds = (self.d / self.height)*100
         xpos = (self.cell_center[0] * self.width) + self.pos[0] - ds / 2
         ypos = (self.cell_center[1] * self.height) + self.pos[1] - ds / 2
 
@@ -244,15 +246,15 @@ class TrackingUI(Widget):
         self.track_ids = np.zeros(1)
         self.current_frame = 0
 
-        inds = self.features[:, 1]
+        inds = self.features['tracking'][:, 1]
         mask = inds == 0
 
         if sum(mask.astype(int)) > 0:
-            self.frame_feats = self.features[mask, :]
+            self.frame_feats = self.features['tracking'][mask, :]
 
         im_temp = self.labels[0, :, :]
 
-        mapping = self.features[:, 18].astype(int)
+        mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
         self.channel = 0
@@ -260,7 +262,7 @@ class TrackingUI(Widget):
         im = im.astype(float)
         self.mov_disp.create_im(im, 'PastelHeat')
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .06),
                                    pos_hint={'x': .145, 'y': .94})
         self.frame_slider.bind(value=self.frame_select)
 
@@ -282,7 +284,9 @@ class TrackingUI(Widget):
         self.jump_window = Jump(size_hint=(.87, .3), pos_hint={'x': .12, 'y': .12})
 
         layout4 = GridLayout(cols=1, padding=2, size_hint=(.1, .78), pos_hint={'x': .01, 'y': .115})
+
         self.cell_mark = CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
+        self.cell_mark_2 = CellMark(size_hint=(.43, .43), pos_hint={'x': .56, 'y': .46})
 
         self.track_btn1 = ToggleButton(text=' Select Cell (z) ', markup=True, halign='center', valign='middle')
         self.track_btn2 = ToggleButton(text=' Add Segment (c)', markup=True, halign='center', valign='middle')
@@ -291,8 +295,6 @@ class TrackingUI(Widget):
         self.track_btn5 = ToggleButton(text='Jump (w)', markup=True, halign='center', valign='middle')
         self.track_btn6 = ToggleButton(text='New Track (n)', markup=True, halign='center', valign='middle')
         self.track_btn9 = Button(text='Store Track', markup=True, halign='center', valign='middle')
-        self.track_btn7 = Button(text='Save Tracks', markup=True, halign='center', valign='middle')
-        self.track_btn8 = Button(text='Load Tracks', markup=True, halign='center', valign='middle')
         self.track_btn10 = Button(text='Export all to CSV', markup=True, halign='center', valign='middle')
         self.track_btn11 = Button(text='Export sel to CSV', markup=True, halign='center', valign='middle')
 
@@ -302,8 +304,6 @@ class TrackingUI(Widget):
         self.track_btn4.bind(on_press=partial(self.tracking_window.state_change, state=4))
         self.track_btn5.bind(on_press=partial(self.jump_window.jump, flag=0))
         self.track_btn6.bind(on_press=partial(self.tracking_window.state_change, state=5))
-        self.track_btn7.bind(on_press=self.save_tracks)
-        self.track_btn8.bind(on_press=self.load_tracks)
         self.track_btn9.bind(on_press=self.store_track)
         self.track_btn10.bind(on_press=self.save_csv)
         self.track_btn11.bind(on_press=self.save_sel_csv)
@@ -314,8 +314,6 @@ class TrackingUI(Widget):
         layout4.add_widget(self.track_btn4)
         layout4.add_widget(self.track_btn6)
         layout4.add_widget(self.track_btn5)
-        layout4.add_widget(self.track_btn7)
-        layout4.add_widget(self.track_btn8)
         layout4.add_widget(self.track_btn9)
         layout4.add_widget(self.track_btn10)
         layout4.add_widget(self.track_btn11)
@@ -325,15 +323,7 @@ class TrackingUI(Widget):
 
         self.layout4 = layout4
 
-        self.feat_inds = [5, 6, 7, 8, 9, 10, 11]
-
-        if self.features.shape[1] == 24:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22]
-
-        if self.features.shape[1] == 27:
-            self.feat_inds = [5, 6, 7, 8, 9, 10, 11, 20, 21, 22, 23, 24, 25]
-
-        self.show_feat = [self.feat_inds[0], self.feat_inds[4], self.feat_inds[6]]
+        self.show_feat = [0, 1, 2]
 
         self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
                            xmax=self.frames, ymin=0,
@@ -417,6 +407,8 @@ class TrackingUI(Widget):
             self.tr_layout.add_widget(self.tracking_window)
             self.tr_layout.add_widget(self.jump_window)
             self.tr_layout.add_widget(self.cell_mark)
+            self.tr_layout.add_widget(self.cell_mark_2)
+
             self.tr_layout.add_widget(self.graph)
 
             self.tr_layout.add_widget(self.text_input1)
@@ -443,11 +435,16 @@ class TrackingUI(Widget):
 
         if self.track_ids.any:
             self.cell_mark.remove_dot()
+            self.cell_mark_2.remove_dot()
+
             mask = np.intersect1d(self.track_ids, self.frame_feats[:, 0])
 
             if mask:
+
                 cell_center = self.frame_feats[self.frame_feats[:, 0] == mask[0], [2, 3]]
-                self.cell_mark.draw_dot(cell_center, self.dims, 1., 1., 1., 50)
+
+                self.cell_mark.draw_dot(cell_center.copy(), self.dims, 1., 1., 1., 15)
+                self.cell_mark_2.draw_dot(cell_center.copy(), self.dims, 1., 0., 0., 12)
 
         for i in range(len(self.parent.fov['tracks_stored'])):
             self.store_layout.children[i].remove_dot()
@@ -480,18 +477,18 @@ class TrackingUI(Widget):
         im_temp = self.labels[int(val), :, :]
         self.frame_slider.value = val
 
-        mapping = self.features[:, 18].astype(int)
+        mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
         im = tifffile.imread(self.file_list[self.channel][int(val)])
         im = im.astype(float)
         self.mov_disp.update_im(im)
 
-        inds = self.features[:, 1]
+        inds = self.features['tracking'][:, 1]
         mask = inds == self.current_frame
-        self.frame_feats = self.features[mask, :]
+        self.frame_feats = self.features['tracking'][mask, :]
 
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
+        self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
         self.track_frame_update()
 
         self.graph.remove_plot(self.plotT)
@@ -503,7 +500,7 @@ class TrackingUI(Widget):
 
         mask2 = self.tracks[:, 4] == self.track_ind[0]
         self.track_ids = self.tracks[mask2, 0].astype(int)
-        self.features[self.track_ids, -1] = 0
+        self.features['tracking'][self.track_ids, 12] = 0
 
         self.modify_update()
 
@@ -513,21 +510,22 @@ class TrackingUI(Widget):
         frame = np.round(self.frames*xpos)
         mask2 = self.tracks[:, 4] == self.track_ind[0]
         self.track_ids = self.tracks[mask2, 0].astype(int)
-        time_points = self.features[self.track_ids, 1]
+
+        time_points = self.features['tracking'][self.track_ids, 1]
         event_ind = np.argmin(np.abs(time_points - frame))
         event_ind = self.track_ids[event_ind]
 
         if val == 1:
             self.event_flag1.state = 'normal'
-            self.features[event_ind, -1] = 1
+            self.features['tracking'][event_ind, 12] = 1
 
         if val == 2:
             self.event_flag2.state = 'normal'
-            self.features[event_ind, -1] = 2
+            self.features['tracking'][event_ind, 12] = 2
 
         if val == 3:
             self.event_flag3.state = 'normal'
-            self.features[event_ind, -1] = 3
+            self.features['tracking'][event_ind, 12] = 3
 
         self.modify_update()
 
@@ -535,7 +533,7 @@ class TrackingUI(Widget):
 
         im_temp = self.labels[self.current_frame, :, :]
 
-        mapping = self.features[:, 18].astype(int)
+        mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
         self.canvas.ask_update()
@@ -544,41 +542,42 @@ class TrackingUI(Widget):
         self.track_ids = self.tracks[mask2, 0].astype(int)
         self.track_frame_update()
 
-        self.map_ind = self.features[self.track_ids[0], 18]
+        self.map_ind = self.features['tracking'][self.track_ids[0], 11]
 
-        feats_temp1 = self.features[self.track_ids, self.show_feat[0]]
-        feats_temp2 = self.features[self.track_ids, self.show_feat[1]]
-        feats_temp3 = self.features[self.track_ids, self.show_feat[2]]
+        feats_temp1 = self.features['data'][self.track_ids, self.show_feat[0]]
+        feats_temp2 = self.features['data'][self.track_ids, self.show_feat[1]]
+        feats_temp3 = self.features['data'][self.track_ids, self.show_feat[2]]
 
-        feats_temp1 = feats_temp1 / max(feats_temp1)
-        feats_temp2 = feats_temp2 / max(feats_temp2)
-        feats_temp3 = feats_temp3 / max(feats_temp3)
+        feats_temp1 = feats_temp1 / np.max(feats_temp1)
+        feats_temp2 = feats_temp2 / np.max(feats_temp2)
+        feats_temp3 = feats_temp3 / np.max(feats_temp3)
 
-        t_temp = self.features[self.track_ids, 1]
-        events_feat = self.features[self.track_ids, -1]
+        t_temp = self.features['tracking'][self.track_ids, 1]
+        events_feat = self.features['tracking'][self.track_ids, 12]
 
         events_point1 = []
         events_point2 = []
         events_point3 = []
 
-        for i in range(len(events_feat)):
-
-            if events_feat[i] == 1:
-                events_point1.append((t_temp[i], -1))
-                events_point1.append((t_temp[i], 1))
-                events_point1.append((t_temp[i], -1))
-
-            if events_feat[i] == 2:
-                events_point2.append((t_temp[i], -1))
-                events_point2.append((t_temp[i], 1))
-                events_point2.append((t_temp[i], -1))
-
-            if events_feat[i] == 3:
-                events_point3.append((t_temp[i], -1))
-                events_point3.append((t_temp[i], 1))
-                events_point3.append((t_temp[i], -1))
-
         if t_temp.size > 1:
+
+            for i in range(len(events_feat)):
+
+                if events_feat[i] == 1:
+                    events_point1.append((t_temp[i], -1))
+                    events_point1.append((t_temp[i], 1))
+                    events_point1.append((t_temp[i], -1))
+
+                if events_feat[i] == 2:
+                    events_point2.append((t_temp[i], -1))
+                    events_point2.append((t_temp[i], 1))
+                    events_point2.append((t_temp[i], -1))
+
+                if events_feat[i] == 3:
+                    events_point3.append((t_temp[i], -1))
+                    events_point3.append((t_temp[i], 1))
+                    events_point3.append((t_temp[i], -1))
+
 
             self.graph.remove_plot(self.plot1)
             self.plot1 = SmoothLinePlot(color=[1, 0, 0, 1])
@@ -621,6 +620,8 @@ class TrackingUI(Widget):
 
     def track_ammend(self, pos, flag):
 
+        mod_flag = False
+
         # Calculate nearest segment
 
         if 0 < flag <= 5:
@@ -656,8 +657,8 @@ class TrackingUI(Widget):
 
                         feat_id = frame_ids[mask2, 0]  # get unique id of segment in frame
 
-                        self.features[self.features[:, 0] == feat_id, 18] = 1
-                        self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                        self.features['tracking'][self.features['tracking'][:, 0] == feat_id, 11] = 1
+                        self.features['tracking'][self.features['tracking'][:, 0] == sel[0], 11] = self.map_ind
 
                         self.tracks[self.tracks[:, 0] == feat_id, 0] = sel[0]
 
@@ -678,14 +679,15 @@ class TrackingUI(Widget):
 
                                 self.tracks = np.vstack(
                                     (self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                                self.features['tracking'][self.features['tracking'][:, 0] == sel[0], 11] = self.map_ind
 
                             else:
 
                                 self.tracks = np.insert(self.tracks, i,
                                                         [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0], 0)
-                                self.features[self.features[:, 0] == sel[0], 18] = self.map_ind
+                                self.features['tracking'][self.features['tracking'][:, 0] == sel[0], 11] = self.map_ind
 
+                    mod_flag = True
                     self.modify_update()
 
             # Remove segment from cell track
@@ -695,10 +697,12 @@ class TrackingUI(Widget):
                 self.track_btn3.state = 'normal'
 
                 if sum(mask) and min(d) < 50:
-                    self.features[self.features[:, 0] == sel[0], 18] = 1
+                    self.features['tracking'][self.features['tracking'][:, 0] == sel[0], 11] = 1
 
                     ind = np.where(mask)
                     self.tracks = np.delete(self.tracks, ind[0][0], 0)
+
+                    mod_flag = True
                     self.modify_update()
 
             # Swap tracks in proceeding frames
@@ -773,14 +777,15 @@ class TrackingUI(Widget):
 
                     if np.count_nonzero(swapped_1):
                         self.tracks = np.vstack((self.tracks, swapped_1))
-                        map_ind1 = self.features[int(swapped_1[0, 0]), 18]
-                        self.features[swapped_1[:, 0].astype(int), 18] = map_ind1
+                        map_ind1 = self.features['tracking'][int(swapped_1[0, 0]), 11]
+                        self.features['tracking'][swapped_1[:, 0].astype(int), 11] = map_ind1
 
                     if np.count_nonzero(swapped_2):
                         self.tracks = np.vstack((self.tracks, swapped_2))
-                        map_ind2 = self.features[int(swapped_2[0, 0]), 18]
-                        self.features[swapped_2[:, 0].astype(int), 18] = map_ind2
+                        map_ind2 = self.features['tracking'][int(swapped_2[0, 0]), 11]
+                        self.features['tracking'][swapped_2[:, 0].astype(int), 11] = map_ind2
 
+                    mod_flag = True
                     self.modify_update()
 
             # Create new track
@@ -797,15 +802,22 @@ class TrackingUI(Widget):
                     self.map_ind = r
 
                     self.tracks = np.vstack((self.tracks, [sel[0], 0, 0, 0, self.track_ind, self.current_frame, 0, 0]))
-                    self.features[self.features[:, 0] == sel[0], 18] = r
+                    self.features['tracking'][self.features['tracking'][:, 0] == sel[0], 11] = r
 
                     self.modify_update()
 
                     stored_temp = self.parent.fov['tracks_stored'][...]
                     stored_temp = np.append(stored_temp, 0)
+
                     del self.parent.fov['tracks_stored']
                     self.parent.fov.create_dataset("tracks_stored", data=stored_temp)
                     self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
+
+                    mod_flag = True
+
+        if mod_flag:
+            del self.parent.fov['tracks']
+            self.parent.fov.create_dataset("tracks", data=self.tracks)
 
     def keyboard_closed(self):
         self.keyboard.unbind(on_key_down=self.key_print)
@@ -913,30 +925,6 @@ class TrackingUI(Widget):
 
             self.jump_window.k_jump(self.event_flag3.state, flag=3)
 
-
-    def save_tracks(self, instance):
-
-        for g in self.parent.fov:
-            if g == 'saved_tracks':
-                del self.parent.fov['saved_tracks']
-            if g == 'saved_features':
-                del self.parent.fov['saved_features']
-
-        self.parent.fov.create_dataset("saved_tracks", data=self.tracks)
-        self.parent.fov.create_dataset("saved_features", data=self.features)
-
-    def load_tracks(self, instance):
-
-        self.tracks = self.parent.fov['saved_tracks'][:, :]
-        self.features = self.parent.fov['saved_features'][:, :]
-
-        im_temp = self.labels[self.current_frame, :, :]
-
-        mapping = self.features[:, 18].astype(int)
-        self.track_disp.update_im(im_temp.astype(float), mapping)
-
-        self.canvas.ask_update()
-
     def store_track(self, instance):
 
         if self.parent.fov['tracks_stored'][int(self.track_ind)] == 0:
@@ -963,9 +951,9 @@ class TrackingUI(Widget):
         if instance.text.isdigit():
             num = int(''.join([instance.text]))-1
 
-            if 0 <= num < len(self.feat_inds):
+            if 0 <= num < self.features['data'].shape[1]:
 
-                self.show_feat[flag] = self.feat_inds[num]
+                self.show_feat[flag] = num
 
             self.modify_update()
 

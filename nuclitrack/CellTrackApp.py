@@ -238,7 +238,7 @@ class UserInterface(Widget):
     def run_tracking(self, instance):
 
         self.remove_widget(self.current_widget)
-        self.current_widget = RunTracking(features=self.fov['features'][...],
+        self.current_widget = RunTracking(features=self.fov['features']['tracking'][...],
                                           track_param=self.params['track_param'][...], frames=self.frames)
 
         self.add_widget(self.current_widget)
@@ -263,7 +263,7 @@ class UserInterface(Widget):
                 cancel = self.current_widget.test_cancel()
 
                 if not cancel:
-                    self.tracks, self.fov['features'][...] = self.current_widget.get()
+                    self.tracks, self.fov['features']['tracking'][...] = self.current_widget.get()
 
                     # Delete if tracks already exists otherwise store extracted features
 
@@ -281,14 +281,14 @@ class UserInterface(Widget):
                     self.fov.create_dataset("tracks_stored", data=tracks_stored)
                     self.progression_state(9)
 
-    # UI for inspecting and ammening tracks
+    # UI for inspecting and ammending tracks
 
     def tracking_ui(self, instance):
         if instance.state == 'down':
             self.remove_widget(self.current_widget)
-            self.current_widget = TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'][...],
-                                             stored_tracks=self.fov['tracks_stored'][...],
-                                             features=self.fov['features'][...], frames=self.frames, dims=self.dims,
+            self.current_widget = TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'],
+                                             stored_tracks=self.fov['tracks_stored'],
+                                             features=self.fov['features'], frames=self.frames, dims=self.dims,
                                              channels=self.channels)
             self.add_widget(self.current_widget)
             Window.bind(on_resize=self.current_widget.update_size)

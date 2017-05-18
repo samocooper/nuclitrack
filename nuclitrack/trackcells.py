@@ -175,12 +175,13 @@ class TrackCells(object):
                 ind = self.tracks[j, 4]
                 r = np.round(252 * np.random.rand()) + 3
 
-            self.features[int(self.tracks[j, 0]), 18] = r
+            self.features[int(self.tracks[j, 0]), 11] = r
 
             if self.tracks[j, 3] > 0:
-                self.features[int(self.tracks[j, 0]), 18] = 5
+                self.features[int(self.tracks[j, 0]), 11] = 5
 
-        self.features[0,:] = 0
+        self.features[:, 12] = 0
+        self.features[0, :] = 0
 
         return self.tracks, self.features, self.segment_count, self.double_segment
 

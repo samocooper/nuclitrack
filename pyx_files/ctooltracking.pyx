@@ -18,8 +18,6 @@ ctypedef np.int_t DTYPE2_t
 def distance_mat(np.ndarray[DTYPE1_t, ndim=2] features, int frames, np.ndarray[DTYPE1_t, ndim=1] param):
 
     cdef int hgt = features.shape[0]
-    cdef int wid = features.shape[1]
-
     cdef int f, i, j, k, t
 
     # Determine number of edges to consider
@@ -204,7 +202,7 @@ def main_loop(np.ndarray[DTYPE1_t, ndim=2] scores, np.ndarray[DTYPE1_t, ndim=2] 
 
         if s < 2:
 
-            add_score = scores[int(prev_id),3] + param[2]*features[count1,13+s] - param[3]*features[count1,12+s]
+            add_score = scores[int(prev_id),3] + param[2]*features[count1,7+s] - param[3]*features[count1,6+s]
 
         else:
 
@@ -299,7 +297,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndi
 
         if s < 2:
 
-            scores[count1,3] = features[count1,13+s] - features[count1,12+s]
+            scores[count1,3] = features[count1,7+s] - features[count1,6+s]
             scores[count1,1] = features[count1,0]
 
         else:
@@ -319,7 +317,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndi
         scores[count3,1] = count3
 
         if s < 2:
-            temp_edge = 1-(param[0]*features[count3,4])**2 + features[count3,13+s] - features[count3,12+s]
+            temp_edge = 1-(param[0]*features[count3,4])**2 + features[count3,7+s] - features[count3,6+s]
 
             if temp_edge > -3.:
                 scores[count3,3] = temp_edge
@@ -368,7 +366,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndi
 
             if s < 2:
 
-                add_score = param[2]*features[count4,13+s] - param[3]*features[count4,12+s]
+                add_score = param[2]*features[count4,7+s] - param[3]*features[count4,6+s]
 
             else:
 
@@ -380,7 +378,7 @@ def forward_pass(np.ndarray[DTYPE1_t, ndim=2] features, np.ndarray[DTYPE1_t, ndi
 
              # Mitosis Component
 
-            temp_score = temp_score + (features[previous_cell_id,15] + features[count4,16]) - param[4]
+            temp_score = temp_score + (features[previous_cell_id,9] + features[count4,10]) - param[4]
 
             if temp_score > max_score:
 
