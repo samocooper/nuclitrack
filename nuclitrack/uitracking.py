@@ -119,6 +119,7 @@ class RunTracking(Widget):
     def get(self):
         return self.tracks, self.features
 
+
 class CellMark(Widget):
 
     def draw_dot(self, cell_center, dims, r, g, b, d):
@@ -262,15 +263,15 @@ class TrackingUI(Widget):
         im = im.astype(float)
         self.mov_disp.create_im(im, 'PastelHeat')
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.4, .06),
+        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
                                    pos_hint={'x': .145, 'y': .94})
         self.frame_slider.bind(value=self.frame_select)
 
         self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
                                 size_hint=(.15, .04), pos_hint={'x': .22, 'y': .9}, markup=True)
-        self.frame_minus = Button(text='(a) <<',
+        self.frame_minus = Button(text='<<:a',
                                   size_hint=(.07, .03), pos_hint={'x': .145, 'y': .905}, markup=True)
-        self.frame_plus = Button(text='>> (d)',
+        self.frame_plus = Button(text='d:>>',
                                  size_hint=(.07, .03), pos_hint={'x': .375, 'y': .905}, markup=True)
         self.frame_minus.bind(on_press=self.frame_backward)
         self.frame_plus.bind(on_press=self.frame_forward)
@@ -295,8 +296,8 @@ class TrackingUI(Widget):
         self.track_btn5 = ToggleButton(text='Jump (w)', markup=True, halign='center', valign='middle')
         self.track_btn6 = ToggleButton(text='New Track (n)', markup=True, halign='center', valign='middle')
         self.track_btn9 = Button(text='Store Track', markup=True, halign='center', valign='middle')
-        self.track_btn10 = Button(text='Export all to CSV', markup=True, halign='center', valign='middle')
-        self.track_btn11 = Button(text='Export sel to CSV', markup=True, halign='center', valign='middle')
+        self.track_btn10 = Button(text='Export All to CSV', markup=True, halign='center', valign='middle')
+        self.track_btn11 = Button(text='Export Sel to CSV', markup=True, halign='center', valign='middle')
 
         self.track_btn1.bind(on_press=partial(self.tracking_window.state_change, state=1))
         self.track_btn2.bind(on_press=partial(self.tracking_window.state_change, state=2))
@@ -457,7 +458,7 @@ class TrackingUI(Widget):
             if len(mask2) > 0:
                 for i in mask2:
                     cell_center = self.frame_feats[self.frame_feats[:, 0] == i, [2, 3]]
-                    self.store_layout.children[count].draw_dot(cell_center, self.dims, 0., 0., 0., 80)
+                    self.store_layout.children[count].draw_dot(cell_center, self.dims, 0., 0., 0., 12)
                     count += 1
 
 
@@ -488,7 +489,7 @@ class TrackingUI(Widget):
         mask = inds == self.current_frame
         self.frame_feats = self.features['tracking'][mask, :]
 
-        self.frame_text.text = '[color=000000]<<a  Frame  d>>: ' + str(int(val)) + '[/color]'
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
         self.track_frame_update()
 
         self.graph.remove_plot(self.plotT)
@@ -940,11 +941,11 @@ class TrackingUI(Widget):
     def save_csv(self, instance):
 
         trackcells.save_csv(self.features, self.tracks, self.parent.csv_file)
-        #trackcells.save_iscb(self.features, self.tracks, self.parent.csv_file, self.labels, self.frames)
+        #trackcells.save_iscb(self.features, self.tracks, self.parent.csv_file, self.labels, self.frames) # Need to update since changes
 
     def save_sel_csv(self, instance):
 
-        trackcells.save_sel_csv(self.features, self.tracks, self.parent.fov['tracks_stored'],self.parent.sel_csv_file)
+        trackcells.save_sel_csv(self.features, self.tracks, self.parent.fov['tracks_stored'], self.parent.sel_csv_file)
 
     def feat_change(self, flag, instance):
 

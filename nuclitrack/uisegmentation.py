@@ -172,7 +172,7 @@ class SegmentationUI(Widget):
         s6 = Slider(min=0, max=50, step=2, value=float(self.params[6]))
         s7 = Slider(min=0, max=10, step=1, value=float(self.params[7]))
         s8 = Slider(min=0, max=1, step=0.05, value=float(self.params[8]))
-        b2 = Button(text='save params')
+        b2 = Button(text='Save Params')
 
         s0.bind(value=partial(self.segment_script, state=2))
         s1.bind(value=partial(self.segment_script, state=3))
@@ -186,8 +186,8 @@ class SegmentationUI(Widget):
         b2.bind(on_press=self.save_params)
 
         self.s1_label = Label(text='[color=000000]Clipping Limit: ' + str(self.params[0]) + '[/color]', markup=True)
-        self.s2_label = Label(text='[color=000000]Background blur: ' + str(self.params[1]) + '[/color]', markup=True)
-        self.s3_label = Label(text='[color=000000]Image blur: ' + str(self.params[2]) + '[/color]', markup=True)
+        self.s2_label = Label(text='[color=000000]Background Blur: ' + str(self.params[1]) + '[/color]', markup=True)
+        self.s3_label = Label(text='[color=000000]Image Blur: ' + str(self.params[2]) + '[/color]', markup=True)
         self.s4_label = Label(text='[color=000000]Threshold: ' + str(self.params[3]) + '[/color]', markup=True)
         self.s5_label = Label(text='[color=000000]Smallest Object: ' + str(self.params[4]) + '[/color]', markup=True)
         self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]',

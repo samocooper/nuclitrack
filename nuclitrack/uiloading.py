@@ -213,9 +213,9 @@ class LoadingUI(Widget):
                 return
 
             if len(input_text) < 20:
-                self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+                self.loaded_param.text = '[b][color=000000] File Loaded: ' + input_text + '[/b][/color]'
             else:
-                self.loaded_param.text = '[b][color=000000] File loaded: ' + input_text[-30:] + '[/b][/color]'
+                self.loaded_param.text = '[b][color=000000] File Loaded: ' + input_text[-30:] + '[/b][/color]'
 
             self.file_loaded[1] = True
 

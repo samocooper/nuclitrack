@@ -155,18 +155,18 @@ class TrainingUI(Widget):
 
         self.track_dist = Slider(min=0, max=100, value=float(params[1]), step=1)
         self.track_dist.bind(value=self.tracking_distance)
-        self.txt_dist = Label(text='[color=000000]Search distance: ' + str(float(params[1])) + '[/color]', markup=True)
+        self.txt_dist = Label(text='[color=000000]Search Distance: ' + str(float(params[1])) + '[/color]', markup=True)
 
         self.max_gap = Slider(min=0, max=6, value=float(params[6]), step=1)
         self.max_gap.bind(value=self.max_gap_change)
-        self.txt_gap = Label(text='[color=000000]Max time gap: ' + str(float(params[6])) + '[/color]', markup=True)
+        self.txt_gap = Label(text='[color=000000]Max Time Gap: ' + str(float(params[6])) + '[/color]', markup=True)
 
         self.mig_cost = Slider(min=0, max=0.1, value=float(params[0]), step=0.001)
         self.mig_cost.bind(value=self.mig_cost_change)
-        self.txt_mig = Label(text='[color=000000]Migration cost: ' + str(float(params[0])) + '[/color]', markup=True)
+        self.txt_mig = Label(text='[color=000000]Migration Cost: ' + str(float(params[0])) + '[/color]', markup=True)
 
         self.training_window = TrainingData(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
-        self.layout3 = GridLayout(rows=3, cols=5, padding=2, size_hint=(.98, .12), pos_hint={'x': .01, 'y': .81})
+        self.layout3 = GridLayout(rows=3, cols=5, padding=2, size_hint=(.98, .18), pos_hint={'x': .01, 'y': .81})
 
         # Drop down menu for choosing which type of segment
 
@@ -211,7 +211,7 @@ class TrainingUI(Widget):
         self.layout3.add_widget(self.data_message)
 
         if stored:
-            self.data_message.text = '[color=000000]Data stored[/color]'
+            self.data_message.text = '[color=000000]Data Stored[/color]'
 
 
         with self.canvas:
@@ -297,23 +297,23 @@ class TrainingUI(Widget):
             self.training_hdf5.create_dataset("data", data=self.training['data'])
             self.training_hdf5.create_dataset("tracking", data=self.training['tracking'])
 
-            self.data_message.text ='[color=000000]Data stored[/color]'
+            self.data_message.text ='[color=000000]Data Stored[/color]'
             self.parent.progression_state(7)
 
     def tracking_distance(self,instance, val):
 
         self.parent.params['track_param'][1] = val
-        self.txt_dist.text = '[color=000000]Search distance: ' + str(val) + '[/color]'
+        self.txt_dist.text = '[color=000000]Search Distance: ' + str(val) + '[/color]'
 
     def max_gap_change(self, instance, val):
 
         self.parent.params['track_param'][6] = val
-        self.txt_gap.text = '[color=000000]Max time gap: ' + str(val) + '[/color]'
+        self.txt_gap.text = '[color=000000]Max Time Gap: ' + str(val) + '[/color]'
 
     def mig_cost_change(self, instance, val):
 
         self.parent.params['track_param'][0] = val
-        self.txt_mig.text = '[color=000000]Migration cost: ' + str(val) + '[/color]'
+        self.txt_mig.text = '[color=000000]Migration Cost: ' + str(val) + '[/color]'
 
     def remove(self):
 
