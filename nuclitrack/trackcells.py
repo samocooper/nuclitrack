@@ -251,9 +251,9 @@ def save_csv(features, tracks, file_name):
     with open(file_name, 'wb') as f:
 
         f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Area, Eccentricity, '
-                b'Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                b'CH2 StdDev Intensity,  CH2 Floored Mean, CH3 Mean Intensity, CH3 StdDev Intensity,  '
-                b'CH3 Floored Mean \n')
+                b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, '
+                b'CH1 Ring Region Median, CH2 Mean Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, '
+                b'CH3 Mean Intensity, CH3 StdDev Intensity, CH3 Floored Mean \n')
 
         feat_mat2 = np.delete(feat_mat, [4, 5], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
@@ -320,9 +320,9 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
     with open(file_name, 'wb') as f:
 
         f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Area, Eccentricity, '
-                b'Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity, '
-                b'CH2 StdDev Intensity,  CH2 Floored Mean, CH3 Mean Intensity, CH3 StdDev Intensity,  '
-                b'CH3 Floored Mean \n')
+                b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, '
+                b'CH1 Ring Region Median, CH2 Mean Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, '
+                b'CH3 Mean Intensity, CH3 StdDev Intensity, CH3 Floored Mean \n')
 
         feat_mat2 = np.delete(feat_mat, [4, 5], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')

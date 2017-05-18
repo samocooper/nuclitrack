@@ -23,7 +23,7 @@ class UserInterface(Widget):
 
         self.current_frame = 0
         self.parallel = False
-
+        self.ring_flag= False
         # Set of values that are used by file loading function to store data on image series,
         # Prevents need to load images into RAM
 
@@ -176,7 +176,7 @@ class UserInterface(Widget):
 
             self.remove_widget(self.current_widget)
             self.current_widget = FeatureExtract(file_list=self.file_list, labels=self.labels[...], frames=self.frames,
-                                                 channels=self.channels, dims=self.dims)
+                                                 channels=self.channels, dims=self.dims, ring_flag=self.ring_flag)
             self.add_widget(self.current_widget)
             self.feature_flag = True
             self.count_scheduled = 0
@@ -415,39 +415,43 @@ class UserInterface(Widget):
 
     def do_work(self, dt):
 
-        self.canvas.ask_update()
+        try:
+            self.canvas.ask_update()
 
-        if self.segment_flag_parallel:
-            Clock.schedule_once(self.segment_parallel, 0)
-            self.segment_flag_parallel = False
+            if self.segment_flag_parallel:
+                Clock.schedule_once(self.segment_parallel, 0)
+                self.segment_flag_parallel = False
 
-        if self.segment_flag:
+            if self.segment_flag:
 
-            Clock.schedule_once(self.current_widget.update_bar, 0)
-            Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
-            self.count_scheduled += 1
+                Clock.schedule_once(self.current_widget.update_bar, 0)
+                Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
+                self.count_scheduled += 1
 
-            if self.count_scheduled == self.frames:
-                self.segment_flag = False
-                Clock.schedule_once(self.finish_segmentation)
+                if self.count_scheduled == self.frames:
+                    self.segment_flag = False
+                    Clock.schedule_once(self.finish_segmentation)
 
-        if self.feature_flag:
+            if self.feature_flag:
 
-            Clock.schedule_once(self.current_widget.update_bar, 0)
-            Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
-            self.count_scheduled += 1
+                Clock.schedule_once(self.current_widget.update_bar, 0)
+                Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
+                self.count_scheduled += 1
 
-            if self.count_scheduled == self.frames:
+                if self.count_scheduled == self.frames:
 
-                self.feature_flag = False
-                Clock.schedule_once(self.save_features, 0)
-
-        if self.tracking_flag:
+                    self.feature_flag = False
+                    Clock.schedule_once(self.save_features, 0)
 
             if self.tracking_flag:
-                self.tracking_flag = False
-                Clock.schedule_once(self.add_tracks, 0)
-                Clock.schedule_once(self.update_count, 0)
+
+                if self.tracking_flag:
+                    self.tracking_flag = False
+                    Clock.schedule_once(self.add_tracks, 0)
+                    Clock.schedule_once(self.update_count, 0)
+        except AttributeError:
+
+            self.error_message('Please allow process to finish')
 
     def update_size(self, window, width, height):
 

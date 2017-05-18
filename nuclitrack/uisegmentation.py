@@ -403,17 +403,21 @@ class ViewSegment(Widget):
         self.frames = frames
 
         self.view = 'seg_view'
-        self.view_button = ToggleButton(text='View Labels', size_hint=(.2, .05), pos_hint={'x': .53, 'y': .925},
-                                        group='view')
-        self.export_button = ToggleButton(text='Export Labels', size_hint=(.2, .05), pos_hint={'x': .74, 'y': .925},
-                                          group='view')
+        self.layout_choice = GridLayout(cols=3, size_hint=(.45, .05), pos_hint={'x': .52, 'y': .925})
+        self.view_button = ToggleButton(text='View Labels', group='view')
+        self.export_button = ToggleButton(text='Export Labels', group='view')
+        self.ring_button = ToggleButton(text='Ring Region')
+
         self.view_button.bind(on_press=self.view_segment)
         self.export_button.bind(on_press=self.export_data)
+        self.ring_button.bind(on_press=self.ring_toggle)
+
+        self.layout_choice.add_widget(self.view_button)
+        self.layout_choice.add_widget(self.export_button)
+        self.layout_choice.add_widget(self.ring_button)
 
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
-
-        self.s_layout.add_widget(self.view_button)
-        self.s_layout.add_widget(self.export_button)
+        self.s_layout.add_widget(self.layout_choice)
 
         im_temp = self.labels[0, :, :]
 
@@ -463,6 +467,12 @@ class ViewSegment(Widget):
         with self.canvas:
             self.add_widget(self.s_layout)
 
+    def ring_toggle(self, instance):
+
+        if instance.state == 'down':
+            self.parent.ring_flag = True
+        else:
+            self.parent.ring_flag = False
 
     def make_folder(self, instance):
 

@@ -9,9 +9,10 @@ from . import extractfeatures
 
 class FeatureExtract(Widget):
 
-    def __init__(self, file_list, labels, frames, channels, dims, **kwargs):
+    def __init__(self, file_list, labels, frames, channels, dims, ring_flag=False, **kwargs):
         super().__init__(**kwargs)
 
+        self.ring_flag = ring_flag
         self.file_list = file_list
         self.labels = labels
         self.frames = frames
@@ -24,7 +25,7 @@ class FeatureExtract(Widget):
 
         self.features = dict()
         self.features['tracking'] = np.zeros([1, 15])
-        self.features['data'] = np.zeros([1, 13])
+        self.features['data'] = np.zeros([1, 16])
 
         self.counter = 1
 
@@ -47,7 +48,8 @@ class FeatureExtract(Widget):
         for i in range(self.channels):
             files.append(self.file_list[i][frame])
 
-        features_temp, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :], self.counter)
+        features_temp, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :],
+                                                                                self.counter, ring_flag=self.ring_flag)
         features_temp['tracking'][:, 1] = frame
         self.features['tracking'] = np.vstack((self.features['tracking'], features_temp['tracking']))
         self.features['data'] = np.vstack((self.features['data'], features_temp['data']))
