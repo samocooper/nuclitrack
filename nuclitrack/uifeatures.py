@@ -24,8 +24,8 @@ class FeatureExtract(Widget):
                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
 
         self.features = dict()
-        self.features['tracking'] = np.zeros([1, 15])
-        self.features['data'] = np.zeros([1, 16])
+        self.features['tracking'] = np.zeros([1, 13])
+        self.features['data'] = np.zeros([1, 22])
 
         self.counter = 1
 

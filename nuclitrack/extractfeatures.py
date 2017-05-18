@@ -19,8 +19,8 @@ def framefeatures(files, labels, counter, ring_flag):
             ims.append(im)
 
     features = dict()
-    features['tracking'] = np.zeros((len(features_temp[0]), 15))
-    features['data'] = np.zeros((len(features_temp[0]), 16))
+    features['tracking'] = np.zeros((len(features_temp[0]), 13))
+    features['data'] = np.zeros((len(features_temp[0]), 22))
 
     dims = labels.shape
     new_label = np.zeros((dims[0], dims[1]))
@@ -71,17 +71,19 @@ def framefeatures(files, labels, counter, ring_flag):
             bin_temp = cell_temp.image.flatten()
             im_temp = im_temp[bin_temp]
 
-            ind = k*4 + 4
+            ind = k*6 + 4
             features['data'][j, ind] = mu
-            features['data'][j, ind+1] = np.std(im_temp)
-            features['data'][j, ind+2] = np.std(im_temp[im_temp > mu])
+            features['data'][j, ind+1] = np.median(im_temp)
+            features['data'][j, ind+2] = np.std(im_temp)
+            features['data'][j, ind+3] = np.std(im_temp[im_temp > mu])
 
             if ring_flag:
 
                 im_roi = ims[k][bbox_dil[0]:bbox_dil[2], bbox_dil[1]:bbox_dil[3]]
-                ring_region = im_roi[ring_region].flatten()
+                ring_region_vals = im_roi[ring_region].flatten()
 
-                features['data'][j, ind+3] = np.median(ring_region)
+                features['data'][j, ind+4] = np.mean(ring_region_vals)
+                features['data'][j, ind+5] = np.median(ring_region_vals)
 
         new_label[labels == cell_temp.label] = counter
         counter += 1
