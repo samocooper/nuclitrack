@@ -402,6 +402,9 @@ class LoadingUI(Widget):
             self.parent.error_message('File selected is invalid or ot tiff')
         except FileNotFoundError:
             self.parent.error_message('File not found')
+        except IndexError:
+            self.parent.error_message('No images found')
+
 
     ############################
     # TEXT FILE LOAD FUNCTIONS #
@@ -426,6 +429,8 @@ class LoadingUI(Widget):
             self.parent.error_message('File is incorrect format')
         except FileNotFoundError:
             self.parent.error_message('File not found')
+        except IndexError:
+            self.parent.error_message('No images found')
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -498,6 +503,8 @@ class LoadingUI(Widget):
 
         except ValueError:
             self.parent.error_message('Invalid time series naming format')
+        except IndexError:
+            self.parent.error_message('No images found')
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
