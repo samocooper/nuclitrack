@@ -310,7 +310,7 @@ Enter your password on request, then launch the NucliTrack Application which sho
 
 	> sudo spctl \--master-enable
 	
-Linux: We have had issues with graphics drivers, either update these otherwise please install and locally build the python package. We also built the distributable version on EL7, we're working on releasing linux versions built on other distributions, for the moment please use the python package if the pre-built version does not work.
+Linux: We have had issues with graphics drivers, either update these otherwise please install and locally build the Python package. We also built the package on EL7, we're working on releasing linux versions built on other distributions, for the moment please use the Python package if the pre-built version does not work.
 
 If you can launch the application from terminal please let us know the error message when it fails to load, this way we'll be able to resolve the issue for future releases.
 
