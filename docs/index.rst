@@ -310,7 +310,9 @@ Enter your password on request, then launch the NucliTrack Application which sho
 
 	> sudo spctl \--master-enable
 	
-Linux: We have had issues with graphics drivers, an alternate release with less dependency on up to date graphics drivers is also available, this was also built on Ubuntu rather than Enterprise Linux. Download this `here <https://github.com/samocooper/nuclitrack/releases/download/1.2.0/nuclitrack_LINUX_NOGL.zip>`_.
+Linux: We have had issues with graphics drivers, either update these otherwise please install and locally build the python package. We also built the distributable version on EL7, we're working on releasing linux versions built on other distributions, for the moment please use the python package if the pre-built version does not work.
+
+If you can launch the application from terminal please let us know the error message when it fails to load, this way we'll be able to resolve the issue for future releases.
 
 OpenGL version is less than 2.0: Update your graphics drivers.
 
