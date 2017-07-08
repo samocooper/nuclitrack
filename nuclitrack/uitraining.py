@@ -104,7 +104,7 @@ class TrainingUI(Widget):
 
         mask = np.where(features['tracking'][:, 5] > 1)[0]
         if np.count_nonzero(mask):
-            print(np.count_nonzero(mask))
+
             self.training['data'] = np.vstack((self.training['data'], features['data'][mask, :]))
             self.training['tracking'] = np.vstack((self.training['tracking'], features['tracking'][mask, :]))
             for i in range(1,self.training['tracking'].shape[0]):

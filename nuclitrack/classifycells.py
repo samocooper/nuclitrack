@@ -30,7 +30,9 @@ def classifycells(features, training):
 
     if sum(mask) == 1:
         ind = np.where(mask)[0][0]
-        print(ind)
-        features['tracking'][:, 6 + ind] = 1
+        features_temp = np.zeros(features['tracking'].shape)
+        features_temp[:,:] = features['tracking'][:,:]
+        features_temp[:, 6 + ind] = 1
+        features['tracking'][:,:] = features_temp[:,:]
 
     return features
