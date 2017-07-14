@@ -207,31 +207,33 @@ Events can also be added. These are extremely useful if you want to computationa
 
 You can also change which features you want to visualise using the text boxes on the right. Here choose a number between one and 11, representing the features, the 'Floored Mean' feature is particularly useful for identifying PCNA foci a common fluoresecent label used to mark S-phase in cycling cells:
 
-1 Area
-2 Eccentricity
-3 Length
-4 Perimeter
-5 CH1 Mean Intensity
-6 CH1 Median Intensity
-7 CH1 Floored Mean
-8 CH1 StdDev Intensity
-9 CH1 Floored Mean
-10 CH1 Ring Region Mean Intensity (opt)
-11 CH1 Ring Region Median Intensity (opt)
-12 CH2 Mean Intensity
-13 CH2 Median Intensity
-14 CH2 Floored Mean
-15 CH2 StdDev Intensity
-16 CH2 Floored Mean
-17 CH2 Ring Region Mean Intensity (opt)
-18 CH2 Ring Region Median Intensity (opt)
-19 CH3 Mean Intensity
-20 CH3 Median Intensity
-21 CH3 Floored Mean
-22 CH3 StdDev Intensity
-23 CH3 Floored Mean
-24 CH3 Ring Region Mean Intensity (opt)
-25 CH3 Ring Region Median Intensity (opt)
+::
+
+   1 Area
+   2 Eccentricity
+   3 Length
+   4 Perimeter
+   5 CH1 Mean Intensity
+   6 CH1 Median Intensity
+   7 CH1 Floored Mean
+   8 CH1 StdDev Intensity
+   9 CH1 Floored Mean
+   10 CH1 Ring Region Mean Intensity (opt)
+   11 CH1 Ring Region Median Intensity (opt)
+   12 CH2 Mean Intensity
+   13 CH2 Median Intensity
+   14 CH2 Floored Mean
+   15 CH2 StdDev Intensity
+   16 CH2 Floored Mean
+   17 CH2 Ring Region Mean Intensity (opt)
+   18 CH2 Ring Region Median Intensity (opt)
+   19 CH3 Mean Intensity
+   20 CH3 Median Intensity
+   21 CH3 Floored Mean
+   22 CH3 StdDev Intensity
+   23 CH3 Floored Mean
+   24 CH3 Ring Region Mean Intensity (opt)
+   25 CH3 Ring Region Median Intensity (opt)
 
 .. figure:: nt7.png
 
