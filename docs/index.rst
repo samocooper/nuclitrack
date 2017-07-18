@@ -37,7 +37,7 @@ Loading Time Series Images
 
 To get started you need to specify file names for the .hdf5 files that will store your tracking data and parameters. You can either enter the location for these files directly into the text boxes and **hit enter**. Alternatively navigate to the desired folder, enter names for the files at the end of the directory path, and then **hit enter**.
 
-Secondly you will need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual single plane tiff files. There are then three options for loading the .tif image time series into NucliTrack.
+Secondly you will need a video of cells that need tracking. Importantly, the video must be stored as a sequence of individual single plane image files fully supported by the pillow `python module <http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html#fully-supported-formats>`_ . There are then three options for loading the image time series into NucliTrack.
 
 
 .. figure:: nt1.png
@@ -48,7 +48,7 @@ Secondly you will need a video of cells that need tracking. Importantly, the vid
 Auto load
 ^^^^^^^^^
 
-The autoloading interface allows you to load an image series based on the first and last filename of each channel. Nuclitrack now supports all images loaded by the pillow `python module <http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html#fully-supported-formats>`_ . Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
+The autoloading interface allows you to load an image series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
 
 ::
 
@@ -114,7 +114,7 @@ Once you have created the text file, navigate to it in the file browser and **do
 Load from directory
 ^^^^^^^^^^^^^^^^^^^
 
-This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging the single image series, and double click the first image in the series, this will load all other .tif images in the  directory in alphabetical/numerical order.
+This is probably the simplest way of loading an image series but only works where a single channel is used. Here, navigate to the folder conainging the single image series, and double click the first image in the series, this will load all other images in the  directory in alphabetical/numerical order.
 
 Segmentation
 ------------
