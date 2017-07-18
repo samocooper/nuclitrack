@@ -48,7 +48,7 @@ Secondly you will need a video of cells that need tracking. Importantly, the vid
 Auto load
 ^^^^^^^^^
 
-The autoloading interface allows you to load a tiff series based on the first and last filename of each channel. Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
+The autoloading interface allows you to load an image series based on the first and last filename of each channel. Nuclitrack now supports all images loaded by the pillow `python module <http://pillow.readthedocs.io/en/3.4.x/handbook/image-file-formats.html#fully-supported-formats>`_ . Whilst it doesn't matter how the rest of the file is named, the image series must contain a continuous series of zero padded time points e.g:
 
 ::
 
