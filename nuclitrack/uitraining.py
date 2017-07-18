@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
-from skimage.external import tifffile
+from PIL import Image
 
 from kivy.uix.widget import Widget
 from kivy.uix.slider import Slider
@@ -128,7 +128,7 @@ class TrainingUI(Widget):
         self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
 
-        im = tifffile.imread(self.file_list[0])
+        im = np.asarray(Image.open(self.file_list[0]))
         im = im.astype(float)
 
         self.mov_disp.create_im(im, 'PastelHeat')
@@ -237,7 +237,7 @@ class TrainingUI(Widget):
         self.im_disp.update_im(im_temp, mapping)
         self.label_disp.update_im(np.mod(im_temp, 64))
 
-        im = tifffile.imread(self.file_list[int(val)])
+        im = np.asarray(Image.open(self.file_list[int(val)]))
         im = im.astype(float)
         self.mov_disp.update_im(im)
 

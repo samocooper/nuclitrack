@@ -1,6 +1,7 @@
 import numpy as np
 import multiprocessing
 from multiprocessing import Pool
+from PIL import Image
 from skimage.external import tifffile
 import os
 
@@ -110,7 +111,7 @@ class SegmentationUI(Widget):
         self.mov_disp = ImDisplay(size_hint=(.2, .2), pos_hint={'x': .78, 'y': .14})
         self.s_layout.add_widget(self.mov_disp)
 
-        self.im = tifffile.imread(file_list[self.seg_channel][0])
+        self.im = np.asarray(Image.open(file_list[self.seg_channel][0]))
         self.im = self.im.astype(float)
         self.im -= self.min_vals[self.seg_channel]
         self.im /= self.max_vals[self.seg_channel]
@@ -242,7 +243,7 @@ class SegmentationUI(Widget):
 
         self.current_frame = int(val)
 
-        self.im = tifffile.imread(self.file_list[self.seg_channel][int(val)])
+        self.im = np.asarray(Image.open(self.file_list[self.seg_channel][int(val)]))
         self.im = self.im.astype(float)
         self.im -= self.min_vals[self.seg_channel]
         self.im /= self.max_vals[self.seg_channel]
@@ -379,7 +380,7 @@ class SegmentationUI(Widget):
 
         self.seg_channel = int(val)
 
-        self.im = tifffile.imread(self.file_list[self.seg_channel][self.current_frame])
+        self.im = np.asarray(Image.open(self.file_list[self.seg_channel][self.current_frame]))
         self.im = self.im.astype(float)
         self.im -= self.min_vals[self.seg_channel]
         self.im /= self.max_vals[self.seg_channel]

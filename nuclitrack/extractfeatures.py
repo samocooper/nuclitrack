@@ -1,9 +1,8 @@
 import numpy as np
 from skimage.measure import regionprops
-from skimage.external import tifffile
 from skimage.morphology import dilation
 from skimage.morphology import square
-
+from PIL import Image
 def framefeatures(files, labels, counter, ring_flag):
 
     labels = labels.astype(int)
@@ -12,7 +11,7 @@ def framefeatures(files, labels, counter, ring_flag):
     ims = []
 
     for j in range(len(files)):
-        im = tifffile.imread(files[j])
+        im = np.asarray(Image.open(files[j]))
         im = im.astype(float)
         features_temp.append(regionprops(labels, im))
         if ring_flag:

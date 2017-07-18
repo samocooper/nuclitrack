@@ -399,7 +399,7 @@ class LoadingUI(Widget):
             self.load_movie(file_list)
 
         except ValueError:
-            self.parent.error_message('File selected is invalid or ot tiff')
+            self.parent.error_message('File selected is invalid')
         except FileNotFoundError:
             self.parent.error_message('File not found')
         except IndexError:
@@ -498,6 +498,7 @@ class LoadingUI(Widget):
 
                 if (not self.file_names[mx * 2 + 0] == '') and (not self.file_names[mx * 2 + 1] == ''):
                     if not (self.file_names[mx * 2 + 0] == self.file_names[mx * 2 + 1]):
+
                         labels = loadimages.autofilelist(self.file_names[mx * 2 + 0], self.file_names[mx * 2 + 1])
                         self.load_labels(labels)
 

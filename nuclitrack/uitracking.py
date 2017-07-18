@@ -16,8 +16,7 @@ from kivy.uix.dropdown import DropDown
 from .imagewidget import ImDisplay, IndexedDisplay
 from .graph import Graph, SmoothLinePlot
 from . import trackcells
-from skimage.external import tifffile
-
+from PIL import Image
 
 class RunTracking(Widget):
 
@@ -259,7 +258,7 @@ class TrackingUI(Widget):
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
         self.channel = 0
-        im = tifffile.imread(self.file_list[self.channel][0])
+        im = np.asarray(Image.open(self.file_list[self.channel][0]))
         im = im.astype(float)
         self.mov_disp.create_im(im, 'PastelHeat')
 
@@ -481,7 +480,7 @@ class TrackingUI(Widget):
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
-        im = tifffile.imread(self.file_list[self.channel][int(val)])
+        im = np.asarray(Image.open(self.file_list[self.channel][int(val)]))
         im = im.astype(float)
         self.mov_disp.update_im(im)
 
@@ -964,7 +963,7 @@ class TrackingUI(Widget):
     def change_channel(self, val, instance):
 
         self.channel = int(val)
-        im = tifffile.imread(self.file_list[self.channel][self.current_frame])
+        im = np.asarray(Image.open(self.file_list[self.channel][self.current_frame]))
         im = im.astype(float)
         self.mov_disp.update_im(im)
 

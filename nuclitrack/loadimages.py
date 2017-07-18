@@ -1,4 +1,4 @@
-from skimage.external import tifffile
+from PIL import Image
 import numpy as np
 import os
 
@@ -7,7 +7,7 @@ def loadimages(file_list):
     # Function to load images for one movie from list of channels/file names
 
     frames = len(file_list[0])
-    im_test = tifffile.imread(file_list[0][0])
+    im_test = np.asarray(Image.open(file_list[0][0]))
     dims = im_test.shape
 
     min_vals = []
@@ -15,13 +15,13 @@ def loadimages(file_list):
 
     for j in range(len(file_list)):
 
-        im_test = tifffile.imread(file_list[j][0])
+        im_test = np.asarray(Image.open(file_list[0][0]))
         max_val = np.max(im_test)
         min_val = np.min(im_test)
 
         for i in range(frames):
 
-            im = tifffile.imread(file_list[j][i])
+            im = np.asarray(Image.open(file_list[0][0]))
             im = im.astype(float)
 
             if np.max(im) > max_val:
@@ -36,13 +36,13 @@ def loadimages(file_list):
 
 def loadlabels(file_list):
 
-    im_test = tifffile.imread(file_list[0])
+    im_test = np.asarray(Image.open(file_list[0]))
     dims = im_test.shape
 
     labels = np.zeros((len(file_list), dims[0], dims[1]))
 
     for i in range(len(file_list)):
-        labels[i, :, :] = tifffile.imread(file_list[i])
+        labels[i, :, :] = np.asarray(Image.open(file_list[i]))
 
     return labels
 
