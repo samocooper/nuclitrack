@@ -258,8 +258,10 @@ class TrackingUI(Widget):
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
         self.channel = 0
-        im = np.asarray(Image.open(self.file_list[self.channel][0]))
-        im = im.astype(float)
+
+        im_temp = Image.open(self.file_list[self.channel][0])
+        im = np.asarray(im_temp, dtype='float')
+
         self.mov_disp.create_im(im, 'PastelHeat')
 
         self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
@@ -480,8 +482,8 @@ class TrackingUI(Widget):
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
-        im = np.asarray(Image.open(self.file_list[self.channel][int(val)]))
-        im = im.astype(float)
+        im_temp = Image.open(self.file_list[self.channel][int(val)])
+        im = np.asarray(im_temp, dtype='float')
         self.mov_disp.update_im(im)
 
         inds = self.features['tracking'][:, 1]
@@ -963,10 +965,11 @@ class TrackingUI(Widget):
     def change_channel(self, val, instance):
 
         self.channel = int(val)
-        im = np.asarray(Image.open(self.file_list[self.channel][self.current_frame]))
-        im = im.astype(float)
-        self.mov_disp.update_im(im)
 
+        im_temp = Image.open(self.file_list[self.channel][self.current_frame])
+        im = np.asarray(im_temp, dtype='float')
+
+        self.mov_disp.update_im(im)
 
     def remove(self):
 

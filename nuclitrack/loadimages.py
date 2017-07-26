@@ -7,7 +7,10 @@ def loadimages(file_list):
     # Function to load images for one movie from list of channels/file names
 
     frames = len(file_list[0])
-    im_test = np.asarray(Image.open(file_list[0][0]))
+
+    im_temp = Image.open(file_list[0][0])
+    im_test = np.asarray(im_temp, dtype='float')
+
     dims = im_test.shape
 
     min_vals = []
@@ -15,13 +18,17 @@ def loadimages(file_list):
 
     for j in range(len(file_list)):
 
-        im_test = np.asarray(Image.open(file_list[0][0]))
+        im_temp = Image.open(file_list[j][0])
+        im_test = np.asarray(im_temp, dtype='float')
+
         max_val = np.max(im_test)
         min_val = np.min(im_test)
 
         for i in range(frames):
 
-            im = np.asarray(Image.open(file_list[0][0]))
+            im_temp = Image.open(file_list[j][i])
+            im = np.asarray(im_temp, dtype='float')
+
             im = im.astype(float)
 
             if np.max(im) > max_val:
@@ -36,13 +43,15 @@ def loadimages(file_list):
 
 def loadlabels(file_list):
 
-    im_test = np.asarray(Image.open(file_list[0]))
+    im_temp = Image.open(file_list[0])
+    im_test = np.asarray(im_temp, dtype='float')
     dims = im_test.shape
 
     labels = np.zeros((len(file_list), dims[0], dims[1]))
 
     for i in range(len(file_list)):
-        labels[i, :, :] = np.asarray(Image.open(file_list[i]))
+        im_temp = Image.open(file_list[i])
+        labels[i, :, :] = np.asarray(im_temp, dtype='float')
 
     return labels
 

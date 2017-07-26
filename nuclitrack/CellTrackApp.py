@@ -95,15 +95,20 @@ class UserInterface(Widget):
     def segment_ui(self, instance):
         if instance.state == 'down':
 
-            self.params.require_dataset('seg_param', (11,), dtype='f')
-
-            if self.params['seg_param'][10] >= self.channels:
-                self.params['seg_param'][10] = 0
+            self.params.require_dataset('seg_param', (18,), dtype='f')
+            if self.params['seg_param'][15] == 0 and self.params['seg_param'][16] == 0 and self.params['seg_param'][17] == 0:
+                self.params['seg_param'][15] = 1
 
             self.remove_widget(self.current_widget)
-            self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
+            if self.params['seg_param'][11] == 1:
+                self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
                                                  max_vals=self.max_vals, frames=self.frames,
-                                                 channels=self.channels, params=self.params['seg_param'][...])
+                                                 channels=self.channels, params=self.params['seg_param'][...],
+                                                     training=self.params['seg_training'])
+            else:
+                self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
+                                                     max_vals=self.max_vals, frames=self.frames,
+                                                     channels=self.channels, params=self.params['seg_param'][...])
 
             self.add_widget(self.current_widget)
             self.progression_state(3)
@@ -122,12 +127,22 @@ class UserInterface(Widget):
                     del self.fov['labels']
             self.labels = self.fov.create_dataset("labels", (self.frames, self.dims[0], self.dims[1]))
 
-            self.current_widget = BatchSegment(file_list=self.file_list[channel],
-                                               min_val=self.min_vals[channel],
-                                               max_val=self.max_vals[channel],
-                                               params=self.params['seg_param'][...], frames=self.frames,
-                                               labels=self.labels,
-                                               parallel=self.parallel)
+            if self.params['seg_param'][11] == 1:
+                self.current_widget = BatchSegment(file_list=self.file_list,
+                                                   min_vals=self.min_vals,
+                                                   max_vals=self.max_vals,
+                                                   params=self.params['seg_param'][...], frames=self.frames,
+                                                   labels=self.labels,
+                                                   parallel=self.parallel,
+                                                   seg_training=self.params['seg_training'])
+            else:
+                self.current_widget = BatchSegment(file_list=self.file_list,
+                                                   min_vals=self.min_vals,
+                                                   max_vals=self.max_vals,
+                                                   params=self.params['seg_param'][...], frames=self.frames,
+                                                   labels=self.labels,
+                                                   parallel=self.parallel)
+
             self.add_widget(self.current_widget)
 
             # Set segmentation flags to True to start performing work

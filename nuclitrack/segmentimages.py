@@ -1,11 +1,14 @@
 import ctoolsegmentation
 import numpy as np
-
+from PIL import Image
 from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from scipy import ndimage
 from PIL import Image
+from sklearn.neural_network import MLPClassifier
+import classifyim
+
 
 def clipping(im, val):
 
@@ -69,14 +72,89 @@ def cell_centers(im, im_bin, val):
 
     return [im_cent, d_mat]
 
+def train_clf(training):
+
+    clf = MLPClassifier(solver='lbfgs', activation='relu', alpha=1e-5,
+                        random_state=1, hidden_layer_sizes=(20,), verbose=False)
+
+    X = training['X'][...]
+    y = training['y'][...]
+
+    clf.fit(X, y)
+
+    return clf
+
+def im_probs(im, clf, wsize, stride):
+
+    vinds = np.arange(im.shape[0], im.shape[0] - wsize + 1, -1) - 1
+    hinds = np.arange(im.shape[1], im.shape[1] - wsize + 1, -1) - 1
+
+    rev_inds = np.arange(wsize + 1, 0, -1)
+
+    conv_im_temp = np.vstack((im[rev_inds, :], im, im[vinds, :]))
+    conv_im = np.hstack((conv_im_temp[:, rev_inds], conv_im_temp, conv_im_temp[:, hinds]))
+
+    X_pred = classifyim.classify_im(conv_im, wsize, stride, im.shape[0], im.shape[1])
+
+    y_prob = clf.predict_proba(X_pred)
+    y_prob = y_prob[:, 1]
+
+    return y_prob.reshape(im.shape)
+
+def open_close(im, val):
+
+    val = int(val)
+
+    if 4 > val > 0:
+
+        k = morphology.octagon(val, val)
+
+        im = filters.gaussian(im, val)
+
+        im = morphology.erosion(im, k)
+
+        im = morphology.dilation(im, k)
+
+    if 8 > val >= 4:
+        k = morphology.octagon(val//2 + 1, val//2 + 1)
+
+        im = filters.gaussian(im, val)
+        im = filters.gaussian(im, val)
+
+        im = morphology.erosion(im, k)
+        im = morphology.erosion(im, k)
+
+        im = morphology.dilation(im, k)
+        im = morphology.dilation(im, k)
+
+    if val >= 8:
+        k = morphology.octagon(val // 4 + 1, val // 4 + 1)
+
+        im = filters.gaussian(im, val)
+        im = filters.gaussian(im, val)
+        im = filters.gaussian(im, val)
+        im = filters.gaussian(im, val)
+
+        im = morphology.erosion(im, k)
+        im = morphology.erosion(im, k)
+        im = morphology.erosion(im, k)
+        im = morphology.erosion(im, k)
+
+        im = morphology.dilation(im, k)
+        im = morphology.dilation(im, k)
+        im = morphology.dilation(im, k)
+        im = morphology.dilation(im, k)
+
+    return im
 
 def fg_markers(im_cent, im_bin, val, edges):
 
     local_maxi = peak_local_max(im_cent, indices=False, min_distance=int(val), labels=im_bin, exclude_border=int(edges))
+    k = morphology.octagon(2, 2)
+
+    local_maxi = morphology.dilation(local_maxi, selem=k)
     markers = ndimage.label(local_maxi)[0]
     markers[local_maxi] += 1
-    k = morphology.octagon(2, 2)
-    markers = morphology.dilation(markers, selem=k)
 
     return markers
 
@@ -122,20 +200,47 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     return labels
 
+def read_im(file_list, channels, min_vals, max_vals):
 
-def segment_image(params, min_val, max_val, file_name):
+    im = np.zeros(1)
 
-    im = np.asarray(Image.open(file_name))
-    im = im.astype(float)
-    im -= min_val
-    im /= max_val
+    for i in range(len(channels)):
+        if channels[i] > 0:
+
+            if im.shape[0] == 1:
+                pil_im = Image.open(file_list[i])
+                temp_im = np.asarray(pil_im, dtype='float').copy()
+                temp_im -= min_vals[i]
+                temp_im /= max_vals[i]
+                im = temp_im
+
+            else:
+                pil_im = Image.open(file_list[i])
+                temp_im = np.asarray(pil_im, dtype='float').copy()
+                temp_im -= min_vals[i]
+                temp_im /= max_vals[i]
+                im = im + temp_im
+    return im
+
+def segment_image(params, min_vals, max_vals, clf, file_name):
+
+
+    im = read_im(file_name, params[15:], min_vals, max_vals)
 
     image = clipping(im, params[0])
     image2 = background(image, params[1])
     image3 = blur(image2, params[2])
+
+    if params[11] == 1:
+        image3 = im_probs(image3, clf, int(params[13]), int(params[14]))
+
+        if params[12] > 0:
+            image3 = open_close(image3, params[12])
+
     im_bin = threshold(image3, params[3])
     im_bin = object_filter(im_bin, params[4])
     [cell_center, d_mat] = cell_centers(image3, im_bin, params[5])
     markers = fg_markers(cell_center, im_bin, params[6], params[9])
     im_edge = sobel_edges(image, params[7])
+
     return watershed(markers, im_bin, im_edge, d_mat, params[8], params[9])

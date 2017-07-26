@@ -1,7 +1,6 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
-
 def classifycells(features, training):
 
     training_tracking = np.delete(training['tracking'][...], 0, 0)

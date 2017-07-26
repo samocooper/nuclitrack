@@ -128,8 +128,9 @@ class TrainingUI(Widget):
         self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
 
-        im = np.asarray(Image.open(self.file_list[0]))
-        im = im.astype(float)
+
+        im_temp = Image.open(self.file_list[0])
+        im = np.asarray(im_temp, dtype='float')
 
         self.mov_disp.create_im(im, 'PastelHeat')
         inds = self.features['tracking'][:, 1]
@@ -237,8 +238,9 @@ class TrainingUI(Widget):
         self.im_disp.update_im(im_temp, mapping)
         self.label_disp.update_im(np.mod(im_temp, 64))
 
-        im = np.asarray(Image.open(self.file_list[int(val)]))
-        im = im.astype(float)
+        im_temp = Image.open(self.file_list[int(val)])
+        im = np.asarray(im_temp, dtype='float')
+
         self.mov_disp.update_im(im)
 
         inds = self.features['tracking'][:, 1]
