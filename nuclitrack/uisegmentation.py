@@ -31,10 +31,19 @@ class BatchSegment(Widget):
         super().__init__(**kwargs)
 
         self.frames = frames
+
+        print(self.frames)
+        print(len(file_list))
+
         self.file_list = []
 
         for i in range(frames):
-            self.file_list.append([file_list[0][i], file_list[1][i], file_list[2][i]])
+            if len(file_list) == 1:
+                self.file_list.append([file_list[0][i]])
+            if len(file_list) == 2:
+                self.file_list.append([file_list[0][i], file_list[1][i]])
+            if len(file_list) == 3:
+                self.file_list.append([file_list[0][i], file_list[1][i], file_list[2][i]])
 
         self.labels = labels
         self.min_vals = min_vals
