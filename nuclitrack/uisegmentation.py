@@ -22,6 +22,7 @@ from skimage.external import tifffile
 from . import segmentimages
 from .imagewidget import ImDisplay
 import os
+
 # Batch Segmentation
 
 class BatchSegment(Widget):

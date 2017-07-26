@@ -197,7 +197,7 @@ def save_csv(features, tracks, file_name):
     Eccentricity, Solidity, Perimeter, CH1 Mean Intensity, CH1 StdDev Intensity, CH1 Floored Mean, CH2 Mean Intensity,
     CH2 StdDev Intensity, CH3 Mean Intensity, CH3 StdDev Intensity, '''
 
-    t_num = 8
+    t_num = 10
     f_num = features['data'].shape[1]
 
     feat_mat = np.zeros((1, t_num + f_num))
@@ -214,43 +214,53 @@ def save_csv(features, tracks, file_name):
                 t_v = features['tracking'][mask, :]
                 f_v = features['data'][mask, :]
                 v = np.hstack(([i, track_temp[j, 5], t_v[0, 2], t_v[0, 3], track_temp[j, 3],
-                                       track_temp[j, 0], 0, t_v[0, 12]], f_v[0, :]))
+                                       track_temp[j, 0], 0, t_v[0, 12], i, i], f_v[0, :]))
                 feat_mat = np.vstack((feat_mat, v))
 
     feat_mat = np.delete(feat_mat, 0, 0)
 
     for i in range(feat_mat.shape[0]):
 
-        if feat_mat[i, 4] > 0:
+        if feat_mat[i, 4] > 0:  # If mitotic daughter
 
-            mask = feat_mat[:, 5] == feat_mat[i, 4]
+            mask = feat_mat[:, 5] == feat_mat[i, 4]  # Mask identifies parent cell
+            current_ind = feat_mat[i, 0]
 
             if np.count_nonzero(mask):
 
-                ind_change = feat_mat[mask, 0]
-                frame_change = feat_mat[mask, 1]
+                ind_change = feat_mat[mask, 0]  # Track index of parent cell
+                frame_change = feat_mat[mask, 1]  # Frame that mitosis happens in
 
-                mask1 = feat_mat[:, 0] == ind_change
-                mask2 = feat_mat[:, 1] > frame_change
+                mask1 = feat_mat[:, 0] == ind_change  # Mask of all objects in parent cell track
+                mask2 = feat_mat[:, 1] > frame_change  # Mask of all objects in frames greater than mitotic frame
+
+                mask3 = feat_mat[:, 0] == current_ind
 
                 if np.count_nonzero(mask1) and np.count_nonzero(mask2):
 
-                    mask_change = np.logical_and(mask1, mask2)
+                    mask_change = np.logical_and(mask1, mask2) # Mask of all objects in frame greater than mitosis and belonging to parent track
                     if np.count_nonzero(mask_change):
                         try:
-                            # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+
+                            feat_mat[mask_change, 9] = max(feat_mat[:, 9]) + 1  # Change index of daughter cell
+
+                            feat_mat[mask3, 8] = ind_change  # Generate tree level label
 
                             change_list = np.where(mask_change)
-                            feat_mat[change_list[0][0], 6] = ind_change
-                            feat_mat[i, 6] = ind_change
+                            feat_mat[change_list[0][0], 6] = ind_change  # Set parent of changed track
+                            feat_mat[i, 6] = ind_change  # Sets parent of track identified as mitotic
+
+
                         except IndexError:
                             pass
                         except ValueError:
                             pass
 
+    print(feat_mat.shape)
+
     with open(file_name, 'wb') as f:
 
-        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Area, Eccentricity, '
+        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, Area, Eccentricity, '
                 b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, CH1 StdDev Intensity, '
                 b'CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, CH2 Mean Intensity, '
                 b'CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, CH2 Ring Region Mean, '
@@ -263,7 +273,7 @@ def save_csv(features, tracks, file_name):
 
 def save_sel_csv(features, tracks, tracks_stored, file_name):
 
-    t_num = 8
+    t_num = 10
     f_num = features['data'].shape[1]
 
     feat_mat = np.zeros((1, t_num + f_num))
@@ -282,7 +292,7 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
                     t_v = features['tracking'][mask, :]
                     f_v = features['data'][mask, :]
                     v = np.hstack(([i, track_temp[j, 5], t_v[0, 2], t_v[0, 3], track_temp[j, 3],
-                                    track_temp[j, 0], 0, t_v[0, 12]], f_v[0, :]))
+                                    track_temp[j, 0], 0, t_v[0, 12], i, i], f_v[0, :]))
                     feat_mat = np.vstack((feat_mat, v))
 
     feat_mat = np.delete(feat_mat, 0, 0)
@@ -295,6 +305,7 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
         if feat_mat[i, 4] > 0:
 
             mask = feat_mat[:, 5] == feat_mat[i, 4]
+            current_ind = feat_mat[i, 0]
 
             if np.count_nonzero(mask):
 
@@ -303,17 +314,21 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
                 mask1 = feat_mat[:, 0] == ind_change
                 mask2 = feat_mat[:, 1] > frame_change
+                mask3 = feat_mat[:,0] == current_ind
 
                 if np.count_nonzero(mask1) and np.count_nonzero(mask2):
 
                     mask_change = np.logical_and(mask1, mask2)
                     if np.count_nonzero(mask_change):
                         try:
-                            # feat_mat[mask_change, 0] = max(feat_mat[:, 0]) + 1  #option to change index of parent track daughter cell
+                            feat_mat[mask_change, 9] = max(feat_mat[:, 9]) + 1  # Change index of daughter cell
+
+                            feat_mat[mask3, 8] = ind_change  # Generate tree level label
 
                             change_list = np.where(mask_change)
-                            feat_mat[change_list[0][0], 6] = ind_change
-                            feat_mat[i, 6] = ind_change
+                            feat_mat[change_list[0][0], 6] = ind_change  # Set parent of changed track
+                            feat_mat[i, 6] = ind_change  # Sets parent of track identified as mitotic
+
                         except IndexError:
                             pass
                         except ValueError:
@@ -321,12 +336,12 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
     with open(file_name, 'wb') as f:
 
-        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Area, Eccentricity, '
-                b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, CH1 StdDev Intensity, '
-                b'CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, CH2 Mean Intensity, '
-                b'CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, CH2 Ring Region Mean, '
-                b'CH2 Ring Region Median, CH3 Mean Intensity, CH3 Median Intensity, CH3 StdDev Intensity, '
-                b'CH3 Floored Mean, CH3 Ring Region Mean, CH3 Ring Region Median \n')
+        f.write( b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, Area, Eccentricity, '
+            b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, CH1 StdDev Intensity, '
+            b'CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, CH2 Mean Intensity, '
+            b'CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, CH2 Ring Region Mean, '
+            b'CH2 Ring Region Median, CH3 Mean Intensity, CH3 Median Intensity, CH3 StdDev Intensity, '
+            b'CH3 Floored Mean, CH3 Ring Region Mean, CH3 Ring Region Median \n')
 
         feat_mat2 = np.delete(feat_mat, [4, 5], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
