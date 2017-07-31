@@ -286,6 +286,7 @@ class SegmentationUI(Widget):
         self.channel_choice = DropDown()
 
         for i in range(self.channels):
+
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), size_hint_y=None)
             channel_btn.bind(on_press=partial(self.change_channel, i))
             self.channel_choice.add_widget(channel_btn)
@@ -467,6 +468,9 @@ class SegmentationUI(Widget):
             if g == 'seg_training':
                 del self.parent.params['seg_training']
                 self.params[11] = 0
+                self.class_flag = False
+        self.train_count.text = '[color=000000]Train pxls ' + str(0) + '[/color]'
+        self.im_disp.update_im(self.im)
 
     def continue_seg(self, instance):
 
@@ -476,12 +480,14 @@ class SegmentationUI(Widget):
         self.s_layout.add_widget(self.layout2)
 
     def change_size(self, instance, val):
+
         self.brush_size = val
         self.brush_lbl.text = '[color=000000]Brush Size ' + str(np.round(val)) + '[/color]'
 
     def classify(self, instance):
 
         print(self.imml.shape)
+
         self.params[13] = 12
         self.params[14] = 2
 
@@ -571,42 +577,47 @@ class SegmentationUI(Widget):
             if g == 'seg_training':
                training_flag = True
 
-        if training_flag:
+        if training_flag or (len(pixel_fg) > 0 and len(pixel_bg) > 0):
+            if training_flag:
 
-            X1 = self.parent.params['seg_training']['X'][...]
-            y1 = self.parent.params['seg_training']['y'][...]
+                X1 = self.parent.params['seg_training']['X'][...]
+                y1 = self.parent.params['seg_training']['y'][...]
 
-            if len(pixel_fg) > 0 and len(pixel_bg) > 0:
+                if len(pixel_fg) > 0 and len(pixel_bg) > 0:
 
-                X = np.vstack((X, X1))
-                y = np.hstack((y, y1))
+                    X = np.vstack((X, X1))
+                    y = np.hstack((y, y1))
+
+                else:
+
+                    X = X1
+                    y = y1
+
+                del self.parent.params['seg_training']
+
+                self.train_count.text = '[color=000000]Train pxls ' + str(X.shape[0]) + '[/color]'
+                self.training_hdf5 = self.parent.params.create_group('seg_training')
+                self.training_hdf5.create_dataset('X', data=X)
+                self.training_hdf5.create_dataset('y', data=y)
 
             else:
 
-                X = X1
-                y = y1
+                self.train_count.text = '[color=000000]Train pxls ' + str(X.shape[0]) + '[/color]'
+                self.training_hdf5 = self.parent.params.create_group('seg_training')
+                self.training_hdf5.create_dataset('X', data=X)
+                self.training_hdf5.create_dataset('y', data=y)
 
-            del self.parent.params['seg_training']
+            self.clf = segmentimages.train_clf(self.training_hdf5)
+            self.class_flag = True
+            self.im_class = segmentimages.im_probs(self.imml, self.clf, wsize, stride)
 
-            self.train_count.text = '[color=000000]Train pxls ' + str(X.shape[0]) + '[/color]'
-            self.training_hdf5 = self.parent.params.create_group('seg_training')
-            self.training_hdf5.create_dataset('X', data=X)
-            self.training_hdf5.create_dataset('y', data=y)
+            self.im_open_close = self.im_class.copy()
+            self.params[11] = 1
+            self.im_disp.update_im(self.im_class)
 
         else:
 
-            self.train_count.text = '[color=000000]Train pxls ' + str(X.shape[0]) + '[/color]'
-            self.training_hdf5 = self.parent.params.create_group('seg_training')
-            self.training_hdf5.create_dataset('X', data=X)
-            self.training_hdf5.create_dataset('y', data=y)
-
-        self.clf = segmentimages.train_clf(self.training_hdf5)
-        self.class_flag = True
-        self.im_class = segmentimages.im_probs(self.imml, self.clf, wsize, stride)
-
-        self.im_open_close = self.im_class.copy()
-        self.params[11] = 1
-        self.im_disp.update_im(self.im_class)
+            self.parent.error_message('Error in classifier: no training data selected')
 
     def label_im(self, instance, level):
 
@@ -789,8 +800,7 @@ class SegmentationUI(Widget):
             self.params[9] = 0
 
     def change_channel(self, val, instance):
-        print(val)
-        print(self.seg_channels)
+
         if instance.state == 'down':
             self.seg_channels[val] = 1
             self.im = read_im(self.file_list, self.seg_channels, self.min_vals, self.max_vals, self.current_frame)

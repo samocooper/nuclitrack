@@ -100,6 +100,7 @@ class UserInterface(Widget):
                 self.params['seg_param'][15] = 1
 
             self.remove_widget(self.current_widget)
+
             if self.params['seg_param'][11] == 1:
                 self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
                                                  max_vals=self.max_vals, frames=self.frames,
@@ -125,6 +126,7 @@ class UserInterface(Widget):
             for g in self.fov:
                 if g == 'labels':
                     del self.fov['labels']
+
             self.labels = self.fov.create_dataset("labels", (self.frames, self.dims[0], self.dims[1]))
 
             if self.params['seg_param'][11] == 1:
