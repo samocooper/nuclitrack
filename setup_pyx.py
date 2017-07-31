@@ -10,7 +10,6 @@ setup(
     author_email='sam@socooper.com',
     license='MIT',
     packages=['nuclitrack'],
-    install_requires=['Cython','numpy','matplotlib','scipy','scikit-image','scikit-learn','pygame','kivy','h5py'],
     ext_modules=cythonize([
         Extension("ctooltracking", ["pyx_files/ctooltracking.pyx"], include_dirs=[numpy.get_include()]),
         Extension("classifyim", ["pyx_files/classifyim.pyx"], include_dirs=[numpy.get_include()]),
