@@ -215,8 +215,8 @@ class SegmentationUI(Widget):
 
         # Frame slider
 
-        self.frame_slider = guitools.frame_slider(self.movie.frames, self.change_frame,
-                                                  size_hint=(.29, .06), pos_hint={'x': .23, 'y': .91})
+        self.frame_slider = guitools.FrameSlider(self.movie.frames, self.change_frame,
+                                                 size_hint=(.29, .06), pos_hint={'x': .23, 'y': .91})
         self.s_layout.add_widget(self.frame_slider)
 
         self.parallel_button = ToggleButton(text=' Multiple Cores ',
@@ -787,18 +787,9 @@ class ViewSegment(Widget):
         self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
         self.im_disp.create_im(im_temp, 'Random')
 
-        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06),
-                                   pos_hint={'x': .1, 'y': .94})
-        self.frame_slider.bind(value=self.segment_frame)
-        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
-                                size_hint=(.19, .04), pos_hint={'x': .155, 'y': .9}, markup=True)
-
-        self.frame_minus = Button(text='<<',
-                                  size_hint=(.05, .03), pos_hint={'x': .1, 'y': .905}, markup=True)
-        self.frame_plus = Button(text='>>',
-                                 size_hint=(.05, .03), pos_hint={'x': .35, 'y': .905}, markup=True)
-        self.frame_minus.bind(on_press=self.frame_backward)
-        self.frame_plus.bind(on_press=self.frame_forward)
+        self.frame_slider = guitools.FrameSlider(self.movie.frames, self.change_frame,
+                                                 size_hint=(.37, .06), pos_hint={'x': .13, 'y': .91})
+        self.s_layout.add_widget(self.frame_slider)
 
         #### FILE WIDGETS ####
 
@@ -819,11 +810,7 @@ class ViewSegment(Widget):
         self.file_label = Label(text='[b][color=000000]Choose file name: [/b][/color]', markup=True,
                                 size_hint=(.25, .05), pos_hint={'x': .05, 'y': .79})
 
-        self.s_layout.add_widget(self.frame_text)
         self.s_layout.add_widget(self.im_disp)
-        self.s_layout.add_widget(self.frame_slider)
-        self.s_layout.add_widget(self.frame_plus)
-        self.s_layout.add_widget(self.frame_minus)
 
         with self.canvas:
             self.add_widget(self.s_layout)
@@ -859,9 +846,6 @@ class ViewSegment(Widget):
 
             self.s_layout.remove_widget(self.im_disp)
             self.s_layout.remove_widget(self.frame_slider)
-            self.s_layout.remove_widget(self.frame_plus)
-            self.s_layout.remove_widget(self.frame_minus)
-            self.s_layout.remove_widget(self.frame_text)
 
             self.s_layout.add_widget(self.file_choose)
             self.s_layout.add_widget(self.text_file_input)
@@ -883,23 +867,11 @@ class ViewSegment(Widget):
 
             self.s_layout.add_widget(self.im_disp)
             self.s_layout.add_widget(self.frame_slider)
-            self.s_layout.add_widget(self.frame_text)
-            self.s_layout.add_widget(self.frame_plus)
-            self.s_layout.add_widget(self.frame_minus)
 
         self.view = 'seg_view'
 
-    def frame_forward(self, instance):
-        if self.frame_slider.value < self.movie.frames - 1:
-            self.frame_slider.value += 1
+    def change_frame(self, val):
 
-    def frame_backward(self, instance):
-        if self.frame_slider.value > 0:
-            self.frame_slider.value -= 1
-
-    def segment_frame(self, instance, val):
-
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
         im_temp = self.labels[int(val), :, :]
         self.im_disp.update_im(im_temp)
 

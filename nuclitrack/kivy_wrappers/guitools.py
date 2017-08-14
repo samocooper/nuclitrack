@@ -8,6 +8,7 @@ from kivy.uix.floatlayout import FloatLayout
 
 from functools import partial
 
+
 def add_tbtn(layout, text, func, group=None):
 
     btn = ToggleButton(text=text, group=group, halign='center', valign='middle')
@@ -17,6 +18,7 @@ def add_tbtn(layout, text, func, group=None):
 
     return
 
+
 def add_btn(layout, text, func, group=None):
     btn = Button(text=text, group=group, halign='center', valign='middle')
     btn.bind(on_press=func)
@@ -25,6 +27,7 @@ def add_btn(layout, text, func, group=None):
 
     return
 
+
 def error_msg(message):
 
     error_msg = Popup(title='Error message',
@@ -32,7 +35,8 @@ def error_msg(message):
                       size_hint=(0.6, 0.3))
     error_msg.open()
 
-class frame_slider(Widget):
+
+class FrameSlider(Widget):
 
     def __init__(self, frames, func, **kwargs):
         super().__init__(**kwargs)
@@ -63,7 +67,6 @@ class frame_slider(Widget):
             self.add_widget(self.slider_layout)
 
         self.bind(pos=self.update_size, size=self.update_size)  # Maintain image size on scaling of parent layout
-
 
     def frame_forward(self, instance):
 

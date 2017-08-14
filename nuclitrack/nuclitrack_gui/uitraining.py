@@ -13,7 +13,7 @@ from scipy.spatial import distance
 
 from nuclitrack.kivy_wrappers.imagewidget import IndexedDisplay, ImDisplay
 from nuclitrack.nuclitrack_tools import classifycells
-
+from nuclitrack.kivy_wrappers import guitools
 
 class ClassifyCells(Widget):
     def __init__(self, features, training, **kwargs):
@@ -138,20 +138,8 @@ class TrainingUI(Widget):
         if np.count_nonzero(mask):
             self.frame_inds = np.where(mask)[0]
 
-        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1)
-        self.frame_slider.bind(value=self.training_frame)
-
-        self.sublayout = GridLayout(cols=3, padding=4)
-        self.frame_text = Label(text='[color=000000]' + str(0) + '[/color]', markup=True)
-        self.frame_minus = Button(text='<<')
-        self.frame_plus = Button(text='>>')
-
-        self.sublayout.add_widget(self.frame_minus)
-        self.sublayout.add_widget(self.frame_text)
-        self.sublayout.add_widget(self.frame_plus)
-
-        self.frame_minus.bind(on_press=self.frame_backward)
-        self.frame_plus.bind(on_press=self.frame_forward)
+        self.frame_slider = guitools.FrameSlider(self.movie.frames, self.change_frame,
+                                                 size_hint=(.27, .06), pos_hint={'x': .01, 'y': .88})
 
         self.track_dist = Slider(min=0, max=100, value=float(params[1]), step=1)
         self.track_dist.bind(value=self.tracking_distance)
@@ -166,7 +154,7 @@ class TrainingUI(Widget):
         self.txt_mig = Label(text='[color=000000]Migration Cost: ' + str(float(params[0])) + '[/color]', markup=True)
 
         self.training_window = TrainingData(size_hint=(.65, .65), pos_hint={'x': .015, 'y': .15})
-        self.layout3 = GridLayout(rows=3, cols=5, padding=2, size_hint=(.98, .18), pos_hint={'x': .01, 'y': .81})
+        self.layout3 = GridLayout(rows=3, cols=4, padding=2, size_hint=(.7, .13), pos_hint={'x': .29, 'y': .82})
 
         # Drop down menu for choosing which type of segment
 
@@ -194,17 +182,14 @@ class TrainingUI(Widget):
         self.channel_choice.add_widget(btn4)
         self.channel_choice.add_widget(btn5)
 
-        self.main_button = Button(text='Training Class')
+        self.main_button = Button(text='Training Class', size_hint=(.27, .04), pos_hint={'x': .01, 'y': .82})
         self.main_button.bind(on_release=self.channel_choice.open)
         self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
 
-        self.layout3.add_widget(self.main_button)
-        self.layout3.add_widget(self.frame_slider)
         self.layout3.add_widget(self.track_dist)
         self.layout3.add_widget(self.max_gap)
         self.layout3.add_widget(self.mig_cost)
         self.layout3.add_widget(btn6)
-        self.layout3.add_widget(self.sublayout)
         self.layout3.add_widget(self.txt_dist)
         self.layout3.add_widget(self.txt_gap)
         self.layout3.add_widget(self.txt_mig)
@@ -217,20 +202,15 @@ class TrainingUI(Widget):
         with self.canvas:
 
             self.add_widget(self.layout)
+
+            self.layout.add_widget(self.main_button)
             self.layout.add_widget(self.training_window)
             self.layout.add_widget(self.layout3)
+            self.layout.add_widget(self.frame_slider)
 
-    def frame_forward(self, instance):
-        if self.frame_slider.value < self.movie.frames - 1:
-            self.frame_slider.value += 1
+    def change_frame(self, val):
 
-    def frame_backward(self, instance):
-        if self.frame_slider.value > 0:
-            self.frame_slider.value -= 1
-
-    def training_frame(self, instance, val):
-
-        self.current_frame = int(val)
+        self.current_frame = val
         im_temp = self.labels[int(val), :, :]
 
         mapping = self.features['tracking'][:, 5].astype(int)
@@ -245,7 +225,6 @@ class TrainingUI(Widget):
         if np.count_nonzero(mask):
             self.frame_inds = np.where(mask)[0]
 
-        self.frame_text.text = '[color=000000]' + str(int(val)) + '[/color]'
 
     def update_training(self, pos, val):
 

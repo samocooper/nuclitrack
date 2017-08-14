@@ -7,7 +7,6 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
-from kivy.uix.slider import Slider
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton, Button
 from kivy.uix.widget import Widget
@@ -16,6 +15,7 @@ from scipy.spatial import distance
 from nuclitrack.kivy_wrappers.imagewidget import ImDisplay, IndexedDisplay
 from nuclitrack.nuclitrack_gui.graph import Graph, SmoothLinePlot
 from nuclitrack.nuclitrack_tools import trackcells
+from nuclitrack.kivy_wrappers import guitools
 
 class RunTracking(Widget):
 
@@ -206,7 +206,7 @@ class Jump(Widget):
             self.is_down = 0
             xpos = (touch.pos[0] - self.pos[0]) / self.size[0]
             if self.flag == 0:
-                self.parent.parent.change_frame([], np.asarray([xpos]))
+                self.parent.parent.change_frame(np.asarray([xpos]))
             else:
                 self.parent.parent.add_event(xpos, self.flag)
 
@@ -259,25 +259,9 @@ class TrackingUI(Widget):
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
-
-
-        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06),
-                                   pos_hint={'x': .145, 'y': .94})
-        self.frame_slider.bind(value=self.frame_select)
-
-        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
-                                size_hint=(.15, .04), pos_hint={'x': .22, 'y': .9}, markup=True)
-        self.frame_minus = Button(text='<<:a',
-                                  size_hint=(.07, .03), pos_hint={'x': .145, 'y': .905}, markup=True)
-        self.frame_plus = Button(text='d:>>',
-                                 size_hint=(.07, .03), pos_hint={'x': .375, 'y': .905}, markup=True)
-        self.frame_minus.bind(on_press=self.frame_backward)
-        self.frame_plus.bind(on_press=self.frame_forward)
-
+        self.frame_slider = guitools.FrameSlider(self.movie.frames, self.change_frame,
+                                                 size_hint=(.39, .06), pos_hint={'x': .13, 'y': .91})
         self.tr_layout.add_widget(self.frame_slider)
-        self.tr_layout.add_widget(self.frame_plus)
-        self.tr_layout.add_widget(self.frame_minus)
-        self.tr_layout.add_widget(self.frame_text)
 
         self.tracking_window = TrackingData(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46})
         self.jump_window = Jump(size_hint=(.87, .3), pos_hint={'x': .12, 'y': .12})
@@ -422,14 +406,6 @@ class TrackingUI(Widget):
             for i in range(len(stored_tracks)):
                 self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
 
-    def frame_forward(self, instance):
-        if self.frame_slider.value < self.movie.frames - 1:
-            self.frame_slider.value += 1
-
-    def frame_backward(self, instance):
-        if self.frame_slider.value > 0:
-            self.frame_slider.value -= 1
-
     def track_frame_update(self):
 
         if self.track_ids.any:
@@ -460,7 +436,7 @@ class TrackingUI(Widget):
                     count += 1
 
 
-    def frame_select(self, instance, val):
+    def change_frame(self, val):
 
         if val >= self.movie.frames:
             val = self.movie.frames - 1
@@ -474,7 +450,7 @@ class TrackingUI(Widget):
 
         self.current_frame = int(val)
         im_temp = self.labels[int(val), :, :]
-        self.frame_slider.value = val
+        self.frame_slider.frame_slider.value = val
 
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
@@ -485,7 +461,6 @@ class TrackingUI(Widget):
         mask = inds == self.current_frame
         self.frame_feats = self.features['tracking'][mask, :]
 
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
         self.track_frame_update()
 
         self.graph.remove_plot(self.plotT)
@@ -825,11 +800,11 @@ class TrackingUI(Widget):
         key = keycode[1]
 
         if key == 'a':
-            self.frame_select([], self.current_frame - 1)
+            self.change_frame(self.current_frame - 1)
             self.canvas.ask_update()
 
         if key == 'd':
-            self.frame_select([], self.current_frame + 1)
+            self.change_frame(self.current_frame + 1)
             self.canvas.ask_update()
 
         if key == 'z':
