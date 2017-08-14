@@ -35,6 +35,13 @@ def error_msg(message):
                       size_hint=(0.6, 0.3))
     error_msg.open()
 
+def ntlabel(text, size_hint, pos_hint):
+
+    return Label(text='[b][color=000000]' + text + '[/b][/color]', markup=True,
+          size_hint=size_hint, pos_hint=pos_hint)
+
+def change_ntlabel(label, text):
+    label.text = '[b][color=000000]' + text + '[/b][/color]'
 
 class FrameSlider(Widget):
 

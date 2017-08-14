@@ -13,6 +13,7 @@ from nuclitrack.nuclitrack_gui.uiloading import LoadingUI
 from nuclitrack.nuclitrack_gui.uisegmentation import SegmentationUI, ViewSegment, BatchSegment
 from nuclitrack.nuclitrack_gui.uitraining import TrainingUI, ClassifyCells
 from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_tools import nttools
 
 class UserInterface(Widget):
 
@@ -59,7 +60,7 @@ class UserInterface(Widget):
             self.add_widget(self.master_btns)
             self.add_widget(self.current_widget)
 
-    # Load image data from files, modified such that only file list is loaded to reduce RAM load.
+    # Change the current UI
 
     def change_widget(self, new_widget):
 
@@ -68,11 +69,12 @@ class UserInterface(Widget):
         self.add_widget(self.current_widget)
         Window.bind(on_resize=self.current_widget.update_size)
 
+    # UI for loading data
+
     def loading_ui(self, instance):
 
         if instance.state == 'down':
             self.change_widget(LoadingUI())
-
 
     # UI for choosing segmentation parameters, these are stored in params['seg_param'] HDF5 file
 
@@ -100,10 +102,8 @@ class UserInterface(Widget):
             self.remove_widget(self.current_widget)
             channel = int(self.params['seg_param'][10])
 
-            for g in self.fov:
-                if g == 'labels':
-                    del self.fov['labels']
-
+            if 'labels' in self.fov:
+                del self.fov['labels']
             self.labels = self.fov.create_dataset("labels", self.movie.shape)
 
             if self.params['seg_param'][11] == 1:
@@ -173,10 +173,8 @@ class UserInterface(Widget):
 
         # Delete if features already exists otherwise store extracted features as number of segments may change.
 
-        for g in self.fov:
-            if g == 'features':
-                del self.fov['features']
-
+        if 'features' in self.fov:
+            del self.fov['features']
         self.features = self.fov.create_group('features')
         self.features.create_dataset("tracking", data=features['tracking'])
         self.features.create_dataset("data", data=features['data'])
@@ -187,16 +185,9 @@ class UserInterface(Widget):
 
     def training_ui(self, instance):
 
-        flag = False
-        for g in self.fov:
-            if g == 'features':
-                flag = True
-        if instance.state == 'down' and flag:
-            store = False
-            for g in self.params:
-                if g == 'training':
-                    store = True
+        if instance.state == 'down' and 'features' in self.fov:
 
+            store = 'training' in self.params
             self.change_widget(TrainingUI(movie=self.movie, labels=self.labels, features=self.fov['features'],
                                      params=self.params['track_param'][...], stored=store))
 
@@ -240,18 +231,14 @@ class UserInterface(Widget):
 
                     # Delete if tracks already exists otherwise store extracted features
 
-                    for g in self.fov:
-                        if g == 'tracks':
-                            del self.fov['tracks']
-
-                    for g in self.fov:
-                        if g == 'tracks_stored':
-                            del self.fov['tracks_stored']
-
+                    if 'tracks' in self.fov:
+                        del self.fov['tracks']
                     self.fov.create_dataset("tracks", data=self.tracks)
 
-                    tracks_stored = np.zeros(int(max(self.tracks[:, 4])))
-                    self.fov.create_dataset("tracks_stored", data=tracks_stored)
+                    if 'tracks_stored' in self.fov:
+                        del self.fov['tracks_stored']
+                    self.fov.create_dataset("tracks_stored", data=np.zeros(int(max(self.tracks[:, 4]))))
+
                     self.progression_state(9)
 
     # UI for inspecting and ammending tracks
@@ -274,9 +261,8 @@ class UserInterface(Widget):
             
             self.progression[2] = 1
 
-            for g in self.params:
-                if g == 'seg_param':
-                    state = 3
+            if 'seg_param' in self.params:
+                state = 3
 
         if state == 3 and self.progression[3] == 0:
 
@@ -284,12 +270,11 @@ class UserInterface(Widget):
 
             self.progression[3] = 1
 
-            for g in self.fov:
-                if g == 'labels':
-                    # Load labels
+            if 'labels' in self.fov:
 
-                    self.labels = self.fov['labels']
-                    state = 4
+                # Load labels
+                self.labels = self.fov['labels']
+                state = 4
 
         if state == 4 and self.progression[4] == 0:
 
@@ -301,10 +286,9 @@ class UserInterface(Widget):
             
             self.progression[5] = 1
 
-            for g in self.fov:
-                if g == 'features':
-                    self.features = self.fov['features']
-                    state = 6
+            if 'features' in self.fov:
+                self.features = self.fov['features']
+                state = 6
 
         if state == 6 and self.progression[6] == 0:
 
@@ -313,17 +297,15 @@ class UserInterface(Widget):
 
             param_flag = True
 
-            for g in self.params:
-                if g == 'track_param':
-                    param_flag = False
+            if 'track_param' in self.params:
+                param_flag = False
 
             if param_flag:
                 self.params.create_dataset('track_param', data=np.asarray([0.05, 50, 1, 5, 0, 1, 3]))
 
-            for g in self.params:
-                if g == 'training':
-                    if self.params['training']['data'].shape[0] > 1:
-                        state = 7
+            if 'training' in self.params:
+                if self.params['training']['data'].shape[0] > 1:
+                    state = 7
 
         if state == 7 and self.progression[7] == 0:
 
@@ -342,9 +324,8 @@ class UserInterface(Widget):
 
             self.progression[8] = 1
 
-            for g in self.fov:
-                if g == 'tracks':
-                    state = 9
+            if 'tracks' in self.fov:
+                state = 9
 
         if state == 9 and self.progression[9] == 0:
 
@@ -356,43 +337,43 @@ class UserInterface(Widget):
 
     def do_work(self, dt):
 
-        #try:
-        self.canvas.ask_update()
+        try:
+            self.canvas.ask_update()
 
-        if self.flags['segment_parallel']:
-            Clock.schedule_once(self.segment_parallel, 0)
-            self.flags['segment_parallel'] = False
+            if self.flags['segment_parallel']:
+                Clock.schedule_once(self.segment_parallel, 0)
+                self.flags['segment_parallel'] = False
 
-        if self.flags['segment']:
+            if self.flags['segment']:
 
-            Clock.schedule_once(self.current_widget.update_bar, 0)
-            Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
-            self.count_scheduled += 1
+                Clock.schedule_once(self.current_widget.update_bar, 0)
+                Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
+                self.count_scheduled += 1
 
-            if self.count_scheduled == self.movie.frames:
-                self.flags['segment'] = False
-                Clock.schedule_once(self.finish_segmentation)
+                if self.count_scheduled == self.movie.frames:
+                    self.flags['segment'] = False
+                    Clock.schedule_once(self.finish_segmentation)
 
-        if self.flags['feat']:
+            if self.flags['feat']:
 
-            Clock.schedule_once(self.current_widget.update_bar, 0)
-            Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
-            self.count_scheduled += 1
+                Clock.schedule_once(self.current_widget.update_bar, 0)
+                Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
+                self.count_scheduled += 1
 
-            if self.count_scheduled == self.movie.frames:
+                if self.count_scheduled == self.movie.frames:
 
-                self.flags['feat'] = False
-                Clock.schedule_once(self.save_features, 0)
+                    self.flags['feat'] = False
+                    Clock.schedule_once(self.save_features, 0)
 
-        if self.flags['track']:
+            if self.flags['track']:
 
-            self.flags['track'] = False
+                self.flags['track'] = False
 
-            Clock.schedule_once(self.add_tracks, 0)
-            Clock.schedule_once(self.update_count, 0)
+                Clock.schedule_once(self.add_tracks, 0)
+                Clock.schedule_once(self.update_count, 0)
 
-            #except AttributeError:
-            #guitools.error_msg('Please allow process to finish')
+        except AttributeError:
+            guitools.error_msg('Please allow process to finish')
 
     def update_size(self, window, width, height):
 

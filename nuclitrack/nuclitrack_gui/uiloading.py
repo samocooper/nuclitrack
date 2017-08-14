@@ -9,7 +9,6 @@ from kivy.uix.dropdown import DropDown
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
@@ -30,79 +29,85 @@ class LoadingUI(Widget):
 
         self.img_layout = FloatLayout(size=(Window.width, Window.height))
         self.add_widget(self.img_layout)
+
+        # Initialize values for specifying choice of loading ui
+
         self.choose_type = 0
+        self.prev_choose = 0
 
-        # Assign/Load HDF5 file for storing data from the current field of view.
+        # Widget dictionary for loading layout
 
-        # Record whether both files are loaded
+        self.ld_widgets = dict()
+
+        # Record whether both data and parameter files are loaded
+
         self.file_loaded = [False, False]
 
-        home = str(Path.home())
-        self.file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22}, path=home)
-        self.ld_layout.add_widget(self.file_choose)
-        self.file_choose.bind(on_entries_cleared=self.dir_change)
-        self.file_choose.bind(on_submit=self.dir_click)
+        # initialize file loading widget to home directory
 
+        home = str(Path.home())
+        self.ld_widgets['file_chooser'] = FileChooserListView(path=home,
+                                                              size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
+
+        # Bind functions for when file is clicked or path changes
+
+        self.ld_widgets['file_chooser'].bind(on_entries_cleared=self.dir_change)
+        self.ld_widgets['file_chooser'].bind(on_submit=self.dir_click)
+
+        # HDF5 DATA FILE
         # Label
 
-        self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
-                               size_hint=(.245, .05), pos_hint={'x': .01, 'y': .95})
-        self.ld_layout.add_widget(self.label_fov)
+        self.ld_widgets['fov_label'] = guitools.ntlabel(text='Experimental Data File',
+                                                        size_hint=(.245, .05), pos_hint={'x': .01, 'y': .95})
 
-        self.select_fov = ToggleButton(text='Select Existing', size_hint=(.145, .04), pos_hint={'x': .26, 'y': .955})
-        self.ld_layout.add_widget(self.select_fov)
-        self.select_fov.bind(on_press=self.toggle_fov)
+        # Option to select existing data file by clicking
 
-        # Input
+        self.ld_widgets['select_fov'] = ToggleButton(text='Select Existing',
+                                                     size_hint=(.145, .04), pos_hint={'x': .26, 'y': .955})
+        self.ld_widgets['select_fov'].bind(on_press=self.toggle_fov)
 
-        self.text_input_fov = TextInput(text='', multiline=False,
-                                        size_hint=(.4, .05), pos_hint={'x': .01, 'y': .9})
-        self.text_input_fov.bind(on_text_validate=partial(self.file_name_val, 'fov'))
-        self.ld_layout.add_widget(self.text_input_fov)
+        # Text input for file selection
+
+        self.ld_widgets['text_input_fov'] = TextInput(text='', multiline=False,
+                                                      size_hint=(.4, .05), pos_hint={'x': .01, 'y': .9})
+        self.ld_widgets['text_input_fov'].bind(on_text_validate=partial(self.file_name_val, 'fov'))
 
         # Display loaded file
 
-        self.loaded_fov = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
-        self.ld_layout.add_widget(self.loaded_fov)
+        self.ld_widgets['loaded_fov'] = guitools.ntlabel(text='', size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
 
         # Info on file loading
 
-        self.ui_message = Label(text='[b][color=000000][/b][/color]', markup=True,
-                                size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
-        self.ld_layout.add_widget(self.ui_message)
+        self.ld_widgets['ui_message'] = guitools.ntlabel(text='', size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
 
-        # Assign/Load HDF5 file for storing tracking and segmentation parameter data.
-
+        # HDF5 PARAMETER FILE
         # Label
-        self.label_param = Label(text='[b][color=000000]Parameter Data File[/b][/color]', markup=True,
-                                 size_hint=(.245, .05), pos_hint={'x': .42, 'y': .95})
-        self.ld_layout.add_widget(self.label_param)
 
-        self.select_param = ToggleButton(text='Select Existing', size_hint=(.145, .04), pos_hint={'x': .67, 'y': .955})
-        self.ld_layout.add_widget(self.select_param)
-        self.select_param.bind(on_press=self.toggle_param)
+        self.ld_widgets['label_param'] = guitools.ntlabel(text='Parameter Data File',
+                                                          size_hint=(.245, .05), pos_hint={'x': .42, 'y': .95})
 
-        # Input
-        self.text_input_param = TextInput(text='', multiline=False,
-                                          size_hint=(.4, .05), pos_hint={'x': .42, 'y': .9})
-        self.text_input_param.bind(on_text_validate=partial(self.file_name_val, 'param'))
-        self.ld_layout.add_widget(self.text_input_param)
+        # Option to select existing data file by clicking
+
+        self.ld_widgets['select_param'] = ToggleButton(text='Select Existing',
+                                                       size_hint=(.145, .04), pos_hint={'x': .67, 'y': .955})
+        self.ld_widgets['select_param'].bind(on_press=self.toggle_param)
+
+        # Text input for file selection
+
+        self.ld_widgets['text_input_param'] = TextInput(text='', multiline=False,
+                                                        size_hint=(.4, .05), pos_hint={'x': .42, 'y': .9})
+        self.ld_widgets['text_input_param'].bind(on_text_validate=partial(self.file_name_val, 'param'))
 
         # Display loaded file
 
-        self.loaded_param = Label(text='[b][color=000000] [/b][/color]', markup=True,
-                                  size_hint=(.4, .05), pos_hint={'x': .42, 'y': .85})
-
-        self.ld_layout.add_widget(self.loaded_param)
+        self.ld_widgets['loaded_param'] = guitools.ntlabel(text='', size_hint=(.4, .05), pos_hint={'x': .42, 'y': .85})
 
         # Reload button
 
-        self.reload_btn = Button(text='Reload Data', size_hint=(.16, .04), pos_hint={'x': .83, 'y': .9})
-        self.reload_btn.bind(on_release=self.reload)
-        self.ld_layout.add_widget(self.reload_btn)
+        self.ld_widgets['reload'] = Button(text='Reload Data', size_hint=(.16, .04), pos_hint={'x': .83, 'y': .9})
+        self.ld_widgets['reload'].bind(on_release=self.reload)
 
-        self.movie = None
+        [self.ld_layout.add_widget(w) for _, w in self.ld_widgets.items()]
 
     def toggle_fov(self, instance):
 
@@ -123,32 +128,16 @@ class LoadingUI(Widget):
     def reload(self, instance, erase_flag=False):
 
         self.parent.progression = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.parent.layout1.clear_widgets()
-        self.parent.layout1.add_widget(self.parent.btn1)
+        self.parent.master_btns.clear_widgets()
+        guitools.add_tbtn(layout=self.parent.master_btns, text='Load Data', group='uis', func=self.parent.loading_ui)
 
         self.ld_layout.clear_widgets()
         self.img_layout.clear_widgets()
 
-        self.ld_layout.add_widget(self.label_fov)
-        self.ld_layout.add_widget(self.text_input_fov)
-        self.ld_layout.add_widget(self.select_fov)
-        self.ld_layout.add_widget(self.loaded_fov)
-        self.ld_layout.add_widget(self.ui_message)
-        self.ld_layout.add_widget(self.label_param)
-        self.ld_layout.add_widget(self.select_param)
-        self.ld_layout.add_widget(self.text_input_param)
-        self.ld_layout.add_widget(self.loaded_param)
-        self.ld_layout.add_widget(self.reload_btn)
-        self.ld_layout.add_widget(self.file_choose)
-
+        [self.ld_layout.add_widget(w) for _, w in self.ld_widgets.items()]
         self.choose_type = 0
-        self.file_choose.bind(on_entries_cleared=self.dir_change)
 
-        if not erase_flag:
-
-            self.file_loaded = [False, False]
-            self.loaded_fov.text ='[b][color=000000] [/b][/color]'
-            self.loaded_param.text = '[b][color=000000] [/b][/color]'
+        self.ld_widgets['file_chooser'].bind(on_entries_cleared=self.dir_change)
 
     def file_name_val(self, input_type, obj):
         self.load_data(input_type, obj.text)
@@ -166,26 +155,30 @@ class LoadingUI(Widget):
             self.load_from_dir(file_name[0])
 
         if self.choose_type == 4:
-            self.select_fov.state = 'normal'
+            self.ld_widgets['select_fov'].state = 'normal'
             self.load_data('fov', file_name[0])
 
         if self.choose_type == 5:
-            self.select_param.state = 'normal'
+            self.ld_widgets['select_param'].state = 'normal'
             self.load_data('param', file_name[0])
 
     def dir_change(self, val):
 
-        self.text_input_fov.text = os.path.join(self.file_choose.path, 'example_data.hdf5')
-        self.text_input_param.text = os.path.join(self.file_choose.path, 'example_params.hdf5')
+        self.ld_widgets['text_input_fov'].text = os.path.join(self.ld_widgets['file_chooser'].path, 'example_data.hdf5')
+        self.ld_widgets['text_input_param'].text = os.path.join(self.ld_widgets['file_chooser'].path, 'example_params.hdf5')
 
     def erase_data(self, instance):
 
-        self.reload(instance, erase_flag=True)
+        self.reload(instance)
 
         for g in self.parent.fov:
             del self.parent.fov[g]
 
         self.load_data('', '')
+        self.file_loaded = [False, False]
+
+        guitools.change_ntlabel(self.ld_widgets['loaded_fov'], '')
+        guitools.change_ntlabel(self.ld_widgets['loaded_param'], '')
 
     def load_data(self, input_type, input_text):
 
@@ -202,9 +195,9 @@ class LoadingUI(Widget):
                 return
 
             if len(input_text) < 20:
-                self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text + '[/b][/color]'
+                guitools.change_ntlabel(self.ld_widgets['loaded_fov'], 'File Loaded: ' + input_text)
             else:
-                self.loaded_fov.text = '[b][color=000000] File loaded: ' + input_text[-30:] + '[/b][/color]'
+                guitools.change_ntlabel(self.ld_widgets['loaded_fov'], 'File Loaded: ' + input_text[-30:])
 
             # Set path for saving csv files in future
 
@@ -223,9 +216,9 @@ class LoadingUI(Widget):
                 return
 
             if len(input_text) < 20:
-                self.loaded_param.text = '[b][color=000000] File Loaded: ' + input_text + '[/b][/color]'
+                guitools.change_ntlabel(self.ld_widgets['loaded_param'], 'File Loaded: ' + input_text)
             else:
-                self.loaded_param.text = '[b][color=000000] File Loaded: ' + input_text[-30:] + '[/b][/color]'
+                guitools.change_ntlabel(self.ld_widgets['loaded_param'], 'File Loaded: ' + input_text[-30:])
 
             self.file_loaded[1] = True
 
@@ -240,8 +233,7 @@ class LoadingUI(Widget):
             self.ld_layout.add_widget(self.erase_btn)
 
         if self.file_loaded[0] and self.file_loaded[1]:
-
-            self.file_choose.unbind(on_entries_cleared=self.dir_change)
+            self.ld_widgets['file_chooser'].unbind(on_entries_cleared=self.dir_change)
 
             # Inform user if data already exists in file
 
@@ -257,10 +249,11 @@ class LoadingUI(Widget):
 
                         # Load image from file list stored in hdf5 file
 
-                        self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
-                                             markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
+                        self.message = guitools.ntlabel(text='Data exists in the HDF5 file', size_hint=(.5, .05),
+                                                        pos_hint={'x': .25, 'y': .55})
+
                         self.ld_layout.add_widget(self.message)
-                        self.ld_layout.remove_widget(self.file_choose)
+                        self.ld_layout.remove_widget(self.ld_widgets['file_chooser'])
                         flag = False
 
                         self.parent.progression[0] = 1
@@ -270,6 +263,7 @@ class LoadingUI(Widget):
             # Give user choice of how to load image series
 
             if flag:
+
                 self.load_choice = GridLayout(rows=1, padding=2, size_hint=(.98, .05), pos_hint={'x': .01, 'y': .8})
 
                 btn1 = ToggleButton(text='Load from file names', group='load_type')
@@ -344,10 +338,8 @@ class LoadingUI(Widget):
 
             # Labels for informing users which images have been loaded
 
-            self.first_img_name = Label(text='[b][color=000000] [/b][/color]',
-                                 markup=True, size_hint=(.44, .05), pos_hint={'x': .05, 'y': .7})
-            self.last_img_name = Label(text='[b][color=000000] [/b][/color]',
-                                 markup=True, size_hint=(.44, .05), pos_hint={'x': .51, 'y': .7})
+            self.first_img_name = guitools.ntlabel(text='', size_hint=(.44, .05), pos_hint={'x': .05, 'y': .7})
+            self.last_img_name = guitools.ntlabel(text='', size_hint=(.44, .05), pos_hint={'x': .51, 'y': .7})
 
             self.img_layout.add_widget(self.first_img_name)
             self.img_layout.add_widget(self.last_img_name)
@@ -464,14 +456,14 @@ class LoadingUI(Widget):
         self.text_input.text = most_recent_text
 
         if len(self.file_names[self.channel*2]) < 30:
-            self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2] + '[/b][/color]'
+            guitools.change_ntlabel(label=self.first_img_name, text=self.file_names[self.channel*2])
         else:
-            self.first_img_name.text = '[b][color=000000]' + self.file_names[self.channel*2][-29:] + '[/b][/color]'
+            guitools.change_ntlabel(label=self.first_img_name,text=self.file_names[self.channel*2][-29:])
 
         if len(self.file_names[self.channel*2+1]) < 30:
-            self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1] + '[/b][/color]'
+            guitools.change_ntlabel(label=self.last_img_name, text=self.file_names[self.channel * 2 + 1])
         else:
-            self.last_img_name.text = '[b][color=000000]' + self.file_names[self.channel * 2 + 1][-29:] + '[/b][/color]'
+            guitools.change_ntlabel(label=self.last_img_name, text=self.file_names[self.channel * 2 + 1][-29:])
 
     def auto_load(self, instance):
 
@@ -550,7 +542,7 @@ class LoadingUI(Widget):
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
 
-        self.ui_message.text = '[b][color=000000]Movie Loaded[/b][/color]'
+        guitools.change_ntlabel(label=self.ui_message, text='Movie Loaded')
 
         return True
 
@@ -585,7 +577,7 @@ class LoadingUI(Widget):
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
-            self.ui_message.text = '[b][color=000000]Movie and Labels Loaded[/b][/color]'
+            guitools.change_ntlabel(label=self.ui_message, text='Movie and Labels Loaded')
 
     def update_size(self, window, width, height):
 

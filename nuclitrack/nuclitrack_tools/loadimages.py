@@ -2,45 +2,6 @@ from PIL import Image
 import numpy as np
 import os
 
-def loadimages(file_list):
-
-    # Function to load images for one movie from list of channels/file names
-
-    frames = len(file_list[0])
-
-    im_temp = Image.open(file_list[0][0])
-    im_test = np.asarray(im_temp, dtype='float')
-
-    dims = im_test.shape
-
-    min_vals = []
-    max_vals = []
-
-    for j in range(len(file_list)):
-
-        im_temp = Image.open(file_list[j][0])
-        im_test = np.asarray(im_temp, dtype='float')
-
-        max_val = np.max(im_test)
-        min_val = np.min(im_test)
-
-        for i in range(frames):
-
-            im_temp = Image.open(file_list[j][i])
-            im = np.asarray(im_temp, dtype='float')
-
-            im = im.astype(float)
-
-            if np.max(im) > max_val:
-                max_val = np.max(im)
-            if np.min(im) < min_val:
-                min_val = np.min(im)
-
-        min_vals.append(min_val)
-        max_vals.append(max_val)
-
-    return dims, min_vals, max_vals
-
 def loadlabels(file_list):
 
     im_temp = Image.open(file_list[0])
@@ -55,7 +16,6 @@ def loadlabels(file_list):
 
     return labels
 
-
 def savefilelist(file_list, fov):
 
     # Save file list in hdf5 format, requires conversion to bytes and numpy array
@@ -66,10 +26,8 @@ def savefilelist(file_list, fov):
 
     file_list_np = np.asarray(file_list_bin)
 
-    for g in fov:
-        if g =='file_list':
-            del fov['file_list']
-
+    if 'file_list' in fov:
+        del fov['file_list']
     fov.create_dataset('file_list', data=file_list_np)
 
 

@@ -1,7 +1,6 @@
 import ctooltracking
 import numpy as np
 
-
 ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
     Col3 = mitosis; Col4 = Track_id; Col5 = frame.
 
