@@ -1,21 +1,18 @@
 import numpy as np
 from skimage.measure import regionprops
-from PIL import Image
 from skimage.morphology import dilation
 from skimage.morphology import square
 
-def framefeatures(files, labels, counter, ring_flag):
+def framefeatures(movie, frame, labels, counter, ring_flag):
 
     labels = labels.astype(int)
     labels_bin = labels == 0
     features_temp = []
     ims = []
 
-    for j in range(len(files)):
+    for j in range(movie.channels):
 
-        im_temp = Image.open(files[j])
-        im = np.asarray(im_temp, dtype='float')
-        im = im.astype(float)
+        im = movie.read_raw(j, frame)
         features_temp.append(regionprops(labels, im))
         if ring_flag:
             ims.append(im)
@@ -24,8 +21,7 @@ def framefeatures(files, labels, counter, ring_flag):
     features['tracking'] = np.zeros((len(features_temp[0]), 13))
     features['data'] = np.zeros((len(features_temp[0]), 22))
 
-    dims = labels.shape
-    new_label = np.zeros((dims[0], dims[1]))
+    new_label = np.zeros((movie.dims[0], movie.dims[1]))
 
     for j in range(len(features_temp[0])):
 
@@ -38,7 +34,7 @@ def framefeatures(files, labels, counter, ring_flag):
         features['tracking'][j, 0] = counter
         features['tracking'][j, 2] = xpos
         features['tracking'][j, 3] = ypos
-        features['tracking'][j, 4] = min([ypos, dims[0] - ypos, xpos, dims[1] - xpos])
+        features['tracking'][j, 4] = min([ypos, movie.dims[0] - ypos, xpos, movie.dims[1] - xpos])
 
         # Morphology Features
 
@@ -54,7 +50,7 @@ def framefeatures(files, labels, counter, ring_flag):
 
             bbox = cell_temp.bbox
             bbox_dil = (np.maximum(0, bbox[0]-r), np.maximum(0, bbox[1]-r),
-                        np.minimum(dims[0], bbox[2]+r-1), np.minimum(dims[1], bbox[3]+r-1))
+                        np.minimum(movie.dims[0], bbox[2]+r-1), np.minimum(movie.dims[1], bbox[3]+r-1))
             pad = ((bbox[0]-bbox_dil[0], bbox_dil[2]-bbox[2]), (bbox[1] - bbox_dil[1], bbox_dil[3]-bbox[3]))
 
             image_dil = np.pad(cell_temp.image, pad, 'constant')
@@ -65,7 +61,7 @@ def framefeatures(files, labels, counter, ring_flag):
 
         # Intensity Measurements for classification
 
-        for k in range(0, len(files)):
+        for k in range(0, movie.channels):
 
             cell_temp = features_temp[k][j]
             mu = cell_temp.mean_intensity

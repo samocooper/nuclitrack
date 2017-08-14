@@ -5,9 +5,6 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.popup import Popup
-from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
 from nuclitrack.nuclitrack_gui.uitracking import TrackingUI, RunTracking
@@ -27,14 +24,6 @@ class UserInterface(Widget):
         self.parallel = False
         self.ring_flag = False
 
-        # Set of values that are used by file loading function to store data on image series,
-        # Prevents need to load images into RAM
-
-        self.dims = []
-        self.min_vals = []
-        self.max_vals = []
-        self.file_list = []
-
         # Progression state defines how many steps the user has gone through
         # Automatically updates on loading of HDF5 file
 
@@ -53,11 +42,8 @@ class UserInterface(Widget):
         # loading bar  updates and this sets the flag to True. This appears to provide a very effective lock on
         # preventing more work being scheduled, and blocking loading bar update.
 
-        self.segment_flag = False
-        self.segment_flag_parallel = False
-        self.feature_flag = False
-        self.tracking_flag = False
-        self.finish_flag = False
+        self.flags = {'segment': False, 'segment_parallel': False, 'feat': False,
+                      'track': False, 'finish': False, 'cancel': False}
 
         # On each kivy frame test if work needs to be performed.
 
@@ -74,13 +60,6 @@ class UserInterface(Widget):
             self.add_widget(self.current_widget)
 
     # Load image data from files, modified such that only file list is loaded to reduce RAM load.
-
-    def error_message(self, message):
-
-        error_msg = Popup(title='Error message',
-                          content=Label(text=message),
-                          size_hint=(0.6, 0.3))
-        error_msg.open()
 
     def change_widget(self, new_widget):
 
@@ -106,14 +85,10 @@ class UserInterface(Widget):
                 self.params['seg_param'][15] = 1
 
             if self.params['seg_param'][11] == 1:
-                self.change_widget(SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
-                                                 max_vals=self.max_vals, frames=self.frames,
-                                                 channels=self.channels, params=self.params['seg_param'][...],
+                self.change_widget(SegmentationUI(movie=self.movie, params=self.params['seg_param'][...],
                                                      training=self.params['seg_training']))
             else:
-                self.change_widget(SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
-                                                     max_vals=self.max_vals, frames=self.frames,
-                                                     channels=self.channels, params=self.params['seg_param'][...]))
+                self.change_widget(SegmentationUI(movie=self.movie, params=self.params['seg_param'][...]))
 
             self.progression_state(3)
 
@@ -129,33 +104,29 @@ class UserInterface(Widget):
                 if g == 'labels':
                     del self.fov['labels']
 
-            self.labels = self.fov.create_dataset("labels", (self.frames, self.dims[0], self.dims[1]))
+            self.labels = self.fov.create_dataset("labels", self.movie.shape)
 
             if self.params['seg_param'][11] == 1:
-                self.change_widget(BatchSegment(file_list=self.file_list,
-                                                   min_vals=self.min_vals,
-                                                   max_vals=self.max_vals,
-                                                   params=self.params['seg_param'][...], frames=self.frames,
+                self.change_widget(BatchSegment(movie=self.movie,
+                                                   params=self.params['seg_param'][...],
                                                    labels=self.labels,
                                                    parallel=self.parallel,
                                                    seg_training=self.params['seg_training']))
             else:
-                self.change_widget(BatchSegment(file_list=self.file_list,
-                                                   min_vals=self.min_vals,
-                                                   max_vals=self.max_vals,
-                                                   params=self.params['seg_param'][...], frames=self.frames,
+                self.change_widget(BatchSegment(movie=self.movie,
+                                                   params=self.params['seg_param'][...],
                                                    labels=self.labels,
                                                    parallel=self.parallel))
 
             # Set segmentation flags to True to start performing work
 
             if self.parallel == True:
-                self.segment_flag_parallel = True
+                self.flags['segment_parallel'] = True
 
             else:
                 self.count_scheduled = 0
                 self.count_completed = 0
-                self.segment_flag = True
+                self.flags['segment'] = True
 
     # Function to schedule parallel segmentation and collect results from segmentation widget
 
@@ -181,18 +152,16 @@ class UserInterface(Widget):
     def view_segments(self, instance):
         if instance.state == 'down':
 
-            self.change_widget(ViewSegment(labels=self.labels, frames=self.frames))
+            self.change_widget(ViewSegment(movie=self.movie, labels=self.labels))
 
-
-    # Widget that bings up loading bar for feature extraction
+    # Widget that brings up loading bar for feature extraction
 
     def extract_features(self, instance):
         if instance.state == 'down':
 
-            self.change_widget(FeatureExtract(file_list=self.file_list, labels=self.labels[...], frames=self.frames,
-                                                 channels=self.channels, dims=self.dims, ring_flag=self.ring_flag))
+            self.change_widget(FeatureExtract(movie=self.movie, labels=self.labels[...], ring_flag=self.ring_flag))
 
-            self.feature_flag = True
+            self.flags['feat'] = True
             self.count_scheduled = 0
             self.count_completed = 0
 
@@ -228,8 +197,7 @@ class UserInterface(Widget):
                 if g == 'training':
                     store = True
 
-            self.change_widget(TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])],
-                                     labels=self.labels, features=self.fov['features'], frames=self.frames,
+            self.change_widget(TrainingUI(movie=self.movie, labels=self.labels, features=self.fov['features'],
                                      params=self.params['track_param'][...], stored=store))
 
     # UI for classifying cells based upon training data
@@ -247,25 +215,24 @@ class UserInterface(Widget):
     def run_tracking(self, instance):
 
         self.change_widget(RunTracking(features=self.fov['features']['tracking'][...],
-                                          track_param=self.params['track_param'][...], frames=self.frames))
-        self.tracking_flag = True
-        self.cancel_flag = False
+                                          track_param=self.params['track_param'][...], frames=self.movie.frames))
+        self.flags['track'] = True
 
     def add_tracks(self, dt):
-        if not self.cancel_flag:
-            self.finish_flag = self.current_widget.add_track()
+        if not self.flags['cancel']:
+            self.flags['finish'] = self.current_widget.add_track()
 
     # Functions that schedules updates to the tracking Widget display and at the end collects results and saves them
 
     def update_count(self, dt):
-        if not self.cancel_flag:
+        if not self.flags['cancel']:
 
             self.current_widget.update_count()
-            self.tracking_flag = True
+            self.flags['track'] = True
 
-            if self.finish_flag:
+            if self.flags['finish']:
 
-                self.tracking_flag = False
+                self.flags['track'] = False
                 cancel = self.current_widget.test_cancel()
 
                 if not cancel:
@@ -291,10 +258,9 @@ class UserInterface(Widget):
 
     def tracking_ui(self, instance):
         if instance.state == 'down':
-            self.change_widget(TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'],
+            self.change_widget(TrackingUI(movie=self.movie, labels=self.labels, tracks=self.fov['tracks'],
                                              stored_tracks=self.fov['tracks_stored'],
-                                             features=self.fov['features'], frames=self.frames, dims=self.dims,
-                                             channels=self.channels))
+                                             features=self.fov['features']))
 
     # Function that determines how far the user has proceeded. When this function is called with the next number the
     # next button is added to the progression button layout. On loading of the HDF5 data and parameter files, this
@@ -390,43 +356,43 @@ class UserInterface(Widget):
 
     def do_work(self, dt):
 
-        try:
-            self.canvas.ask_update()
+        #try:
+        self.canvas.ask_update()
 
-            if self.segment_flag_parallel:
-                Clock.schedule_once(self.segment_parallel, 0)
-                self.segment_flag_parallel = False
+        if self.flags['segment_parallel']:
+            Clock.schedule_once(self.segment_parallel, 0)
+            self.flags['segment_parallel'] = False
 
-            if self.segment_flag:
+        if self.flags['segment']:
 
-                Clock.schedule_once(self.current_widget.update_bar, 0)
-                Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
-                self.count_scheduled += 1
+            Clock.schedule_once(self.current_widget.update_bar, 0)
+            Clock.schedule_once(partial(self.current_widget.segment_im, self.count_scheduled), 0)
+            self.count_scheduled += 1
 
-                if self.count_scheduled == self.frames:
-                    self.segment_flag = False
-                    Clock.schedule_once(self.finish_segmentation)
+            if self.count_scheduled == self.movie.frames:
+                self.flags['segment'] = False
+                Clock.schedule_once(self.finish_segmentation)
 
-            if self.feature_flag:
+        if self.flags['feat']:
 
-                Clock.schedule_once(self.current_widget.update_bar, 0)
-                Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
-                self.count_scheduled += 1
+            Clock.schedule_once(self.current_widget.update_bar, 0)
+            Clock.schedule_once(partial(self.current_widget.frame_features, self.count_scheduled), 0)
+            self.count_scheduled += 1
 
-                if self.count_scheduled == self.frames:
+            if self.count_scheduled == self.movie.frames:
 
-                    self.feature_flag = False
-                    Clock.schedule_once(self.save_features, 0)
+                self.flags['feat'] = False
+                Clock.schedule_once(self.save_features, 0)
 
-            if self.tracking_flag:
+        if self.flags['track']:
 
-                if self.tracking_flag:
-                    self.tracking_flag = False
-                    Clock.schedule_once(self.add_tracks, 0)
-                    Clock.schedule_once(self.update_count, 0)
-        except AttributeError:
+            self.flags['track'] = False
 
-            self.error_message('Please allow process to finish')
+            Clock.schedule_once(self.add_tracks, 0)
+            Clock.schedule_once(self.update_count, 0)
+
+            #except AttributeError:
+            #guitools.error_msg('Please allow process to finish')
 
     def update_size(self, window, width, height):
 

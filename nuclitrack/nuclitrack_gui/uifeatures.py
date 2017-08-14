@@ -11,16 +11,12 @@ from nuclitrack.nuclitrack_tools import extractfeatures
 
 class FeatureExtract(Widget):
 
-    def __init__(self, file_list, labels, frames, channels, dims, ring_flag=False, **kwargs):
+    def __init__(self, movie,  labels, ring_flag=False, **kwargs):
         super().__init__(**kwargs)
 
         self.ring_flag = ring_flag
-        self.file_list = file_list
         self.labels = labels
-        self.frames = frames
-        self.channels = channels
-        self.dims = dims
-
+        self.movie = movie
         self.layout = FloatLayout(size=(Window.width, Window.height))
         self.feat_message = Label(text='[b][color=000000]Extracting Features[/b][/color]', markup=True,
                                   size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
@@ -32,7 +28,7 @@ class FeatureExtract(Widget):
         self.counter = 1
 
         self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
-        self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value= 1000 / self.frames)
+        self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=1000/self.movie.frames)
         self.layout2.add_widget(self.pb)
 
         with self.canvas:
@@ -42,20 +38,16 @@ class FeatureExtract(Widget):
             self.layout.add_widget(self.layout2)
 
     def update_bar(self, dt):
-        self.pb.value += 1000 / self.frames
+        self.pb.value += 1000 / self.movie.frames
 
     def frame_features(self, frame, dt):
 
-        files = []
-        for i in range(self.channels):
-            files.append(self.file_list[i][frame])
-
-        features_temp, new_labels, self.counter = extractfeatures.framefeatures(files, self.labels[frame, :, :],
+        features_temp, new_labels, self.counter = extractfeatures.framefeatures(self.movie, frame, self.labels[frame, :, :],
                                                                                 self.counter, ring_flag=self.ring_flag)
         features_temp['tracking'][:, 1] = frame
+
         self.features['tracking'] = np.vstack((self.features['tracking'], features_temp['tracking']))
         self.features['data'] = np.vstack((self.features['data'], features_temp['data']))
-
         self.labels[frame, :, :] = new_labels
 
     def get(self):
@@ -67,3 +59,8 @@ class FeatureExtract(Widget):
         self.features['tracking'][1:, 5] = 1.
 
         return [self.features, self.labels]
+
+    def update_size(self, window, width, height):
+
+        self.width = width
+        self.height = height

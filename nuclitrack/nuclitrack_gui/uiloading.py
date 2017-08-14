@@ -15,6 +15,8 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
 from nuclitrack.nuclitrack_tools import loadimages
+from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_tools.movieobj import MovieObj
 
 class LoadingUI(Widget):
 
@@ -99,6 +101,8 @@ class LoadingUI(Widget):
         self.reload_btn = Button(text='Reload Data', size_hint=(.16, .04), pos_hint={'x': .83, 'y': .9})
         self.reload_btn.bind(on_release=self.reload)
         self.ld_layout.add_widget(self.reload_btn)
+
+        self.movie = None
 
     def toggle_fov(self, instance):
 
@@ -193,7 +197,7 @@ class LoadingUI(Widget):
                 self.parent.fov = h5py.File(input_text, "a")
 
             except OSError:
-                self.parent.error_message('File could not be created or opened\n'
+                guitools.error_msg('File could not be created or opened\n'
                                           'Invalid data format or permission may be denied')
                 return
 
@@ -215,7 +219,7 @@ class LoadingUI(Widget):
                 self.parent.params = h5py.File(input_text, "a")
 
             except OSError:
-                self.parent.error_message('File could not be created, permission may be denied')
+                guitools.error_msg('File could not be created, permission may be denied')
                 return
 
             if len(input_text) < 20:
@@ -246,22 +250,22 @@ class LoadingUI(Widget):
             for g in self.parent.fov:
                 if g == 'file_list':
 
-                    self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
-                                              markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
-                    self.ld_layout.add_widget(self.message)
-                    self.ld_layout.remove_widget(self.file_choose)
-                    flag = False
-
                     file_list = loadimages.loadfilelist(self.parent.fov)
+                    self.parent.movie = MovieObj(file_list)
 
-                    self.parent.dims, self.parent.min_vals, self.parent.max_vals, = loadimages.loadimages(file_list)
-                    self.parent.file_list = file_list
-                    self.parent.frames = len(file_list[0])
-                    self.parent.channels = len(file_list)
+                    if self.parent.movie.loaded:
 
-                    self.parent.progression[0] = 1
-                    self.parent.progression[1] = 1
-                    self.parent.progression_state(2)
+                        # Load image from file list stored in hdf5 file
+
+                        self.message = Label(text='[b][color=000000] Data exists in the HDF5 file [/b][/color]',
+                                             markup=True, size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
+                        self.ld_layout.add_widget(self.message)
+                        self.ld_layout.remove_widget(self.file_choose)
+                        flag = False
+
+                        self.parent.progression[0] = 1
+                        self.parent.progression[1] = 1
+                        self.parent.progression_state(2)
 
             # Give user choice of how to load image series
 
@@ -404,11 +408,11 @@ class LoadingUI(Widget):
             self.load_movie(file_list)
 
         except ValueError:
-            self.parent.error_message('File selected is invalid')
+            guitools.error_msg('File selected is invalid')
         except FileNotFoundError:
-            self.parent.error_message('File not found')
+            guitools.error_msg('File not found')
         except IndexError:
-            self.parent.error_message('No images found')
+            guitools.error_msg('No images found')
 
 
     ############################
@@ -429,13 +433,13 @@ class LoadingUI(Widget):
                 self.load_labels(label_list)
 
         except UnicodeDecodeError:
-            self.parent.error_message('File is not a text file')
+            guitools.error_msg('File is not a text file')
         except ValueError:
-            self.parent.error_message('File is incorrect format')
+            guitools.error_msg('File is incorrect format')
         except FileNotFoundError:
-            self.parent.error_message('File not found')
+            guitools.error_msg('File not found')
         except IndexError:
-            self.parent.error_message('No images found')
+            guitools.error_msg('No images found')
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -475,15 +479,15 @@ class LoadingUI(Widget):
         # Handle errors in file loading
 
         if self.file_names[0] == '' or self.file_names[1] == '':
-            self.parent.error_message('Select two files')
+            guitools.error_msg('Select two files')
             return
 
         if self.file_names[0] == self.file_names[1]:
-            self.parent.error_message('Select two different files')
+            guitools.error_msg('Select two different files')
             return
 
         if not(len(self.file_names[0]) == len(self.file_names[1])):
-            self.parent.error_message('Names must be of equal length')
+            guitools.error_msg('Names must be of equal length')
             return
 
         images = []
@@ -508,9 +512,9 @@ class LoadingUI(Widget):
                         self.load_labels(labels)
 
         except ValueError:
-            self.parent.error_message('Invalid time series naming format')
+            guitools.error_msg('Invalid time series naming format')
         except IndexError:
-            self.parent.error_message('No images found')
+            guitools.error_msg('No images found')
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
@@ -525,18 +529,17 @@ class LoadingUI(Widget):
         for channel in file_list:
 
             if not (frames == len(channel)):
-                self.parent.error_message('Channels not same length')
+                guitools.error_msg('Channels not same length')
                 return False
 
             for f in channel:
                 if not os.path.isfile(f):
-                    self.parent.error_message('Missing File: ' + f)
+                    guitools.error_msg('Missing File: ' + f)
                     return False
 
         # Load images save list of file names into hdf5 file
 
-        self.parent.dims, self.parent.min_vals, self.parent.max_vals, = loadimages.loadimages(file_list)
-
+        self.parent.movie = MovieObj(file_list)
         loadimages.savefilelist(file_list, self.parent.fov)
 
         self.parent.frames = frames
@@ -558,12 +561,12 @@ class LoadingUI(Widget):
             frames = self.parent.frames
 
             if not (frames == len(file_list)):
-                self.parent.error_message('Labels not same length')
+                guitools.error_msg('Labels not same length')
                 return
 
             for f in file_list:
                 if not os.path.isfile(f):
-                    self.parent.error_message('Missing label file: ' + f)
+                    guitools.error_msg('Missing label file: ' + f)
                     return
 
             # Load and save label images

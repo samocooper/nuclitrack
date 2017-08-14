@@ -32,6 +32,10 @@ class ClassifyCells(Widget):
 
         return self.features
 
+    def update_size(self, window, width, height):
+
+        self.width = width
+        self.height = height
 
 class TrainingData(Widget):
     cell_type = 0
@@ -84,17 +88,15 @@ class TrainingData(Widget):
 
 class TrainingUI(Widget):
 
-    def __init__(self, file_list, labels, features, frames, params, stored,  **kwargs):
+    def __init__(self, movie, labels, features, params, stored,  **kwargs):
         super().__init__(**kwargs)
 
-        self.file_list = file_list
         self.labels = labels
 
         self.features = dict()
         self.features['tracking'] = features['tracking']
         self.features['data'] = features['data']
 
-        self.frames = frames
         self.dims = labels[0, :, :].shape
         self.current_frame = 0
 
@@ -107,7 +109,7 @@ class TrainingUI(Widget):
 
             self.training['data'] = np.vstack((self.training['data'], features['data'][mask, :]))
             self.training['tracking'] = np.vstack((self.training['tracking'], features['tracking'][mask, :]))
-            for i in range(1,self.training['tracking'].shape[0]):
+            for i in range(1, self.training['tracking'].shape[0]):
                 val = features['tracking'][mask[i-1], 5]
                 self.training['tracking'][i, int(4 + val)] = 1
 
@@ -128,18 +130,15 @@ class TrainingUI(Widget):
         self.label_disp.create_im(im_temp, 'Random')
         self.im_disp.create_im(im_temp, 'Random', mapping)
 
-
-        im_temp = Image.open(self.file_list[0])
-        im = np.asarray(im_temp, dtype='float')
-
-        self.mov_disp.create_im(im, 'PastelHeat')
+        self.movie = movie
+        self.mov_disp.create_im(self.movie.read_im(0, 0), 'PastelHeat')
         inds = self.features['tracking'][:, 1]
 
         mask = inds == self.current_frame
         if np.count_nonzero(mask):
             self.frame_inds = np.where(mask)[0]
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1)
+        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1)
         self.frame_slider.bind(value=self.training_frame)
 
         self.sublayout = GridLayout(cols=3, padding=4)
@@ -222,7 +221,7 @@ class TrainingUI(Widget):
             self.layout.add_widget(self.layout3)
 
     def frame_forward(self, instance):
-        if self.frame_slider.value < self.frames - 1:
+        if self.frame_slider.value < self.movie.frames - 1:
             self.frame_slider.value += 1
 
     def frame_backward(self, instance):
@@ -238,10 +237,7 @@ class TrainingUI(Widget):
         self.im_disp.update_im(im_temp, mapping)
         self.label_disp.update_im(np.mod(im_temp, 64))
 
-        im_temp = Image.open(self.file_list[int(val)])
-        im = np.asarray(im_temp, dtype='float')
-
-        self.mov_disp.update_im(im)
+        self.mov_disp.update_im(self.movie.read_im(0, self.current_frame))
 
         inds = self.features['tracking'][:, 1]
 

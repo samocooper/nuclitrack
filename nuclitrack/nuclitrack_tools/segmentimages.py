@@ -200,32 +200,10 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     return labels
 
-def read_im(file_list, channels, min_vals, max_vals):
 
-    im = np.zeros(1)
+def segment_image(movie, params, clf, frame):
 
-    for i in range(len(channels)):
-        if channels[i] > 0:
-
-            if im.shape[0] == 1:
-                pil_im = Image.open(file_list[i])
-                temp_im = np.asarray(pil_im, dtype='float').copy()
-                temp_im -= min_vals[i]
-                temp_im /= max_vals[i]
-                im = temp_im
-
-            else:
-                pil_im = Image.open(file_list[i])
-                temp_im = np.asarray(pil_im, dtype='float').copy()
-                temp_im -= min_vals[i]
-                temp_im /= max_vals[i]
-                im = im + temp_im
-    return im
-
-def segment_image(params, min_vals, max_vals, clf, file_name):
-
-
-    im = read_im(file_name, params[15:], min_vals, max_vals)
+    im = movie.comb_im(params[15:].astype(int), frame)
 
     image = clipping(im, params[0])
     image2 = background(image, params[1])

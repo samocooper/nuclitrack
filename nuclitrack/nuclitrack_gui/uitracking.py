@@ -1,7 +1,6 @@
 from functools import partial
 
 import numpy as np
-from PIL import Image
 from kivy.core.window import Window
 from kivy.graphics import Ellipse, Color
 from kivy.uix.dropdown import DropDown
@@ -118,6 +117,11 @@ class RunTracking(Widget):
     def get(self):
         return self.tracks, self.features
 
+    def update_size(self, window, width, height):
+
+        self.width = width
+        self.height = height
+
 
 class CellMark(Widget):
 
@@ -202,28 +206,23 @@ class Jump(Widget):
             self.is_down = 0
             xpos = (touch.pos[0] - self.pos[0]) / self.size[0]
             if self.flag == 0:
-                self.parent.parent.frame_select([], np.asarray([xpos]))
+                self.parent.parent.change_frame([], np.asarray([xpos]))
             else:
                 self.parent.parent.add_event(xpos, self.flag)
 
 
 class TrackingUI(Widget):
 
-    def __init__(self, file_list, labels, tracks, stored_tracks, features, frames,
-                 dims, channels, *args, **kwargs):
+    def __init__(self, movie, labels, tracks, stored_tracks, features, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.file_list = file_list
-        self.channels = channels
+        self.movie = movie
         self.tracks = tracks
         self.features = features
-        self.dims = dims
         self.labels = labels
 
         self.keyboard = Window.request_keyboard(self.keyboard_closed, self)
         self.keyboard.bind(on_key_down=self.key_print)
-
-        self.frames = frames
 
         self.tr_layout = FloatLayout(size=(Window.width, Window.height))
 
@@ -244,7 +243,10 @@ class TrackingUI(Widget):
         self.tr_layout.add_widget(self.mov_disp)
 
         self.track_ids = np.zeros(1)
+
         self.current_frame = 0
+        self.channel = 0
+        self.mov_disp.create_im(self.movie.read_im(self.channel, self.current_frame), 'PastelHeat')
 
         inds = self.features['tracking'][:, 1]
         mask = inds == 0
@@ -257,14 +259,9 @@ class TrackingUI(Widget):
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.create_im(im_temp, 'Random', mapping)
 
-        self.channel = 0
 
-        im_temp = Image.open(self.file_list[self.channel][0])
-        im = np.asarray(im_temp, dtype='float')
 
-        self.mov_disp.create_im(im, 'PastelHeat')
-
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
+        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06),
                                    pos_hint={'x': .145, 'y': .94})
         self.frame_slider.bind(value=self.frame_select)
 
@@ -328,7 +325,7 @@ class TrackingUI(Widget):
         self.show_feat = [0, 1, 2]
 
         self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
-                           xmax=self.frames, ymin=0,
+                           xmax=self.movie.frames, ymin=0,
                            ymax=1,
                            size_hint=(.87, .32), pos_hint={'x': .12, 'y': .12})
 
@@ -382,7 +379,7 @@ class TrackingUI(Widget):
         # Drop down menu for choosing which channel
         self.channel_choice = DropDown()
 
-        for i in range(self.channels):
+        for i in range(self.movie.channels):
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), group='channel', size_hint_y=None)
             channel_btn.bind(on_press=partial(self.change_channel, i))
             self.channel_choice.add_widget(channel_btn)
@@ -426,7 +423,7 @@ class TrackingUI(Widget):
                 self.store_layout.add_widget(CellMark(size_hint=(.43, .43), pos_hint={'x': .12, 'y': .46}))
 
     def frame_forward(self, instance):
-        if self.frame_slider.value < self.frames - 1:
+        if self.frame_slider.value < self.movie.frames - 1:
             self.frame_slider.value += 1
 
     def frame_backward(self, instance):
@@ -445,8 +442,8 @@ class TrackingUI(Widget):
 
                 cell_center = self.frame_feats[self.frame_feats[:, 0] == mask[0], [2, 3]]
 
-                self.cell_mark.draw_dot(cell_center.copy(), self.dims, 1., 1., 1., 15)
-                self.cell_mark_2.draw_dot(cell_center.copy(), self.dims, 1., 0., 0., 12)
+                self.cell_mark.draw_dot(cell_center.copy(), self.movie.dims, 1., 1., 1., 15)
+                self.cell_mark_2.draw_dot(cell_center.copy(), self.movie.dims, 1., 0., 0., 12)
 
         for i in range(len(self.parent.fov['tracks_stored'])):
             self.store_layout.children[i].remove_dot()
@@ -459,21 +456,21 @@ class TrackingUI(Widget):
             if len(mask2) > 0:
                 for i in mask2:
                     cell_center = self.frame_feats[self.frame_feats[:, 0] == i, [2, 3]]
-                    self.store_layout.children[count].draw_dot(cell_center, self.dims, 0., 0., 0., 12)
+                    self.store_layout.children[count].draw_dot(cell_center, self.movie.dims, 0., 0., 0., 12)
                     count += 1
 
 
     def frame_select(self, instance, val):
 
-        if val >= self.frames:
-            val = self.frames - 1
+        if val >= self.movie.frames:
+            val = self.movie.frames - 1
 
         if val < 0:
             val = 0
 
         if self.track_btn5.state == 'down':
             self.track_btn5.state = 'normal'
-            val = int(val * self.frames)
+            val = int(val * self.movie.frames)
 
         self.current_frame = int(val)
         im_temp = self.labels[int(val), :, :]
@@ -482,9 +479,7 @@ class TrackingUI(Widget):
         mapping = self.features['tracking'][:, 11].astype(int)
         self.track_disp.update_im(im_temp.astype(float), mapping)
 
-        im_temp = Image.open(self.file_list[self.channel][int(val)])
-        im = np.asarray(im_temp, dtype='float')
-        self.mov_disp.update_im(im)
+        self.mov_disp.update_im(self.movie.read_im(self.channel, self.current_frame))
 
         inds = self.features['tracking'][:, 1]
         mask = inds == self.current_frame
@@ -509,7 +504,7 @@ class TrackingUI(Widget):
 
     def add_event(self, xpos, val):
 
-        frame = np.round(self.frames*xpos)
+        frame = np.round(self.movie.frames*xpos)
         mask2 = self.tracks[:, 4] == self.track_ind[0]
         self.track_ids = self.tracks[mask2, 0].astype(int)
 
@@ -628,7 +623,7 @@ class TrackingUI(Widget):
 
         if 0 < flag <= 5:
 
-            pos = np.asarray([[pos[0] * self.dims[1], pos[1] * self.dims[0]]])
+            pos = np.asarray([[pos[0] * self.movie.dims[1], pos[1] * self.movie.dims[0]]])
             d = distance.cdist(self.frame_feats[:, [2, 3]], pos)  # Calculate distance from frame segments
 
             sel = self.frame_feats[np.argmin(d), :]  # Choose closest segment to mouse click
@@ -713,7 +708,7 @@ class TrackingUI(Widget):
 
                 self.track_btn4.state = 'normal'
 
-                if sum(mask) and min(d) < 50 and self.current_frame != 0 and self.current_frame != self.frames:
+                if sum(mask) and min(d) < 50 and self.current_frame != 0 and self.current_frame != self.movie.frames:
                     # rows of selected track proceeding frame
 
                     sel_mask = self.tracks[:, 4] == self.track_ind[0]
@@ -965,11 +960,7 @@ class TrackingUI(Widget):
     def change_channel(self, val, instance):
 
         self.channel = int(val)
-
-        im_temp = Image.open(self.file_list[self.channel][self.current_frame])
-        im = np.asarray(im_temp, dtype='float')
-
-        self.mov_disp.update_im(im)
+        self.mov_disp.update_im(self.movie.read_im(self.channel, self.current_frame))
 
     def remove(self):
 

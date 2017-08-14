@@ -4,7 +4,6 @@ from functools import partial
 from multiprocessing import Pool
 
 import numpy as np
-from PIL import Image
 from kivy.core.window import Window
 from kivy.graphics import Ellipse, Color
 from kivy.uix.button import Button
@@ -23,32 +22,16 @@ from skimage.external import tifffile
 from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
 from nuclitrack.nuclitrack_tools import segmentimages
 
-
 # Batch Segmentation
+
 
 class BatchSegment(Widget):
 
-    def __init__(self, file_list, min_vals, max_vals, labels, params, frames, parallel, seg_training=None, **kwargs):
+    def __init__(self, movie, labels, params, parallel, seg_training=None, **kwargs):
         super().__init__(**kwargs)
 
-        self.frames = frames
-
-        print(self.frames)
-        print(len(file_list))
-
-        self.file_list = []
-
-        for i in range(frames):
-            if len(file_list) == 1:
-                self.file_list.append([file_list[0][i]])
-            if len(file_list) == 2:
-                self.file_list.append([file_list[0][i], file_list[1][i]])
-            if len(file_list) == 3:
-                self.file_list.append([file_list[0][i], file_list[1][i], file_list[2][i]])
-
+        self.movie = movie
         self.labels = labels
-        self.min_vals = min_vals
-        self.max_vals = max_vals
 
         self.params = params
         self.layout = FloatLayout(size=(Window.width, Window.height))
@@ -71,7 +54,7 @@ class BatchSegment(Widget):
                                      size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
 
             self.layout2 = GridLayout(rows=1, padding=2, size_hint=(.9, .1), pos_hint={'x': .05, 'y': .5})
-            self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=1000/self.frames)
+            self.pb = ProgressBar(max=1000, size_hint=(8., 1.), pos_hint={'x': .1, 'y': .6}, value=1000/self.movie.frames)
             self.layout2.add_widget(self.pb)
 
             with self.canvas:
@@ -80,37 +63,40 @@ class BatchSegment(Widget):
                 self.layout.add_widget(self.layout2)
 
     def update_bar(self, dt):
-        self.pb.value += 1000/self.frames
+        self.pb.value += 1000/self.movie.frames
 
     def segment_im(self, frame, dt):
 
         if self.params[11] == 1:
-            self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.min_vals, self.max_vals, self.clf,
-                                                                   self.file_list[int(frame)])
+            self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, self.clf, frame)
         else:
-            self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.min_vals, self.max_vals, [],
-                                                                   self.file_list[int(frame)])
+            self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, [], frame)
 
     def segment_parallel(self):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
         if self.params[11] == 1:
-            labels = pool.map(partial(segmentimages.segment_image, self.params,
-                                      self.min_val, self.max_vals, self.clf), self.file_list)
+            labels = pool.map(partial(segmentimages.segment_image, self.movie, self.params, self.clf),
+                              range(self.movie.frames))
         else:
-            labels = pool.map(partial(segmentimages.segment_image, self.params,
-                                      self.min_val, self.max_vals, []), self.file_list)
+            labels = pool.map(partial(segmentimages.segment_image, self.movie, self.params, []),
+                              range(self.movie.frames))
 
         pool.close()
         pool.join()
 
-        for i in range(self.frames):
+        for i in range(self.movie.frames):
             self.labels[i, :, :] = labels[i]
 
     def get(self):
         self.seg_message.text = '[b][color=000000]Images Segmented[/b][/color]'
         return self.labels
+
+    def update_size(self, window, width, height):
+
+        self.width = width
+        self.height = height
 
 # Segmentation UI
 class LabelWindow(Widget):
@@ -198,43 +184,15 @@ def unique_pixls(X):
 
     return X_filter
 
-def read_im(file_list, channels, min_vals, max_vals, frame):
-
-    im = np.zeros(1)
-
-    for i in range(len(channels)):
-        if channels[i] > 0:
-
-            if im.shape[0] == 1:
-                pil_im = Image.open(file_list[i][frame])
-                temp_im = np.asarray(pil_im, dtype='float').copy()
-                temp_im -= min_vals[i]
-                temp_im /= max_vals[i]
-                im = temp_im
-
-            else:
-                pil_im = Image.open(file_list[i][frame])
-                temp_im = np.asarray(pil_im, dtype='float').copy()
-                temp_im -= min_vals[i]
-                temp_im /= max_vals[i]
-                im = im + temp_im
-    return im
-
-
 class SegmentationUI(Widget):
 
-    def __init__(self, file_list, min_vals, max_vals, frames, channels, params, training=None, **kwargs):
+    def __init__(self, movie, params, training=None, **kwargs):
         super().__init__(**kwargs)
 
         self.current_state = 0
-        self.params = params
         self.current_frame = 0
-        self.channels = channels
-        self.frames = frames
-
-        self.file_list = file_list
-        self.min_vals = min_vals
-        self.max_vals = max_vals
+        self.movie = movie
+        self.params = params
 
         self.seg_channels = self.params[15:].astype(int)
         print(self.seg_channels)
@@ -249,16 +207,14 @@ class SegmentationUI(Widget):
         self.mov_disp = ImDisplay(size_hint=(.2, .2), pos_hint={'x': .78, 'y': .14})
         self.s_layout.add_widget(self.mov_disp)
 
-        self.im = read_im(self.file_list, self.seg_channels, self.min_vals, self.max_vals, 0)
-
-
+        self.im = movie.read_im(0, 0)
         self.im_disp.create_im(self.im, 'PastelHeat')
         self.mov_disp.create_im(self.im, 'PastelHeat')
 
         # Frame slider
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06), pos_hint={'x': .23, 'y': .94})
-        self.frame_slider.bind(value=self.frame_select)
+        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06), pos_hint={'x': .23, 'y': .94})
+        self.frame_slider.bind(value=self.change_frame)
         self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
                                 size_hint=(.2, .04), pos_hint={'x': .28, 'y': .9}, markup=True)
 
@@ -282,11 +238,11 @@ class SegmentationUI(Widget):
         if self.params[9] == 1:
             self.edge_button.state = 'down'
 
-
         # Drop down menu for choosing which channel
+
         self.channel_choice = DropDown()
 
-        for i in range(self.channels):
+        for i in range(self.movie.channels):
 
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), size_hint_y=None)
             channel_btn.bind(on_press=partial(self.change_channel, i))
@@ -625,33 +581,12 @@ class SegmentationUI(Widget):
         self.label_window.level = level
 
     def frame_forward(self, instance):
-        if self.frame_slider.value < self.frames - 1:
+        if self.frame_slider.value < self.movie.frames - 1:
             self.frame_slider.value += 1
 
     def frame_backward(self, instance):
         if self.frame_slider.value > 0:
             self.frame_slider.value -= 1
-
-    def frame_select(self, instance, val):
-
-        self.current_frame = int(val)
-
-
-        self.im = read_im(self.file_list, self.seg_channels, self.min_vals, self.max_vals, int(val))
-        self.imml = self.im.copy()
-
-        if self.current_state > 0:
-            self.segment_script([], -1, state=self.current_state)
-        else:
-            self.im_disp.update_im(self.im)
-
-        if self.ml_mode:
-            self.label_window.clear([])
-
-        self.class_flag = True
-
-        self.mov_disp.update_im(self.im)
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
 
     def segment_script(self, instance, val, **kwargs):
 
@@ -800,23 +735,40 @@ class SegmentationUI(Widget):
         else:
             self.params[9] = 0
 
+    def change_frame(self, instance, val):
+
+        self.current_frame = int(val)
+        self.update_im()
+
     def change_channel(self, val, instance):
 
         if instance.state == 'down':
             self.seg_channels[val] = 1
-            self.im = read_im(self.file_list, self.seg_channels, self.min_vals, self.max_vals, self.current_frame)
-
-            self.im_disp.update_im(self.im)
-            self.mov_disp.update_im(self.im)
             self.params[15+val] = 1
         else:
             if sum(self.seg_channels) > 1:
                 self.seg_channels[val] = 0
-                self.im = read_im(self.file_list, self.seg_channels, self.min_vals, self.max_vals, self.current_frame)
-
-                self.im_disp.update_im(self.im)
-                self.mov_disp.update_im(self.im)
                 self.params[15 + val] = 0
+
+        self.update_im()
+
+    def update_im(self):
+
+        self.im = self.movie.comb_im(self.seg_channels, self.current_frame)
+        self.imml = self.im.copy()
+
+        if self.current_state > 0:
+            self.segment_script([], -1, state=self.current_state)
+        else:
+            self.im_disp.update_im(self.im)
+
+        self.mov_disp.update_im(self.im)
+        self.frame_text.text = '[color=000000]Frame: ' + str(int(self.current_frame)) + '[/color]'
+
+        if self.ml_mode:
+            self.label_window.clear([])
+
+        self.class_flag = True
 
     def update_size(self, window, width, height):
 
@@ -825,11 +777,11 @@ class SegmentationUI(Widget):
 
 class ViewSegment(Widget):
 
-    def __init__(self, labels=None, frames=None, **kwargs):
+    def __init__(self, movie, labels, **kwargs):
         super().__init__(**kwargs)
 
+        self.movie = movie
         self.labels = labels
-        self.frames = frames
 
         self.view = 'seg_view'
         self.layout_choice = GridLayout(cols=3, size_hint=(.45, .05), pos_hint={'x': .52, 'y': .925})
@@ -855,7 +807,7 @@ class ViewSegment(Widget):
         self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
         self.im_disp.create_im(im_temp, 'Random')
 
-        self.frame_slider = Slider(min=0, max=self.frames - 1, value=1, size_hint=(.3, .06),
+        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06),
                                    pos_hint={'x': .1, 'y': .94})
         self.frame_slider.bind(value=self.segment_frame)
         self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
@@ -911,9 +863,9 @@ class ViewSegment(Widget):
     def export_files(self, instance):
 
         temp_path = self.file_choose.path
-        digits = len(str(self.frames))
+        digits = len(str(self.movie.frames))
 
-        for i in range(self.frames):
+        for i in range(self.movie.frames):
             num = str(i)
             num = num.zfill(digits)
             fname = os.path.join(temp_path, instance.text + '_' + num + '.tif')
@@ -958,7 +910,7 @@ class ViewSegment(Widget):
         self.view = 'seg_view'
 
     def frame_forward(self, instance):
-        if self.frame_slider.value < self.frames - 1:
+        if self.frame_slider.value < self.movie.frames - 1:
             self.frame_slider.value += 1
 
     def frame_backward(self, instance):
