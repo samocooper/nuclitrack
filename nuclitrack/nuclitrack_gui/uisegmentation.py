@@ -32,18 +32,14 @@ class BatchSegment(Widget):
         super().__init__(**kwargs)
 
         self.params = params['seg_param'][...]
+        self.clf = 0
 
-        if self.params[11] == 1:
+        if 'seg_training' in params:
             self.clf = segmentimages.train_clf(params['seg_training'])
 
         self.movie = movie
-
         self.labels = labels
-        self.params = params
-
         self.layout = FloatLayout(size=(Window.width, Window.height))
-
-
 
         if parallel:
 
@@ -73,21 +69,15 @@ class BatchSegment(Widget):
 
     def segment_im(self, frame, dt):
 
-        if self.params[11] == 1:
-            self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, self.clf, frame)
-        else:
-            self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, [], frame)
+        self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, self.clf, frame)
 
     def segment_parallel(self):
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
-        if self.params[11] == 1:
-            labels = pool.map(partial(segmentimages.segment_image, self.movie, self.params, self.clf),
-                              range(self.movie.frames))
-        else:
-            labels = pool.map(partial(segmentimages.segment_image, self.movie, self.params, []),
-                              range(self.movie.frames))
+
+        labels = pool.map(partial(segmentimages.segment_image, self.movie, self.params, self.clf),
+                          range(self.movie.frames))
 
         pool.close()
         pool.join()
@@ -297,6 +287,8 @@ class SegmentationUI(Widget):
         s8.bind(value=partial(self.segment_script, state=1))
         s9.bind(value=partial(self.segment_script, state=9))
 
+        # Slider labels
+
         self.s1_label = guitools.ntlabel(text='Clipping Limit: ' + str(self.params[0]), style=2)
         self.s2_label = guitools.ntlabel(text='Background Blur: ' + str(self.params[1]), style=2)
         self.s3_label = guitools.ntlabel(text='Image Blur: ' + str(self.params[2]), style=2)
@@ -313,7 +305,7 @@ class SegmentationUI(Widget):
         self.b1.bind(on_press=self.ml_segment)
         self.spacer = Label(text='')
 
-        # Button to save paramters for segmentation
+        # Button to save parameters for segmentation
 
         b2 = Button(text='Save Params')
         b2.bind(on_press=self.save_params)
@@ -351,58 +343,94 @@ class SegmentationUI(Widget):
 
     def ml_segment(self, instance):
 
+        # Ensure that image is at correct stage of segmentation
+
         self.segment_script([], self.params[2], state=4)
+
+        # Swap layouts to ml layout
+
+        self.s_layout.remove_widget(self.layout2)
+        self.ml_layout = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
+
+        # Add widget that allows user to paint foreground and background pixels, stores list of central pixel and brush
+        # size for each brush stroke
+
         self.label_window = LabelWindow(size_hint=(.76, .76), pos_hint={'x': .23, 'y': .14})
         self.s_layout.add_widget(self.label_window)
 
-        self.s_layout.remove_widget(self.layout2)
-        self.layout3 = GridLayout(cols=1, padding=2, size_hint=(.2, .84), pos_hint={'x': .01, 'y': .14})
+        # Set default size of paint brush and attach widget to adjust this size
 
-        self.brush_size = 30
+        self.brush_size = 20
+
         btn_size = Slider(min=1, max=100, step=1, value=30)
         btn_size.bind(value=self.change_size)
-        self.layout3.add_widget(btn_size)
+        self.ml_layout.add_widget(btn_size)
+
         self.brush_lbl = Label(text='[color=000000]Brush Size ' + str(self.brush_size) + '[/color]', markup=True)
-        self.layout3.add_widget(self.brush_lbl)
+        self.ml_layout.add_widget(self.brush_lbl)
+
+        # Toggle buttons to select whether foreground or background is being labelled
 
         self.select_fg = ToggleButton(text='Select Nuclei', group='label_data')
-        self.layout3.add_widget(self.select_fg)
+        self.ml_layout.add_widget(self.select_fg)
 
         self.select_bg = ToggleButton(text='Select Background', group='label_data')
-        self.layout3.add_widget(self.select_bg)
+        self.ml_layout.add_widget(self.select_bg)
+
+        # Button to clear current selection
 
         clear = Button(text='Clear Selection')
         clear.bind(on_press=self.label_window.clear)
-        self.layout3.add_widget(clear)
+        self.ml_layout.add_widget(clear)
+
+        # Button to add training examples to list of all training data and output probability map
 
         classify = Button(text='Calculate Probability')
         classify.bind(on_press=self.classify)
-        self.layout3.add_widget(classify)
+        self.ml_layout.add_widget(classify)
+
+        # Button to restore image and if the user wants to add more training data
+
+        rev_image = Button(text='Revert Image')
+        rev_image.bind(on_press=self.revert_image)
+        self.ml_layout.add_widget(rev_image)
+
+        # Open close parameter to reduce noise in pixel level classification
 
         self.params[12] = 0
+
         soc = Slider(min=0, max=20, step=1, value=0)
         soc.bind(value=self.open_close)
-        self.layout3.add_widget(soc)
+        self.ml_layout.add_widget(soc)
+
         self.oc_lbl = Label(text='[color=000000]Open Close ' + str(self.params[12]) + '[/color]', markup=True)
-        self.layout3.add_widget(self.oc_lbl)
+        self.ml_layout.add_widget(self.oc_lbl)
+
+        # Reset all training data
 
         reset = Button(text='Reset Training')
         reset.bind(on_press=self.reset_train)
-        self.layout3.add_widget(reset)
+        self.ml_layout.add_widget(reset)
+
+        # Leave the ml window and return to normal segmentation
 
         cont = Button(text='Continue Segmentation')
         cont.bind(on_press=self.continue_seg)
-        self.layout3.add_widget(cont)
-        self.ml_mode = True
-        self.s_layout.add_widget(self.layout3)
+        self.ml_layout.add_widget(cont)
+
+        # Counter which gives the number of training examples for pixel level classification
+
         self.train_count = Label(text='[color=000000]Train pxls ' + str(0) + '[/color]', markup=True)
 
         if 'seg_training' in self.parent.params:
-
             count = self.parent.params['seg_training']['X'].shape[0]
             self.train_count.text = '[color=000000]Train pxls ' + str(count) + '[/color]'
 
-        self.layout3.add_widget(self.train_count)
+        self.ml_layout.add_widget(self.train_count)
+
+        # Add the ml_layout
+
+        self.s_layout.add_widget(self.ml_layout)
 
     def reset_train(self, instance):
 
@@ -414,7 +442,7 @@ class SegmentationUI(Widget):
 
     def continue_seg(self, instance):
 
-        self.s_layout.remove_widget(self.layout3)
+        self.s_layout.remove_widget(self.ml_layout)
         self.s_layout.remove_widget(self.label_window)
         self.s_layout.add_widget(self.layout2)
         self.label_window = None
@@ -429,11 +457,15 @@ class SegmentationUI(Widget):
         self.segment_script([], self.params[2], state=4)
         dims = self.movie.dims
 
+        # Parameters for stride and width of MLP region of interest
+
         self.params[13] = 12
         self.params[14] = 2
 
         wsize = int(self.params[13])
         stride = int(self.params[14])
+
+        # Initialize arrays for foreground and background pixels
 
         P = np.zeros((1, 2))
         N = np.zeros((1, 2))
@@ -442,6 +474,8 @@ class SegmentationUI(Widget):
         pixel_fg = self.label_window.pixel_list_fg
 
         if len(pixel_fg) > 0 and len(pixel_bg) > 0:
+
+            # Scale pixel lists in range 0 to 1 to image dimensions
 
             pixel_bg = np.asarray(pixel_bg)
             pixel_fg = np.asarray(pixel_fg)
@@ -455,6 +489,8 @@ class SegmentationUI(Widget):
             pixel_bg = pixel_bg.astype(int)
             pixel_fg = pixel_fg.astype(int)
 
+            # Identify pixels within elliptical roi around central pixel defined by brush size
+
             for i in range(pixel_bg.shape[0]):
 
                 pixls = ellipse_roi(pixel_bg[i, :], dims)
@@ -464,19 +500,16 @@ class SegmentationUI(Widget):
                 pixls = ellipse_roi(pixel_fg[i, :], dims)
                 P = np.vstack((P, pixls))
 
-            vinds = np.arange(dims[0], dims[0]-self.params[13]+1, -1)-1
-            hinds = np.arange(dims[1], dims[1]-self.params[13]+1, -1)-1
-            rinds = np.arange(self.params[13]+1, 0, -1)
+            # Calculate necessary expansion of image needed to perform pixel convolution
 
-            vinds = vinds.astype(int)
-            hinds = hinds.astype(int)
-            rinds = rinds.astype(int)
+            conv_im = segmentimages.expand_im(self.im3, self.params[13])
 
-            conv_im_temp = np.vstack((self.im3[rinds, :], self.im3, self.im3[vinds, :]))
-            conv_im = np.hstack((conv_im_temp[:, rinds],  conv_im_temp,  conv_im_temp[:, hinds]))
+            # Add expansion amount to pixels in list to center on new image
 
             P = P[1:, :] + self.params[13]+1
             N = N[1:, :] + self.params[13]+1
+
+            # Take unique pixel values
 
             P = unique_pixls(P)
             N = unique_pixls(N)
@@ -486,6 +519,8 @@ class SegmentationUI(Widget):
 
             X = []
             y = []
+
+            # Extract intensity values for given pixels
 
             for i in range(P.shape[0]):
                 roi = conv_im[P[i, 0]-wsize:P[i, 0]+wsize, P[i, 1]-wsize:P[i, 1]+wsize]
@@ -499,6 +534,8 @@ class SegmentationUI(Widget):
                 X.append(roi.flatten())
                 y.append(0)
 
+            # Convert to numpy arrays for classification
+
             X = np.asarray(X)
             y = np.asarray(y)
 
@@ -510,7 +547,7 @@ class SegmentationUI(Widget):
 
             self.label_window.clear([])
 
-        # Create if no training data else append
+        # Create new training data hdf5 file if no prior data exists else append
 
         if len(pixel_fg) > 0 and len(pixel_bg) > 0:
             if 'seg_training' in self.parent.params:
@@ -553,6 +590,10 @@ class SegmentationUI(Widget):
                 self.im_open_close = self.im_class.copy()
 
             self.im_disp.update_im(self.im_open_close)
+
+    def revert_image(self, instance):
+
+        self.im_disp.update_im(self.im3)
 
     def open_close(self, instance, val):
 

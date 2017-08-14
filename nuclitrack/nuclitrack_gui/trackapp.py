@@ -93,23 +93,13 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.remove_widget(self.current_widget)
-            channel = int(self.params['seg_param'][10])
 
             if 'labels' in self.fov:
                 del self.fov['labels']
             self.labels = self.fov.create_dataset("labels", self.movie.shape)
 
-            if self.params['seg_param'][11] == 1:
-                self.change_widget(BatchSegment(movie=self.movie,
-                                                   params=self.params['seg_param'][...],
-                                                   labels=self.labels,
-                                                   parallel=self.parallel,
-                                                   seg_training=self.params['seg_training']))
-            else:
-                self.change_widget(BatchSegment(movie=self.movie,
-                                                   params=self.params['seg_param'][...],
-                                                   labels=self.labels,
-                                                   parallel=self.parallel))
+            self.change_widget(BatchSegment(movie=self.movie, params=self.params,
+                                            labels=self.labels, parallel=self.parallel))
 
             # Set segmentation flags to True to start performing work
 

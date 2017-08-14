@@ -82,16 +82,24 @@ def train_clf(training):
 
     return clf
 
-def im_probs(im, clf, wsize, stride):
+def expand_im(im, wsize):
 
     vinds = np.arange(im.shape[0], im.shape[0] - wsize + 1, -1) - 1
     hinds = np.arange(im.shape[1], im.shape[1] - wsize + 1, -1) - 1
-
     rev_inds = np.arange(wsize + 1, 0, -1)
+
+    vinds = vinds.astype(int)
+    hinds = hinds.astype(int)
+    rev_inds = rev_inds.astype(int)
 
     conv_im_temp = np.vstack((im[rev_inds, :], im, im[vinds, :]))
     conv_im = np.hstack((conv_im_temp[:, rev_inds], conv_im_temp, conv_im_temp[:, hinds]))
 
+    return conv_im
+
+def im_probs(im, clf, wsize, stride):
+
+    conv_im = expand_im(im, wsize)
     X_pred = classifyim.classify_im(conv_im, wsize, stride, im.shape[0], im.shape[1])
 
     y_prob = clf.predict_proba(X_pred)
@@ -208,7 +216,7 @@ def segment_image(movie, params, clf, frame):
     image2 = background(image, params[1])
     image3 = blur(image2, params[2])
 
-    if params[11] == 1:
+    if clf is not 0:
         image3 = im_probs(image3, clf, int(params[13]), int(params[14]))
 
         if params[12] > 0:
