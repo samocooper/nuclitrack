@@ -207,10 +207,11 @@ class SegmentationUI(Widget):
         self.params = params['seg_param'][...]
         self.seg_channels = self.params[15:18].astype(int)
 
-        # Set classifier and label window to None
+        # Set classifier, label window and classified image to None to prevent them being prematurely used
 
         self.clf = None
         self.label_window = None
+        self.im_class = None
 
         # Master layout for segmentation UI
 
@@ -397,9 +398,7 @@ class SegmentationUI(Widget):
 
         # Open close parameter to reduce noise in pixel level classification
 
-        self.params[12] = 0
-
-        soc = Slider(min=0, max=20, step=1, value=0)
+        soc = Slider(min=0, max=20, step=1, value=int(self.params[12]))
         soc.bind(value=self.open_close)
         self.ml_layout.add_widget(soc)
 
@@ -567,6 +566,8 @@ class SegmentationUI(Widget):
 
                 del self.parent.params['seg_training']
 
+                # Update training pixel counts
+
                 self.train_count.text = '[color=000000]Train pxls ' + str(X.shape[0]) + '[/color]'
                 training_hdf5 = self.parent.params.create_group('seg_training')
                 training_hdf5.create_dataset('X', data=X)
@@ -579,10 +580,14 @@ class SegmentationUI(Widget):
                 training_hdf5.create_dataset('X', data=X)
                 training_hdf5.create_dataset('y', data=y)
 
+        # Perform classification is training data is present
+
         if 'seg_training' in self.parent.params:
 
             self.clf = segmentimages.train_clf(self.parent.params['seg_training'])
             self.im_class = segmentimages.im_probs(self.im3.copy(), self.clf, wsize, stride)
+
+            # Also perform open and closing here if the parameter is greater than 0
 
             if self.params[12] > 0:
                 self.im_open_close = segmentimages.open_close(self.im_class, self.params[12])
@@ -596,6 +601,9 @@ class SegmentationUI(Widget):
         self.im_disp.update_im(self.im3)
 
     def open_close(self, instance, val):
+
+        if self.im_class is None:
+            self.im_class = self.im3  # users can call open close prior to classification as well
 
         if val > 0:
 
@@ -657,6 +665,7 @@ class SegmentationUI(Widget):
                     self.im_disp.update_im(self.im3)
                     self.prior_state = 4
 
+            # Pixel classifier state sits optionally between blurring and threshold
 
             if state >= 4.5 >= self.prior_state:
 
@@ -665,19 +674,15 @@ class SegmentationUI(Widget):
                         self.clf = segmentimages.train_clf(self.parent.params['seg_training'])
 
                 if self.clf is not None:
-
-                        self.im_class = segmentimages.im_probs(self.im3, self.clf, int(self.params[13]), int(self.params[14]))
-
-                        if self.params[12] > 0:
-
-                            self.im3b = segmentimages.open_close(self.im_class, self.params[12])
-
-                        else:
-                            self.im3b = self.im_class
-
+                    self.im3b = segmentimages.im_probs(self.im3, self.clf, int(self.params[13]), int(self.params[14]))
                 else:
-
                     self.im3b = self.im3
+
+                if self.params[12] > 0:
+
+                    self.im3c = segmentimages.open_close(self.im3b, self.params[12])
+                else:
+                    self.im3c = self.im3b
 
                 self.prior_state = 4.5
 
@@ -688,7 +693,7 @@ class SegmentationUI(Widget):
                         self.params[3] = val
                         guitools.ntchange(label=self.s4_label, text='Threshold: ' + str(np.round(val, 2)), style=2)
 
-                self.im_bin_uf = segmentimages.threshold(self.im3, self.params[3])
+                self.im_bin_uf = segmentimages.threshold(self.im3c, self.params[3])
 
                 if state == 5:
                     self.im_disp.update_im(self.im_bin_uf.astype(float))
