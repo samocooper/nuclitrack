@@ -21,6 +21,7 @@ from skimage.external import tifffile
 
 from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
 from nuclitrack.nuclitrack_tools import segmentimages
+from nuclitrack.kivy_wrappers import guitools
 
 # Batch Segmentation
 
@@ -99,6 +100,7 @@ class BatchSegment(Widget):
         self.height = height
 
 # Segmentation UI
+
 class LabelWindow(Widget):
 
     pixel_list_fg = []
@@ -213,17 +215,9 @@ class SegmentationUI(Widget):
 
         # Frame slider
 
-        self.frame_slider = Slider(min=0, max=self.movie.frames - 1, value=1, size_hint=(.3, .06), pos_hint={'x': .23, 'y': .94})
-        self.frame_slider.bind(value=self.change_frame)
-        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
-                                size_hint=(.2, .04), pos_hint={'x': .28, 'y': .9}, markup=True)
-
-        self.frame_minus = Button(text='<<',
-                                size_hint =(.05, .03), pos_hint={'x': .23, 'y': .905}, markup=True)
-        self.frame_plus = Button(text='>>',
-                                 size_hint=(.05, .03), pos_hint={'x': .48, 'y': .905}, markup=True)
-        self.frame_minus.bind(on_press=self.frame_backward)
-        self.frame_plus.bind(on_press=self.frame_forward)
+        self.frame_slider = guitools.frame_slider(self.movie.frames, self.change_frame,
+                                                  size_hint=(.29, .06), pos_hint={'x': .23, 'y': .91})
+        self.s_layout.add_widget(self.frame_slider)
 
         self.parallel_button = ToggleButton(text=' Multiple Cores ',
                                 size_hint=(.15, .04), pos_hint={'x': .682, 'y': .923}, markup=True)
@@ -341,12 +335,6 @@ class SegmentationUI(Widget):
         with self.canvas:
 
             self.add_widget(self.s_layout)
-
-            self.s_layout.add_widget(self.frame_slider)
-            self.s_layout.add_widget(self.frame_plus)
-            self.s_layout.add_widget(self.frame_minus)
-
-            self.s_layout.add_widget(self.frame_text)
             self.s_layout.add_widget(self.layout2)
 
     def ml_segment(self, instance):
@@ -580,13 +568,6 @@ class SegmentationUI(Widget):
 
         self.label_window.level = level
 
-    def frame_forward(self, instance):
-        if self.frame_slider.value < self.movie.frames - 1:
-            self.frame_slider.value += 1
-
-    def frame_backward(self, instance):
-        if self.frame_slider.value > 0:
-            self.frame_slider.value -= 1
 
     def segment_script(self, instance, val, **kwargs):
 
@@ -735,9 +716,9 @@ class SegmentationUI(Widget):
         else:
             self.params[9] = 0
 
-    def change_frame(self, instance, val):
+    def change_frame(self, val):
 
-        self.current_frame = int(val)
+        self.current_frame = val
         self.update_im()
 
     def change_channel(self, val, instance):
@@ -763,7 +744,6 @@ class SegmentationUI(Widget):
             self.im_disp.update_im(self.im)
 
         self.mov_disp.update_im(self.im)
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(self.current_frame)) + '[/color]'
 
         if self.ml_mode:
             self.label_window.clear([])

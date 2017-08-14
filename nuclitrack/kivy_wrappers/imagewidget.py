@@ -13,6 +13,7 @@ class ImDisplay(Widget):
     code.'''
 
     def create_im(self, mat, c_map,  scale=True):
+
         mat = np.flipud(mat)
         dims = np.shape(mat)  # Dimensions of the Image to show
         self.texture = Texture.create(size=(dims[1], dims[0]), colorfmt='rgb')  # Create texture sized to image
