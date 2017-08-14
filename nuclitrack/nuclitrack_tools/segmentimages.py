@@ -1,11 +1,9 @@
 import ctoolsegmentation
 import numpy as np
-from PIL import Image
 from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from scipy import ndimage
-from PIL import Image
 from sklearn.neural_network import MLPClassifier
 import classifyim
 
@@ -190,6 +188,7 @@ def watershed(markers, im_bin, im_edge, d_mat, val, edges):
 
     labels = morphology.watershed(image=shed_im, markers=markers_temp)
     labels -= 1
+
     if edges == 1:
         edge_vec = np.hstack((labels[:, 0].flatten(), labels[:, -1].flatten(), labels[0, :].flatten(),
                               labels[-1, :].flatten()))
