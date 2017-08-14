@@ -15,15 +15,18 @@ from nuclitrack.nuclitrack_gui.uifeatures import FeatureExtract
 from nuclitrack.nuclitrack_gui.uiloading import LoadingUI
 from nuclitrack.nuclitrack_gui.uisegmentation import SegmentationUI, ViewSegment, BatchSegment
 from nuclitrack.nuclitrack_gui.uitraining import TrainingUI, ClassifyCells
-
+from nuclitrack.kivy_wrappers import guitools
 
 class UserInterface(Widget):
+
     def __init__(self, **kwargs):
+
         super().__init__(**kwargs)
 
         self.current_frame = 0
         self.parallel = False
-        self.ring_flag= False
+        self.ring_flag = False
+
         # Set of values that are used by file loading function to store data on image series,
         # Prevents need to load images into RAM
 
@@ -39,14 +42,11 @@ class UserInterface(Widget):
 
         # Layout for binding progression buttons
 
-        self.layout1 = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
+        self.master_btns = GridLayout(rows=1, padding=5, size=(Window.width, Window.height / 10))
 
         # Add first button for loading data
 
-        self.btn1 = ToggleButton(text='Load Data', group='ui_choice', halign='center', valign='middle')
-        self.btn1.bind(on_press=self.loading_ui)
-        self.btn1.bind(size=self.btn1.setter('text_size'))
-        self.layout1.add_widget(self.btn1)
+        guitools.add_tbtn(layout=self.master_btns, text='Load Data', group='uis', func=self.loading_ui)
 
         # Flags for performing work using scheduler. System works by scheduling a small section of work then updating
         # progress bar. A flag is set to true, work is performed and the flag set to false. On the next kivy frame the
@@ -70,7 +70,7 @@ class UserInterface(Widget):
         Window.bind(on_resize=self.current_widget.update_size)
 
         with self.canvas:
-            self.add_widget(self.layout1)
+            self.add_widget(self.master_btns)
             self.add_widget(self.current_widget)
 
     # Load image data from files, modified such that only file list is loaded to reduce RAM load.
@@ -82,13 +82,18 @@ class UserInterface(Widget):
                           size_hint=(0.6, 0.3))
         error_msg.open()
 
-    def loading_ui(self, instance):
-        if instance.state == 'down':
+    def change_widget(self, new_widget):
 
-            self.remove_widget(self.current_widget)
-            self.current_widget = LoadingUI()
-            self.add_widget(self.current_widget)
-            Window.bind(on_resize=self.current_widget.update_size)
+        self.remove_widget(self.current_widget)
+        self.current_widget = new_widget
+        self.add_widget(self.current_widget)
+        Window.bind(on_resize=self.current_widget.update_size)
+
+    def loading_ui(self, instance):
+
+        if instance.state == 'down':
+            self.change_widget(LoadingUI())
+
 
     # UI for choosing segmentation parameters, these are stored in params['seg_param'] HDF5 file
 
@@ -96,24 +101,21 @@ class UserInterface(Widget):
         if instance.state == 'down':
 
             self.params.require_dataset('seg_param', (18,), dtype='f')
+
             if self.params['seg_param'][15] == 0 and self.params['seg_param'][16] == 0 and self.params['seg_param'][17] == 0:
                 self.params['seg_param'][15] = 1
 
-            self.remove_widget(self.current_widget)
-
             if self.params['seg_param'][11] == 1:
-                self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
+                self.change_widget(SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
                                                  max_vals=self.max_vals, frames=self.frames,
                                                  channels=self.channels, params=self.params['seg_param'][...],
-                                                     training=self.params['seg_training'])
+                                                     training=self.params['seg_training']))
             else:
-                self.current_widget = SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
+                self.change_widget(SegmentationUI(file_list=self.file_list, min_vals=self.min_vals,
                                                      max_vals=self.max_vals, frames=self.frames,
-                                                     channels=self.channels, params=self.params['seg_param'][...])
+                                                     channels=self.channels, params=self.params['seg_param'][...]))
 
-            self.add_widget(self.current_widget)
             self.progression_state(3)
-            Window.bind(on_resize=self.current_widget.update_size)
 
     # Widget for segmenting images, includes loading bar and schedules segmentation fucntion
 
@@ -130,22 +132,20 @@ class UserInterface(Widget):
             self.labels = self.fov.create_dataset("labels", (self.frames, self.dims[0], self.dims[1]))
 
             if self.params['seg_param'][11] == 1:
-                self.current_widget = BatchSegment(file_list=self.file_list,
+                self.change_widget(BatchSegment(file_list=self.file_list,
                                                    min_vals=self.min_vals,
                                                    max_vals=self.max_vals,
                                                    params=self.params['seg_param'][...], frames=self.frames,
                                                    labels=self.labels,
                                                    parallel=self.parallel,
-                                                   seg_training=self.params['seg_training'])
+                                                   seg_training=self.params['seg_training']))
             else:
-                self.current_widget = BatchSegment(file_list=self.file_list,
+                self.change_widget(BatchSegment(file_list=self.file_list,
                                                    min_vals=self.min_vals,
                                                    max_vals=self.max_vals,
                                                    params=self.params['seg_param'][...], frames=self.frames,
                                                    labels=self.labels,
-                                                   parallel=self.parallel)
-
-            self.add_widget(self.current_widget)
+                                                   parallel=self.parallel))
 
             # Set segmentation flags to True to start performing work
 
@@ -181,20 +181,17 @@ class UserInterface(Widget):
     def view_segments(self, instance):
         if instance.state == 'down':
 
-            self.remove_widget(self.current_widget)
-            self.current_widget = ViewSegment(labels=self.labels, frames=self.frames)
-            self.add_widget(self.current_widget)
-            Window.bind(on_resize=self.current_widget.update_size)
+            self.change_widget(ViewSegment(labels=self.labels, frames=self.frames))
+
 
     # Widget that bings up loading bar for feature extraction
 
     def extract_features(self, instance):
         if instance.state == 'down':
 
-            self.remove_widget(self.current_widget)
-            self.current_widget = FeatureExtract(file_list=self.file_list, labels=self.labels[...], frames=self.frames,
-                                                 channels=self.channels, dims=self.dims, ring_flag=self.ring_flag)
-            self.add_widget(self.current_widget)
+            self.change_widget(FeatureExtract(file_list=self.file_list, labels=self.labels[...], frames=self.frames,
+                                                 channels=self.channels, dims=self.dims, ring_flag=self.ring_flag))
+
             self.feature_flag = True
             self.count_scheduled = 0
             self.count_completed = 0
@@ -231,21 +228,16 @@ class UserInterface(Widget):
                 if g == 'training':
                     store = True
 
-            self.remove_widget(self.current_widget)
-            self.current_widget = TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])],
-                                             labels=self.labels, features=self.fov['features'], frames=self.frames,
-                                             params=self.params['track_param'][...], stored=store)
-            self.add_widget(self.current_widget)
-            Window.bind(on_resize=self.current_widget.update_size)
+            self.change_widget(TrainingUI(file_list=self.file_list[int(self.params['seg_param'][10])],
+                                     labels=self.labels, features=self.fov['features'], frames=self.frames,
+                                     params=self.params['track_param'][...], stored=store))
 
     # UI for classifying cells based upon training data
 
     def classify_cells(self, instance):
         if instance.state == 'down':
 
-            self.remove_widget(self.current_widget)
-            self.current_widget = ClassifyCells(features=self.fov['features'], training=self.params['training'])
-            self.add_widget(self.current_widget)
+            self.change_widget(ClassifyCells(features=self.fov['features'], training=self.params['training']))
             self.features = self.current_widget.get()
 
             self.progression_state(8)
@@ -254,11 +246,8 @@ class UserInterface(Widget):
 
     def run_tracking(self, instance):
 
-        self.remove_widget(self.current_widget)
-        self.current_widget = RunTracking(features=self.fov['features']['tracking'][...],
-                                          track_param=self.params['track_param'][...], frames=self.frames)
-
-        self.add_widget(self.current_widget)
+        self.change_widget(RunTracking(features=self.fov['features']['tracking'][...],
+                                          track_param=self.params['track_param'][...], frames=self.frames))
         self.tracking_flag = True
         self.cancel_flag = False
 
@@ -302,13 +291,10 @@ class UserInterface(Widget):
 
     def tracking_ui(self, instance):
         if instance.state == 'down':
-            self.remove_widget(self.current_widget)
-            self.current_widget = TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'],
+            self.change_widget(TrackingUI(file_list=self.file_list, labels=self.labels, tracks=self.fov['tracks'],
                                              stored_tracks=self.fov['tracks_stored'],
                                              features=self.fov['features'], frames=self.frames, dims=self.dims,
-                                             channels=self.channels)
-            self.add_widget(self.current_widget)
-            Window.bind(on_resize=self.current_widget.update_size)
+                                             channels=self.channels))
 
     # Function that determines how far the user has proceeded. When this function is called with the next number the
     # next button is added to the progression button layout. On loading of the HDF5 data and parameter files, this
@@ -318,11 +304,8 @@ class UserInterface(Widget):
 
         if state == 2 and self.progression[2] == 0 and self.progression[0] == 1 and self.progression[1] == 1:
 
-            btn2 = ToggleButton(text='Segment',  group='ui_choice', halign='center', valign='middle')
-            btn2.bind(on_press=self.segment_ui)
-            btn2.bind(size=btn2.setter('text_size'))
-
-            self.layout1.add_widget(btn2)
+            guitools.add_tbtn(layout=self.master_btns, text='Segment', group='uis', func=self.segment_ui)
+            
             self.progression[2] = 1
 
             for g in self.params:
@@ -331,10 +314,7 @@ class UserInterface(Widget):
 
         if state == 3 and self.progression[3] == 0:
 
-            btn3 = ToggleButton(text='Segment\nMovie',  group='ui_choice', halign='center', valign='middle')
-            btn3.bind(on_press=self.segment_movie)
-            btn3.bind(size=btn3.setter('text_size'))
-            self.layout1.add_widget(btn3)
+            guitools.add_tbtn(layout=self.master_btns, text='Segment Movie', group='uis', func=self.segment_movie)
 
             self.progression[3] = 1
 
@@ -347,20 +327,12 @@ class UserInterface(Widget):
 
         if state == 4 and self.progression[4] == 0:
 
-            btn4 = ToggleButton(text='View\nSegment',  group='ui_choice', halign='center', valign='middle')
-            btn4.bind(on_press=self.view_segments)
-            btn4.bind(size=btn4.setter('text_size'))
-
-            self.layout1.add_widget(btn4)
-
+            guitools.add_tbtn(layout=self.master_btns, text='View Segment', group='uis', func=self.view_segments)
+            
             self.progression[4] = 1
 
-            btn5 = ToggleButton(text='Extract\nFeatures', group='ui_choice', halign='center', valign='middle')
-            btn5.bind(on_press=self.extract_features)
-            btn5.bind(size=btn5.setter('text_size'))
-
-            self.layout1.add_widget(btn5)
-
+            guitools.add_tbtn(layout=self.master_btns, text='Extract Features', group='uis', func=self.extract_features)
+            
             self.progression[5] = 1
 
             for g in self.fov:
@@ -368,15 +340,9 @@ class UserInterface(Widget):
                     self.features = self.fov['features']
                     state = 6
 
-
         if state == 6 and self.progression[6] == 0:
 
-            btn6 = ToggleButton(text='Training\nData', group='ui_choice', halign='center', valign='middle')
-            btn6.bind(on_press=self.training_ui)
-            btn6.bind(size=btn6.setter('text_size'))
-
-            self.layout1.add_widget(btn6)
-
+            guitools.add_tbtn(layout=self.master_btns, text='Training Data', group='uis', func=self.training_ui)
             self.progression[6] = 1
 
             param_flag = True
@@ -395,23 +361,18 @@ class UserInterface(Widget):
 
         if state == 7 and self.progression[7] == 0:
 
-            btn7 = ToggleButton(text='Classify\nCells', group='ui_choice', halign='center', valign='middle')
-            btn7.bind(on_press=self.classify_cells)
-            btn7.bind(size=btn7.setter('text_size'))
+            guitools.add_tbtn(layout=self.master_btns, text='Classify Cells', group='uis', func=self.classify_cells)
 
-            self.layout1.add_widget(btn7)
             self.progression[7] = 1
+
             cl = self.features['tracking'][:, 11:14]
 
             if sum(cl.flatten()) > 0:
                 state = 8
 
         if state == 8 and self.progression[8] == 0:
-            btn8 = ToggleButton(text='Track\nCells', group='ui_choice', halign='center', valign='middle')
-            btn8.bind(on_press=self.run_tracking)
-            btn8.bind(size=btn8.setter('text_size'))
 
-            self.layout1.add_widget(btn8)
+            guitools.add_tbtn(layout=self.master_btns, text='Track Cells', group='uis', func=self.run_tracking)
 
             self.progression[8] = 1
 
@@ -420,11 +381,8 @@ class UserInterface(Widget):
                     state = 9
 
         if state == 9 and self.progression[9] == 0:
-            btn9 = ToggleButton(text='View\nTracks', group='ui_choice', halign='center', valign='middle')
-            btn9.bind(on_press=self.tracking_ui)
-            btn9.bind(size=btn9.setter('text_size'))
 
-            self.layout1.add_widget(btn9)
+            guitools.add_tbtn(layout=self.master_btns, text='View Tracks', group='uis', func=self.tracking_ui)
 
             self.progression[9] = 1
 
@@ -472,8 +430,8 @@ class UserInterface(Widget):
 
     def update_size(self, window, width, height):
 
-        self.layout1.width = width
-        self.layout1.height = height / 10
+        self.master_btns.width = width
+        self.master_btns.height = height / 10
 
 
 class CellTrackApp(App):

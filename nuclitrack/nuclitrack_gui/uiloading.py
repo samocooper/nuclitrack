@@ -16,7 +16,6 @@ from kivy.uix.widget import Widget
 
 from nuclitrack.nuclitrack_tools import loadimages
 
-
 class LoadingUI(Widget):
 
     def __init__(self, **kwargs):
@@ -43,6 +42,7 @@ class LoadingUI(Widget):
         self.file_choose.bind(on_submit=self.dir_click)
 
         # Label
+
         self.label_fov = Label(text='[b][color=000000]Experimental Data File[/b][/color]', markup=True,
                                size_hint=(.245, .05), pos_hint={'x': .01, 'y': .95})
         self.ld_layout.add_widget(self.label_fov)
@@ -52,6 +52,7 @@ class LoadingUI(Widget):
         self.select_fov.bind(on_press=self.toggle_fov)
 
         # Input
+
         self.text_input_fov = TextInput(text='', multiline=False,
                                         size_hint=(.4, .05), pos_hint={'x': .01, 'y': .9})
         self.text_input_fov.bind(on_text_validate=partial(self.file_name_val, 'fov'))
