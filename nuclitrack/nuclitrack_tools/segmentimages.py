@@ -4,7 +4,6 @@ from skimage import filters
 from skimage import morphology
 from skimage.feature import peak_local_max
 from scipy import ndimage
-from sklearn.neural_network import MLPClassifier
 import classifyim
 
 
@@ -69,18 +68,6 @@ def cell_centers(im, im_bin, val):
     im_cent[np.logical_not(im_bin)] = 0
 
     return [im_cent, d_mat]
-
-def train_clf(training):
-
-    clf = MLPClassifier(solver='lbfgs', activation='relu', alpha=1e-5,
-                        random_state=1, hidden_layer_sizes=(20,), verbose=False)
-
-    X = training['X'][...]
-    y = training['y'][...]
-
-    clf.fit(X, y)
-
-    return clf
 
 def expand_im(im, wsize):
 

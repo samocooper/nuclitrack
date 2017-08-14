@@ -22,7 +22,7 @@ from skimage.external import tifffile
 from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
 from nuclitrack.nuclitrack_tools import segmentimages
 from nuclitrack.kivy_wrappers import guitools
-
+from nuclitrack.nuclitrack_tools import classifypixels
 
 class BatchSegment(Widget):
 
@@ -136,49 +136,6 @@ class LabelWindow(Widget):
         self.canvas.clear()
         self.pixel_list_bg = []
         self.pixel_list_fg = []
-
-
-def ellipse_roi(roi_vec, imshape):
-
-    x_values = np.arange(roi_vec[1] - roi_vec[3], roi_vec[1] + roi_vec[3])
-    y_values = np.arange(roi_vec[0] - roi_vec[2], roi_vec[0] + roi_vec[2])
-
-    xx, yy = np.meshgrid(x_values, y_values)
-
-    xx = xx.flatten()
-    yy = yy.flatten()
-
-    mask = np.logical_and(np.logical_and(xx > 0, xx < imshape[0]), np.logical_and(yy > 0, yy < imshape[1]))
-
-    xx = xx[mask]
-    yy = yy[mask]
-
-    for j in range(xx.shape[0]):
-        if (xx[j] - roi_vec[1]) ** 2 / roi_vec[3] ** 2 + (yy[j] - roi_vec[0]) ** 2 / roi_vec[2] ** 2 > 1:
-            xx[j] = -1
-            yy[j] = -1
-
-    xx = xx[np.logical_not(xx == -1)]
-    yy = yy[np.logical_not(yy == -1)]
-
-    pixls = np.zeros((xx.shape[0], 2))
-    pixls[:, 0] = xx
-    pixls[:, 1] = yy
-
-    return pixls
-
-
-def unique_pixls(X):
-
-    X_mask = X[:, 0] * 10 ** 5 + X[:, 1]
-    X_mask = np.unique(X_mask)
-    X_filter = np.zeros((X_mask.shape[0], 2))
-    X_filter[:, 0] = X_mask // 10 ** 5
-    X_filter[:, 1] = X_mask % 10 ** 5
-    X_filter = X_filter.astype(int)
-
-    return X_filter
-
 
 class SegmentationUI(Widget):
 
@@ -488,11 +445,11 @@ class SegmentationUI(Widget):
 
             for i in range(pixel_bg.shape[0]):
 
-                pixls = ellipse_roi(pixel_bg[i, :], dims)
+                pixls = classifypixels.ellipse_roi(pixel_bg[i, :], dims)
                 N = np.vstack((N, pixls))
 
             for i in range(pixel_fg.shape[0]):
-                pixls = ellipse_roi(pixel_fg[i, :], dims)
+                pixls = classifypixels.ellipse_roi(pixel_fg[i, :], dims)
                 P = np.vstack((P, pixls))
 
             # Calculate necessary expansion of image needed to perform pixel convolution
@@ -506,8 +463,8 @@ class SegmentationUI(Widget):
 
             # Take unique pixel values
 
-            P = unique_pixls(P)
-            N = unique_pixls(N)
+            P = classifypixels.unique_pixls(P)
+            N = classifypixels.unique_pixls(N)
 
             P = P.astype(int)
             N = N.astype(int)
@@ -580,7 +537,7 @@ class SegmentationUI(Widget):
 
         if 'seg_training' in self.parent.params:
 
-            self.clf = segmentimages.train_clf(self.parent.params['seg_training'])
+            self.clf = classifypixels.train_clf(self.parent.params['seg_training'])
             self.im_class = segmentimages.im_probs(self.im3.copy(), self.clf, wsize, stride)
 
             # Also perform open and closing here if the parameter is greater than 0
@@ -667,7 +624,7 @@ class SegmentationUI(Widget):
 
                 if self.clf is None:
                     if 'seg_training' in self.parent.params:
-                        self.clf = segmentimages.train_clf(self.parent.params['seg_training'])
+                        self.clf = classifypixels.train_clf(self.parent.params['seg_training'])
 
                 if self.clf is not None:
                     self.im3b = segmentimages.im_probs(self.im3, self.clf, int(self.params[13]), int(self.params[14]))
