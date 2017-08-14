@@ -350,8 +350,8 @@ class LoadingUI(Widget):
 
             # Text input for selecting image location
 
-            self.text_input = TextInput(text='File location',
-                                        multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+            self.text_input = TextInput(text='File location', multiline=False,
+                                        size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.text_input.bind(on_text_validate=self.record_filename)
             self.img_layout.add_widget(self.text_input)
 
@@ -367,8 +367,8 @@ class LoadingUI(Widget):
 
             # Text input for selecting image location
 
-            self.text_file_input = TextInput(text='File location',
-                                        multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+            self.text_file_input = TextInput(text='File location', multiline=False,
+                                             size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.text_file_input.bind(on_text_validate=self.record_text_file)
             self.img_layout.add_widget(self.text_file_input)
 
@@ -382,8 +382,8 @@ class LoadingUI(Widget):
 
             # Text input for selecting image location
 
-            self.dir_input = TextInput(text='File location',
-                                             multiline=False, size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+            self.dir_input = TextInput(text='File location', multiline=False,
+                                       size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
             self.dir_input.bind(on_text_validate=self.record_dir)
             self.img_layout.add_widget(self.dir_input)
 
@@ -455,19 +455,19 @@ class LoadingUI(Widget):
 
         self.text_input.text = most_recent_text
 
-        if len(self.file_names[self.channel*2]) < 30:
-            guitools.change_ntlabel(label=self.first_img_name, text=self.file_names[self.channel*2])
-        else:
-            guitools.change_ntlabel(label=self.first_img_name,text=self.file_names[self.channel*2][-29:])
+        first_name = self.file_names[self.channel*2]
+        first_name = (first_name[-28:] + '...') if len(first_name) > 75 else first_name
 
-        if len(self.file_names[self.channel*2+1]) < 30:
-            guitools.change_ntlabel(label=self.last_img_name, text=self.file_names[self.channel * 2 + 1])
-        else:
-            guitools.change_ntlabel(label=self.last_img_name, text=self.file_names[self.channel * 2 + 1][-29:])
+        last_name = self.file_names[self.channel*2+1]
+        last_name = (last_name[-28:] + '...') if len(last_name) > 75 else last_name
+
+        guitools.change_ntlabel(label=self.first_img_name, text=first_name)
+        guitools.change_ntlabel(label=self.last_img_name, text=last_name)
 
     def auto_load(self, instance):
 
-        # Autoload all channels where both file names are given output file names to all_file list
+        # Auto load all channels where both file names are given output file names to all_file list
+
         # Handle errors in file loading
 
         if self.file_names[0] == '' or self.file_names[1] == '':
