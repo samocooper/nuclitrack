@@ -24,14 +24,16 @@ from nuclitrack.nuclitrack_tools import segmentimages
 from nuclitrack.kivy_wrappers import guitools
 from nuclitrack.nuclitrack_tools import classifypixels
 
+
 class BatchSegment(Widget):
 
     def __init__(self, movie, labels, params, parallel, **kwargs):
         super().__init__(**kwargs)
 
         self.params = params['seg_param'][...]
-        self.clf = 0
 
+        # Classifier is used if training data is present
+        self.clf = 0
         if 'seg_training' in params:
             self.clf = segmentimages.train_clf(params['seg_training'])
 
@@ -41,14 +43,19 @@ class BatchSegment(Widget):
 
         if parallel:
 
+            # Cannot provide loading bar if parallel processing is used with current structure
+
             self.seg_message = Label(text='[b][color=000000]Parallel Processing' \
                                           '\n   No Loading Bar[/b][/color]', markup=True,
                                      size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
             with self.canvas:
+
                 self.add_widget(self.layout)
                 self.layout.add_widget(self.seg_message)
 
         else:
+
+            # Add loading bar to canvas and initiate scheduling of segmentation
 
             self.seg_message = Label(text='[b][color=000000]Segmenting Images[/b][/color]', markup=True,
                                      size_hint=(.2, .05), pos_hint={'x': .4, 'y': .65})
@@ -58,6 +65,7 @@ class BatchSegment(Widget):
             self.layout2.add_widget(self.pb)
 
             with self.canvas:
+
                 self.add_widget(self.layout)
                 self.layout.add_widget(self.seg_message)
                 self.layout.add_widget(self.layout2)
@@ -70,6 +78,8 @@ class BatchSegment(Widget):
         self.labels[frame, :, :] = segmentimages.segment_image(self.movie, self.params, self.clf, frame)
 
     def segment_parallel(self):
+
+        # Schedule segmentation of images in parallel using pool class
 
         cpu_count = multiprocessing.cpu_count()
         pool = Pool(cpu_count)
@@ -95,15 +105,22 @@ class BatchSegment(Widget):
 
 class LabelWindow(Widget):
 
+    # lists for storing locations and sizes of brush strokes for background and foreground
+
     pixel_list_fg = []
     pixel_list_bg = []
 
     def paint(self, touch):
 
+        # Get location of clicks
+
         x_size = self.size[0]
         y_size = self.size[1]
+
         xpos = touch.pos[0]
         ypos = touch.pos[1]
+
+        # Scale to between 0 and 1 relative to image size
 
         xpos_norm = (touch.pos[0] - self.pos[0]) / x_size
         ypos_norm = 1 - ((touch.pos[1] - self.pos[1]) / y_size)
@@ -111,6 +128,9 @@ class LabelWindow(Widget):
         ds = self.parent.parent.brush_size / 1000
 
         with self.canvas:
+
+            # Mark location of clicks with ellipses (circles scaled to image), gives impression of painting
+
             if 0 < xpos_norm < 1 and 0 < ypos_norm < 1:
                 if self.parent.parent.select_fg.state == 'down':
 
@@ -133,9 +153,13 @@ class LabelWindow(Widget):
         self.paint(touch)
 
     def clear(self, instance):
+
+        # Clear canvas and pixel lists
+
         self.canvas.clear()
         self.pixel_list_bg = []
         self.pixel_list_fg = []
+
 
 class SegmentationUI(Widget):
 
@@ -770,6 +794,7 @@ class SegmentationUI(Widget):
 
         self.s_layout.width = width
         self.s_layout.height = height
+
 
 class ViewSegment(Widget):
 
