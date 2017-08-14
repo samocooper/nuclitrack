@@ -1,20 +1,20 @@
-import numpy as np
 from functools import partial
-
-from .uisegmentation import SegmentationUI, ViewSegment, BatchSegment
-from .uitracking import TrackingUI, RunTracking
-from .uitraining import TrainingUI, ClassifyCells
-from .uiloading import LoadingUI
-from .uifeatures import FeatureExtract
+import numpy as np
 
 from kivy.app import App
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
-from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
-from kivy.clock import Clock
+
+from nuclitrack.nuclitrack_gui.uitracking import TrackingUI, RunTracking
+from nuclitrack.nuclitrack_gui.uifeatures import FeatureExtract
+from nuclitrack.nuclitrack_gui.uiloading import LoadingUI
+from nuclitrack.nuclitrack_gui.uisegmentation import SegmentationUI, ViewSegment, BatchSegment
+from nuclitrack.nuclitrack_gui.uitraining import TrainingUI, ClassifyCells
 
 
 class UserInterface(Widget):
@@ -43,7 +43,7 @@ class UserInterface(Widget):
 
         # Add first button for loading data
 
-        self.btn1 = ToggleButton(text='Load\nData', group='ui_choice', halign='center', valign='middle')
+        self.btn1 = ToggleButton(text='Load Data', group='ui_choice', halign='center', valign='middle')
         self.btn1.bind(on_press=self.loading_ui)
         self.btn1.bind(size=self.btn1.setter('text_size'))
         self.layout1.add_widget(self.btn1)
@@ -63,7 +63,7 @@ class UserInterface(Widget):
 
         Clock.schedule_interval(self.do_work, 0)
 
-        # Attach the first UI for loading data. Current widget is used for all of the main UIs,
+        # Attach the first UI for loading data. Current widget is used for all of the main nuclitrack_gui,
         # This allows easy clearing of the previous UI
 
         self.current_widget = LoadingUI()

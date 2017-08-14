@@ -1,18 +1,20 @@
-import h5py
 import os
 from functools import partial
+from pathlib import Path
+import h5py
 
-from kivy.uix.dropdown import DropDown
-from kivy.uix.widget import Widget
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.label import Label
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.textinput import TextInput
 from kivy.core.window import Window
+from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
 from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
-from . import loadimages
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.widget import Widget
+
+from nuclitrack.nuclitrack_tools import loadimages
 
 
 class LoadingUI(Widget):
@@ -28,12 +30,14 @@ class LoadingUI(Widget):
         self.img_layout = FloatLayout(size=(Window.width, Window.height))
         self.add_widget(self.img_layout)
         self.choose_type = 0
+
         # Assign/Load HDF5 file for storing data from the current field of view.
 
         # Record whether both files are loaded
         self.file_loaded = [False, False]
 
-        self.file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
+        home = str(Path.home())
+        self.file_choose = FileChooserListView(size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22}, path=home)
         self.ld_layout.add_widget(self.file_choose)
         self.file_choose.bind(on_entries_cleared=self.dir_change)
         self.file_choose.bind(on_submit=self.dir_click)

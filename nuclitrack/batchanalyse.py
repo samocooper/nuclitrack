@@ -1,14 +1,16 @@
+import multiprocessing
+from functools import partial
+from multiprocessing import Pool
+
 import h5py
 import numpy as np
-import multiprocessing
-from multiprocessing import Pool
-from functools import partial
 
-from . import loadimages
+from nuclitrack.nuclitrack_tools import classifycells
 from . import extractfeatures
-from . import classifycells
+from . import loadimages
 from . import trackcells
 from .segmentimages import segment_image
+
 
 def batchanalyse(text_file, param_file, output_file, ring_flag=False):
 

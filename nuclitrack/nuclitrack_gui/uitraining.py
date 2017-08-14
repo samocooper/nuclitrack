@@ -1,19 +1,19 @@
 import numpy as np
-from scipy.spatial import distance
 from PIL import Image
-
-from kivy.uix.widget import Widget
-from kivy.uix.slider import Slider
-from kivy.uix.button import Button
-from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.label import Label
-from kivy.uix.dropdown import DropDown
 from kivy.core.window import Window
+from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.slider import Slider
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.widget import Widget
+from scipy.spatial import distance
 
-from .imagewidget import IndexedDisplay, ImDisplay
-from . import classifycells
+from nuclitrack.kivy_wrappers.imagewidget import IndexedDisplay, ImDisplay
+from nuclitrack.nuclitrack_tools import classifycells
+
 
 class ClassifyCells(Widget):
     def __init__(self, features, training, **kwargs):

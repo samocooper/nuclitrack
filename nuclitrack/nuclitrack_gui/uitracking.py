@@ -1,22 +1,22 @@
-import numpy as np
-
-from kivy.graphics import Ellipse, Color
-from kivy.uix.widget import Widget
-from kivy.uix.slider import Slider
-from kivy.uix.togglebutton import ToggleButton, Button
-from kivy.uix.gridlayout import GridLayout
-from kivy.core.window import Window
-from kivy.uix.floatlayout import FloatLayout
 from functools import partial
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
-from scipy.spatial import distance
-from kivy.uix.dropdown import DropDown
 
-from .imagewidget import ImDisplay, IndexedDisplay
-from .graph import Graph, SmoothLinePlot
-from . import trackcells
+import numpy as np
 from PIL import Image
+from kivy.core.window import Window
+from kivy.graphics import Ellipse, Color
+from kivy.uix.dropdown import DropDown
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.slider import Slider
+from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton, Button
+from kivy.uix.widget import Widget
+from scipy.spatial import distance
+
+from nuclitrack.kivy_wrappers.imagewidget import ImDisplay, IndexedDisplay
+from nuclitrack.nuclitrack_gui.graph import Graph, SmoothLinePlot
+from nuclitrack.nuclitrack_tools import trackcells
 
 class RunTracking(Widget):
 

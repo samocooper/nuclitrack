@@ -1,27 +1,28 @@
-import numpy as np
 import multiprocessing
-from multiprocessing import Pool
-from PIL import Image
-
-from kivy.graphics import Ellipse, Color
-from kivy.uix.widget import Widget
-from kivy.uix.slider import Slider
-from kivy.uix.button import Button
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.floatlayout import FloatLayout
-from kivy.core.window import Window
-from kivy.uix.togglebutton import ToggleButton
-from kivy.uix.filechooser import FileChooserListView
-from kivy.uix.textinput import TextInput
-from kivy.uix.label import Label
-from kivy.uix.dropdown import DropDown
-from kivy.uix.progressbar import ProgressBar
-from functools import partial
-
-from skimage.external import tifffile
-from . import segmentimages
-from .imagewidget import ImDisplay
 import os
+from functools import partial
+from multiprocessing import Pool
+
+import numpy as np
+from PIL import Image
+from kivy.core.window import Window
+from kivy.graphics import Ellipse, Color
+from kivy.uix.button import Button
+from kivy.uix.dropdown import DropDown
+from kivy.uix.filechooser import FileChooserListView
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.progressbar import ProgressBar
+from kivy.uix.slider import Slider
+from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton
+from kivy.uix.widget import Widget
+from skimage.external import tifffile
+
+from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
+from nuclitrack.nuclitrack_tools import segmentimages
+
 
 # Batch Segmentation
 
@@ -88,7 +89,7 @@ class BatchSegment(Widget):
                                                                    self.file_list[int(frame)])
         else:
             self.labels[frame, :, :] = segmentimages.segment_image(self.params, self.min_vals, self.max_vals, [],
-                                                               self.file_list[int(frame)])
+                                                                   self.file_list[int(frame)])
 
     def segment_parallel(self):
 
@@ -755,7 +756,7 @@ class SegmentationUI(Widget):
                         self.params[6] = val
                         self.s7_label.text = '[color=000000]Separation Distance: ' + str(np.round(val, 2)) + '[/color]'
 
-                self.markers = segmentimages.fg_markers(self.cell_center, self.im_bin, self.params[6],self.params[9])
+                self.markers = segmentimages.fg_markers(self.cell_center, self.im_bin, self.params[6], self.params[9])
 
                 if state == 8:
                     self.im_disp.update_im(self.cell_center + (self.markers > 0))
