@@ -23,8 +23,6 @@ from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
 from nuclitrack.nuclitrack_tools import segmentimages
 from nuclitrack.kivy_wrappers import guitools
 
-# Batch Segmentation
-
 
 class BatchSegment(Widget):
 
@@ -93,8 +91,6 @@ class BatchSegment(Widget):
 
         self.width = width
         self.height = height
-
-# Segmentation UI
 
 
 class LabelWindow(Widget):
