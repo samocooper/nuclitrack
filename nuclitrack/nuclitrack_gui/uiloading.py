@@ -57,7 +57,7 @@ class LoadingUI(Widget):
         # HDF5 DATA FILE
         # Label
 
-        self.ld_widgets['fov_label'] = guitools.ntlabel(text='Experimental Data File',
+        self.ld_widgets['fov_label'] = guitools.ntlabel(text='Experimental Data File', style=1,
                                                         size_hint=(.245, .05), pos_hint={'x': .01, 'y': .95})
 
         # Option to select existing data file by clicking
@@ -74,16 +74,18 @@ class LoadingUI(Widget):
 
         # Display loaded file
 
-        self.ld_widgets['loaded_fov'] = guitools.ntlabel(text='', size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
+        self.ld_widgets['loaded_fov'] = guitools.ntlabel(text='', style=1,
+                                                         size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
 
         # Info on file loading
 
-        self.ld_widgets['ui_message'] = guitools.ntlabel(text='', size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
+        self.ld_widgets['ui_message'] = guitools.ntlabel(text='', style=1,
+                                                         size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
 
         # HDF5 PARAMETER FILE
         # Label
 
-        self.ld_widgets['label_param'] = guitools.ntlabel(text='Parameter Data File',
+        self.ld_widgets['label_param'] = guitools.ntlabel(text='Parameter Data File', style=1,
                                                           size_hint=(.245, .05), pos_hint={'x': .42, 'y': .95})
 
         # Option to select existing data file by clicking
@@ -100,7 +102,8 @@ class LoadingUI(Widget):
 
         # Display loaded file
 
-        self.ld_widgets['loaded_param'] = guitools.ntlabel(text='', size_hint=(.4, .05), pos_hint={'x': .42, 'y': .85})
+        self.ld_widgets['loaded_param'] = guitools.ntlabel(text='', style=1,
+                                                           size_hint=(.4, .05), pos_hint={'x': .42, 'y': .85})
 
         # Reload button
 
@@ -177,8 +180,8 @@ class LoadingUI(Widget):
         self.load_data('', '')
         self.file_loaded = [False, False]
 
-        guitools.change_ntlabel(self.ld_widgets['loaded_fov'], '')
-        guitools.change_ntlabel(self.ld_widgets['loaded_param'], '')
+        guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='', style=1)
+        guitools.ntchange(label=self.ld_widgets['loaded_param'], text='', style=1)
 
     def load_data(self, input_type, input_text):
 
@@ -195,9 +198,9 @@ class LoadingUI(Widget):
                 return
 
             if len(input_text) < 20:
-                guitools.change_ntlabel(self.ld_widgets['loaded_fov'], 'File Loaded: ' + input_text)
+                guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text, style=1)
             else:
-                guitools.change_ntlabel(self.ld_widgets['loaded_fov'], 'File Loaded: ' + input_text[-30:])
+                guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text[-30:], style=1)
 
             # Set path for saving csv files in future
 
@@ -216,9 +219,9 @@ class LoadingUI(Widget):
                 return
 
             if len(input_text) < 20:
-                guitools.change_ntlabel(self.ld_widgets['loaded_param'], 'File Loaded: ' + input_text)
+                guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text, style=1)
             else:
-                guitools.change_ntlabel(self.ld_widgets['loaded_param'], 'File Loaded: ' + input_text[-30:])
+                guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text[-30:], style=1)
 
             self.file_loaded[1] = True
 
@@ -249,8 +252,8 @@ class LoadingUI(Widget):
 
                         # Load image from file list stored in hdf5 file
 
-                        self.message = guitools.ntlabel(text='Data exists in the HDF5 file', size_hint=(.5, .05),
-                                                        pos_hint={'x': .25, 'y': .55})
+                        self.message = guitools.ntlabel(text='Data exists in the HDF5 file', style=1,
+                                                        size_hint=(.5, .05), pos_hint={'x': .25, 'y': .55})
 
                         self.ld_layout.add_widget(self.message)
                         self.ld_layout.remove_widget(self.ld_widgets['file_chooser'])
@@ -338,8 +341,10 @@ class LoadingUI(Widget):
 
             # Labels for informing users which images have been loaded
 
-            self.first_img_name = guitools.ntlabel(text='', size_hint=(.44, .05), pos_hint={'x': .05, 'y': .7})
-            self.last_img_name = guitools.ntlabel(text='', size_hint=(.44, .05), pos_hint={'x': .51, 'y': .7})
+            self.first_img_name = guitools.ntlabel(text='', style=1,
+                                                   size_hint=(.44, .05), pos_hint={'x': .05, 'y': .7})
+            self.last_img_name = guitools.ntlabel(text='', style=1,
+                                                  size_hint=(.44, .05), pos_hint={'x': .51, 'y': .7})
 
             self.img_layout.add_widget(self.first_img_name)
             self.img_layout.add_widget(self.last_img_name)
@@ -461,8 +466,8 @@ class LoadingUI(Widget):
         last_name = self.file_names[self.channel*2+1]
         last_name = (last_name[-28:] + '...') if len(last_name) > 75 else last_name
 
-        guitools.change_ntlabel(label=self.first_img_name, text=first_name)
-        guitools.change_ntlabel(label=self.last_img_name, text=last_name)
+        guitools.ntchange(label=self.first_img_name, text=first_name, style=1)
+        guitools.ntchange(label=self.last_img_name, text=last_name, style=1)
 
     def auto_load(self, instance):
 
@@ -542,7 +547,7 @@ class LoadingUI(Widget):
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
 
-        guitools.change_ntlabel(label=self.ui_message, text='Movie Loaded')
+        guitools.ntchange(label=self.ui_message, text='Movie Loaded', style=1)
 
         return True
 
@@ -577,7 +582,7 @@ class LoadingUI(Widget):
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
-            guitools.change_ntlabel(label=self.ui_message, text='Movie and Labels Loaded')
+            guitools.ntchange(label=self.ui_message, text='Movie and Labels Loaded', style=1)
 
     def update_size(self, window, width, height):
 

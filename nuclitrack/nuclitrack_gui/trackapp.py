@@ -72,7 +72,6 @@ class UserInterface(Widget):
     # UI for loading data
 
     def loading_ui(self, instance):
-
         if instance.state == 'down':
             self.change_widget(LoadingUI())
 
@@ -83,15 +82,10 @@ class UserInterface(Widget):
 
             self.params.require_dataset('seg_param', (18,), dtype='f')
 
-            if self.params['seg_param'][15] == 0 and self.params['seg_param'][16] == 0 and self.params['seg_param'][17] == 0:
+            if not any(self.params['seg_param'][15:18]):
                 self.params['seg_param'][15] = 1
 
-            if self.params['seg_param'][11] == 1:
-                self.change_widget(SegmentationUI(movie=self.movie, params=self.params['seg_param'][...],
-                                                     training=self.params['seg_training']))
-            else:
-                self.change_widget(SegmentationUI(movie=self.movie, params=self.params['seg_param'][...]))
-
+            self.change_widget(SegmentationUI(movie=self.movie, params=self.params))
             self.progression_state(3)
 
     # Widget for segmenting images, includes loading bar and schedules segmentation fucntion

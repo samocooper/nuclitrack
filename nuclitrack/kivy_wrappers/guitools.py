@@ -35,13 +35,41 @@ def error_msg(message):
                       size_hint=(0.6, 0.3))
     error_msg.open()
 
-def ntlabel(text, size_hint, pos_hint):
 
-    return Label(text='[b][color=000000]' + text + '[/b][/color]', markup=True,
-          size_hint=size_hint, pos_hint=pos_hint)
+def ntlabel(text, style, size_hint=None, pos_hint=None):
 
-def change_ntlabel(label, text):
-    label.text = '[b][color=000000]' + text + '[/b][/color]'
+    style_on = ''
+    style_off = ''
+
+    if style == 1:
+        style_on = '[b][color=000000]'
+        style_off = '[/b][/color]'
+
+    if style == 2:
+        style_on = '[color=000000]'
+        style_off = '[/color]'
+
+    if size_hint is None:
+        return Label(text=style_on + text + style_off, markup=True)
+    else:
+        return Label(text=style_on + text + style_off, markup=True,
+              size_hint=size_hint, pos_hint=pos_hint)
+
+
+def ntchange(label, style, text):
+
+    style_on = ''
+    style_off = ''
+
+    if style == 1:
+        style_on = '[b][color=000000]'
+        style_off = '[/b][/color]'
+
+    if style == 2:
+        style_on = '[color=000000]'
+        style_off = '[/color]'
+
+    label.text = style_on + text + style_off
 
 class FrameSlider(Widget):
 
@@ -51,8 +79,7 @@ class FrameSlider(Widget):
         self.frame_slider = Slider(min=0, max=frames - 1, value=1, size_hint=(.7, .6), pos_hint={'x': .15, 'y': .4})
         self.frame_slider.bind(value=partial(self.change_frame, func))
 
-        self.frame_text = Label(text='[color=000000]Frame: ' + str(0) + '[/color]',
-                                size_hint=(.6, .4), pos_hint={'x': .2, 'y': 0}, markup=True)
+        self.frame_text = ntlabel(text='Frame: ' + str(0), size_hint=(.6, .4), pos_hint={'x': .2, 'y': 0}, style=2)
 
         self.frame_minus = Button(text='<<',
                                   size_hint=(.15, .6), pos_hint={'x': .0, 'y': .4}, markup=True)
@@ -88,7 +115,7 @@ class FrameSlider(Widget):
     def change_frame(self, func, instance, val):
 
         func(int(val))
-        self.frame_text.text = '[color=000000]Frame: ' + str(int(val)) + '[/color]'
+        ntchange(label=self.frame_text, text='Frame: ' + str(int(val)), style=2)
 
     def update_size(self, *args):
 

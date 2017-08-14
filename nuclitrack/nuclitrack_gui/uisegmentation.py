@@ -28,17 +28,22 @@ from nuclitrack.kivy_wrappers import guitools
 
 class BatchSegment(Widget):
 
-    def __init__(self, movie, labels, params, parallel, seg_training=None, **kwargs):
+    def __init__(self, movie, labels, params, parallel, **kwargs):
         super().__init__(**kwargs)
 
-        self.movie = movie
-        self.labels = labels
-
-        self.params = params
-        self.layout = FloatLayout(size=(Window.width, Window.height))
+        self.params = params['seg_param'][...]
 
         if self.params[11] == 1:
-            self.clf = segmentimages.train_clf(seg_training)
+            self.clf = segmentimages.train_clf(params['seg_training'])
+
+        self.movie = movie
+
+        self.labels = labels
+        self.params = params
+
+        self.layout = FloatLayout(size=(Window.width, Window.height))
+
+
 
         if parallel:
 
@@ -188,18 +193,18 @@ def unique_pixls(X):
 
 class SegmentationUI(Widget):
 
-    def __init__(self, movie, params, training=None, **kwargs):
+    def __init__(self, movie, params, **kwargs):
         super().__init__(**kwargs)
 
+        # How far the user has progressed through segmentation
         self.current_state = 0
-        self.current_frame = 0
+
+        self.frame = 0
         self.movie = movie
-        self.params = params
-
-        self.seg_channels = self.params[15:].astype(int)
-        print(self.seg_channels)
-
         self.state = 0
+
+        self.params = params['seg_param'][...]
+        self.seg_channels = self.params[15:18].astype(int)
 
         self.s_layout = FloatLayout(size=(Window.width, Window.height))
 
@@ -278,17 +283,15 @@ class SegmentationUI(Widget):
 
         b2.bind(on_press=self.save_params)
 
-        self.s1_label = Label(text='[color=000000]Clipping Limit: ' + str(self.params[0]) + '[/color]', markup=True)
-        self.s2_label = Label(text='[color=000000]Background Blur: ' + str(self.params[1]) + '[/color]', markup=True)
-        self.s3_label = Label(text='[color=000000]Image Blur: ' + str(self.params[2]) + '[/color]', markup=True)
-        self.s4_label = Label(text='[color=000000]Threshold: ' + str(self.params[3]) + '[/color]', markup=True)
-        self.s5_label = Label(text='[color=000000]Smallest Object: ' + str(self.params[4]) + '[/color]', markup=True)
-        self.s6_label = Label(text='[color=000000]Distance to Intensity: ' + str(self.params[5]) + '[/color]',
-                              markup=True)
-        self.s7_label = Label(text='[color=000000]Separation Distance: ' + str(self.params[6]) + '[/color]',
-                              markup=True)
-        self.s8_label = Label(text='[color=000000]Edge Blur: ' + str(self.params[7]) + '[/color]', markup=True)
-        self.s9_label = Label(text='[color=000000]Watershed Ratio: ' + str(self.params[8]) + '[/color]', markup=True)
+        self.s1_label = guitools.ntlabel(text='Clipping Limit: ' + str(self.params[0]), style=2)
+        self.s2_label = guitools.ntlabel(text='Background Blur: ' + str(self.params[1]), style=2)
+        self.s3_label = guitools.ntlabel(text='Image Blur: ' + str(self.params[2]), style=2)
+        self.s4_label = guitools.ntlabel(text='Threshold: ' + str(self.params[3]), style=2)
+        self.s5_label = guitools.ntlabel(text='Smallest Object: ' + str(self.params[4]), style=2)
+        self.s6_label = guitools.ntlabel(text='Distance to Intensity: ' + str(self.params[5]), style=2)
+        self.s7_label = guitools.ntlabel(text='Separation Distance: ' + str(self.params[6]), style=2)
+        self.s8_label = guitools.ntlabel(text='Edge Blur: ' + str(self.params[7]), style=2)
+        self.s9_label = guitools.ntlabel(text='Watershed Ratio: ' + str(self.params[8]), style=2)
 
         self.spacer = Label(text='')
 
@@ -327,7 +330,7 @@ class SegmentationUI(Widget):
 
         if self.params[11] == 1:
             if self.params[11] == 1:
-                self.clf = segmentimages.train_clf(training)
+                self.clf = segmentimages.train_clf(params['seg_training'])
                 self.class_flag = True
 
         self.ml_mode = False
@@ -568,7 +571,6 @@ class SegmentationUI(Widget):
 
         self.label_window.level = level
 
-
     def segment_script(self, instance, val, **kwargs):
 
         # Dynamically update segmentation image and parameters
@@ -583,7 +585,7 @@ class SegmentationUI(Widget):
                 if state == 2:  # if state is equal to stage of segmentation modify parameter
                     if not val == -1:
                         self.params[0] = val
-                        self.s1_label.text = '[color=000000]Clipping Limit ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s1_label, text='Clipping Limit ' + str(np.round(val, 2)), style=2)
 
                 self.im1 = segmentimages.clipping(self.im, self.params[0])  # perform image analysis operation
                 self.imml = self.im1.copy()
@@ -596,7 +598,7 @@ class SegmentationUI(Widget):
                 if state == 3:
                     if not val == -1:
                         self.params[1] = val
-                        self.s2_label.text = '[color=000000]Background blur: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s2_label, text='Background blur: ' + str(np.round(val, 2)), style=2)
 
                 self.im2 = segmentimages.background(self.im1, self.params[1])
                 self.imml = self.im2.copy()
@@ -609,7 +611,7 @@ class SegmentationUI(Widget):
                 if state == 4:
                     if not val == -1:
                         self.params[2] = val
-                        self.s3_label.text = '[color=000000]Image blur: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s3_label, text='Image blur: ' + str(np.round(val, 2)), style=2)
 
                 self.im3 = segmentimages.blur(self.im2, self.params[2])
                 self.imml = self.im3.copy()
@@ -622,7 +624,7 @@ class SegmentationUI(Widget):
                 if state == 5:
                     if not val == -1:
                         self.params[3] = val
-                        self.s4_label.text = '[color=000000]Threshold: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s4_label, text='Threshold: ' + str(np.round(val, 2)), style=2)
 
                 if self.params[11] == 1:
                     if self.class_flag:
@@ -642,7 +644,7 @@ class SegmentationUI(Widget):
                 if state == 6:
                     if not val == -1:
                         self.params[4] = val
-                        self.s5_label.text = '[color=000000]Smallest Object: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s5_label, text='Smallest Object: ' + str(np.round(val, 2)), style=2)
 
                 self.im_bin = segmentimages.object_filter(self.im_bin_uf, self.params[4])
 
@@ -654,7 +656,7 @@ class SegmentationUI(Widget):
                 if state == 7:
                     if not val == -1:
                         self.params[5] = val
-                        self.s6_label.text = '[color=000000]Distance to Intensity: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s6_label, text='Distance to Intensity: ' + str(np.round(val, 2)), style=2)
 
                 if self.params[11] == 1:
                     [self.cell_center, self.d_mat] = segmentimages.cell_centers(self.im_open_close, self.im_bin, self.params[5])
@@ -670,7 +672,7 @@ class SegmentationUI(Widget):
                 if state == 8:
                     if not val == -1:
                         self.params[6] = val
-                        self.s7_label.text = '[color=000000]Separation Distance: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s7_label, text='Separation Distance: ' + str(np.round(val, 2)), style=2)
 
                 self.markers = segmentimages.fg_markers(self.cell_center, self.im_bin, self.params[6], self.params[9])
 
@@ -682,7 +684,7 @@ class SegmentationUI(Widget):
                 if state == 1:
                     if not val == -1:
                         self.params[7] = val
-                        self.s8_label.text = '[color=000000]Edge Blur: ' + str(np.round(val, 2)) + '[/color]'
+                        guitools.ntchange(label=self.s8_label, text='Edge Blur: ' + str(np.round(val, 2)), style=2)
 
                 self.im_edge = segmentimages.sobel_edges(self.im1, self.params[7])
 
@@ -692,11 +694,9 @@ class SegmentationUI(Widget):
             if state == 9:
                 if not val == -1:
                     self.params[8] = val
-                    self.s9_label.text = '[color=000000]Watershed Ratio: ' + str(np.round(val, 2)) + '[/color]'
+                    guitools.ntchange(label=self.s9_label, text='Watershed Ratio: ' + str(np.round(val, 2)), style=2)
 
                 self.labels = segmentimages.watershed(self.markers, self.im_bin, self.im_edge, self.d_mat, self.params[8], self.params[9])
-
-
                 self.im_disp.update_im(self.labels.astype(float))
 
     def save_params(self, instance):
@@ -718,7 +718,7 @@ class SegmentationUI(Widget):
 
     def change_frame(self, val):
 
-        self.current_frame = val
+        self.frame = val
         self.update_im()
 
     def change_channel(self, val, instance):
@@ -735,7 +735,7 @@ class SegmentationUI(Widget):
 
     def update_im(self):
 
-        self.im = self.movie.comb_im(self.seg_channels, self.current_frame)
+        self.im = self.movie.comb_im(self.seg_channels, self.frame)
         self.imml = self.im.copy()
 
         if self.current_state > 0:
