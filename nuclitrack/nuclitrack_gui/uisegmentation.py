@@ -805,6 +805,9 @@ class ViewSegment(Widget):
         self.labels = labels
 
         self.view = 'seg_view'
+
+        # Buttons for choosing between whether to view labelled segments or export labelled images
+
         self.layout_choice = GridLayout(cols=3, size_hint=(.45, .05), pos_hint={'x': .52, 'y': .925})
         self.view_button = ToggleButton(text='View Labels', group='view')
         self.export_button = ToggleButton(text='Export Labels', group='view')
@@ -820,7 +823,6 @@ class ViewSegment(Widget):
 
         self.label_layout = FloatLayout(size=(Window.width, Window.height))
         self.save_layout = FloatLayout(size=(Window.width, Window.height))
-
 
         im_temp = self.labels[0, :, :]
 
