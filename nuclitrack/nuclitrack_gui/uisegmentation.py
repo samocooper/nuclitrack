@@ -818,32 +818,41 @@ class ViewSegment(Widget):
         self.layout_choice.add_widget(self.export_button)
         self.layout_choice.add_widget(self.ring_button)
 
-        self.s_layout = FloatLayout(size=(Window.width, Window.height))
-        self.s_layout.add_widget(self.layout_choice)
+        self.label_layout = FloatLayout(size=(Window.width, Window.height))
+        self.save_layout = FloatLayout(size=(Window.width, Window.height))
+
 
         im_temp = self.labels[0, :, :]
 
-        #### SEG WIDGETS ####
+        # Label Viewing Widgets
 
         self.im_disp = ImDisplay(size_hint=(.8, .73), pos_hint={'x': .1, 'y': .14})
         self.im_disp.create_im(im_temp, 'Random')
 
         self.frame_slider = guitools.FrameSlider(self.movie.frames, self.change_frame,
                                                  size_hint=(.37, .06), pos_hint={'x': .13, 'y': .91})
-        self.s_layout.add_widget(self.frame_slider)
 
-        #### FILE WIDGETS ####
+        self.label_layout.add_widget(self.frame_slider)
+        self.label_layout.add_widget(self.im_disp)
+        self.label_layout.add_widget(self.layout_choice)
+
+        # File Viewing Widgets
 
         self.file_choose = FileChooserListView(size_hint=(.9, .6), pos_hint={'x': .05, 'y': .14})
+        self.save_layout.add_widget(self.file_choose)
 
-        # Crate dir
+        # Widgets for creating directory
+
         self.folder_input = TextInput(text='Directory Name',
                                       multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .85})
         self.folder_input.bind(on_text_validate=self.make_folder)
         self.folder_label = Label(text='[b][color=000000]Create directory name: [/b][/color]', markup=True,
                                   size_hint=(.25, .05), pos_hint={'x': .05, 'y': .85})
 
-        # Export labels to tif files
+        self.save_layout.add_widget(self.folder_input)
+        self.save_layout.add_widget(self.folder_label)
+
+        # Widgets for exporting labels to tif files
 
         self.text_file_input = TextInput(text='File Name',
                                          multiline=False, size_hint=(.65, .05), pos_hint={'x': .31, 'y': .79})
@@ -851,17 +860,11 @@ class ViewSegment(Widget):
         self.file_label = Label(text='[b][color=000000]Choose file name: [/b][/color]', markup=True,
                                 size_hint=(.25, .05), pos_hint={'x': .05, 'y': .79})
 
-        self.s_layout.add_widget(self.im_disp)
+        self.save_layout.add_widget(self.text_file_input)
+        self.save_layout.add_widget(self.file_label)
 
         with self.canvas:
-            self.add_widget(self.s_layout)
-
-    def ring_toggle(self, instance):
-
-        if instance.state == 'down':
-            self.parent.ring_flag = True
-        else:
-            self.parent.ring_flag = False
+            self.add_widget(self.label_layout)
 
     def make_folder(self, instance):
 
@@ -885,14 +888,11 @@ class ViewSegment(Widget):
 
         if self.view == 'seg_view':
 
-            self.s_layout.remove_widget(self.im_disp)
-            self.s_layout.remove_widget(self.frame_slider)
+            self.label_layout.remove_widget(self.layout_choice)
+            self.save_layout.add_widget(self.layout_choice)
 
-            self.s_layout.add_widget(self.file_choose)
-            self.s_layout.add_widget(self.text_file_input)
-            self.s_layout.add_widget(self.file_label)
-            self.s_layout.add_widget(self.folder_input)
-            self.s_layout.add_widget(self.folder_label)
+            self.remove_widget(self.label_layout)
+            self.add_widget(self.save_layout)
 
         self.view = 'file_view'
 
@@ -900,14 +900,11 @@ class ViewSegment(Widget):
 
         if self.view == 'file_view':
 
-            self.s_layout.remove_widget(self.file_choose)
-            self.s_layout.remove_widget(self.text_file_input)
-            self.s_layout.remove_widget(self.file_label)
-            self.s_layout.remove_widget(self.folder_input)
-            self.s_layout.remove_widget(self.folder_label)
+            self.save_layout.remove_widget(self.layout_choice)
+            self.label_layout.add_widget(self.layout_choice)
 
-            self.s_layout.add_widget(self.im_disp)
-            self.s_layout.add_widget(self.frame_slider)
+            self.remove_widget(self.save_layout)
+            self.add_widget(self.label_layout)
 
         self.view = 'seg_view'
 
@@ -918,6 +915,17 @@ class ViewSegment(Widget):
 
     def update_size(self, window, width, height):
 
-        self.s_layout.width = width
-        self.s_layout.height = height
+        self.label_layout.width = width
+        self.label_layout.height = height
+        self.save_layout.width = width
+        self.save_layout.height = height
+
+    def ring_toggle(self, instance):
+
+        # Toggle button for whether to extract intensity of ring region in feature extraction
+
+        if instance.state == 'down':
+            self.parent.ring_flag = True
+        else:
+            self.parent.ring_flag = False
 
