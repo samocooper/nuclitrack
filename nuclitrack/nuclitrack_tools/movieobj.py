@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy as np
 
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 
 
 class MovieObj(object):

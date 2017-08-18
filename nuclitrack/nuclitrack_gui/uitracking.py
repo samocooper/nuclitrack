@@ -12,10 +12,10 @@ from kivy.uix.togglebutton import ToggleButton, Button
 from kivy.uix.widget import Widget
 from scipy.spatial import distance
 
-from nuclitrack.kivy_wrappers.imagewidget import ImDisplay, IndexedDisplay
+from nuclitrack.nuclitrack_guitools.imagewidget import ImDisplay, IndexedDisplay
 from nuclitrack.nuclitrack_gui.graph import Graph, SmoothLinePlot
 from nuclitrack.nuclitrack_tools import trackcells
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 
 class RunTracking(Widget):
 

@@ -14,7 +14,7 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
 from nuclitrack.nuclitrack_tools import loadimages
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 from nuclitrack.nuclitrack_tools.movieobj import MovieObj
 
 class LoadingUI(Widget):

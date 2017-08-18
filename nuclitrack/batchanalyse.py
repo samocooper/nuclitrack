@@ -6,56 +6,68 @@ import h5py
 import numpy as np
 
 from nuclitrack.nuclitrack_tools import classifycells
-from . import extractfeatures
-from . import loadimages
-from . import trackcells
-from .segmentimages import segment_image
+from nuclitrack.nuclitrack_tools import classifypixels
+from nuclitrack.nuclitrack_tools import extractfeats
+from nuclitrack.nuclitrack_tools import loadimages
+from nuclitrack.nuclitrack_tools import movieobj
+from nuclitrack.nuclitrack_tools import trackcells
+from nuclitrack.nuclitrack_tools import segmentimages
 
 
-def batchanalyse(text_file, param_file, output_file, ring_flag=False):
+def batch_analyse(text_file, param_file, output_file, parallel_flag=False, ring_flag=False):
 
     print('Loading Images')
     fov = h5py.File(output_file + '.hdf5', "a")
     file_list, label_files = loadimages.filelistfromtext(text_file)
 
     loadimages.savefilelist(file_list, fov)
-    dims, min_vals, max_vals = loadimages.loadimages(file_list)
-    channel_num = len(file_list)
+    movie = movieobj.MovieObj(file_list)
+
     params = h5py.File(param_file, "a")
     s_params = params['seg_param'][...]
-    frames = len(file_list[0])
-    seg_ch = int(s_params[10])
+    clf = 0
+
+    if 'seg_training' in params:
+        clf = classifypixels.train_clf(params['seg_training'])
 
     if len(label_files) > 1:
         labels = loadimages.loadlabels(label_files)
 
     else:
-        print('Segmenting Cells')
-        cpu_count = multiprocessing.cpu_count()
-        pool = Pool(cpu_count)
-        labels_list = pool.map(partial(segment_image, s_params, min_vals[seg_ch],
-                                  max_vals[seg_ch]), file_list[seg_ch])
-        pool.close()
-        pool.join()
+        if parallel_flag:
 
-        labels = np.zeros((frames, labels_list[0].shape[0], labels_list[0].shape[1]))
+            print('Segmenting Cells in Parallel')
 
-        for i in range(len(labels_list)):
-            labels[i, :, :] = labels_list[i]
+            cpu_count = multiprocessing.cpu_count()
+            pool = Pool(cpu_count)
+
+            labels_list = pool.map(partial(segmentimages.segment_image, movie, s_params, clf), range(movie.frames))
+
+            pool.close()
+            pool.join()
+
+            labels = np.zeros((movie.frames, movie.dims[0], movie.dims[1]))
+
+            for i in movie.frames:
+                labels[i, :, :] = labels_list[i]
+
+        else:
+
+            labels = np.zeros((movie.frames, movie.dims[0], movie.dims[1]))
+
+            for i in range(movie.frames):
+                labels[i, :, :] = segmentimages.segment_image(movie, s_params, clf, i)
 
     print('Extracting features')
+
     features = dict()
     features['tracking'] = np.zeros((1, 13))
     features['data'] = np.zeros((1, 22))
     counter = 1
 
-    for i in range(frames):
+    for i in range(movie.frames):
 
-        files = []
-        for j in range(channel_num):
-            files.append(file_list[j][i])
-
-        temp_feat, labels[i, :, :], counter = extractfeatures.framefeatures(files, labels[i, :, :], counter, ring_flag)
+        temp_feat, labels[i, :, :], counter = extractfeats.framefeats(movie, i, labels[i, :, :], counter, ring_flag)
         temp_feat['tracking'][:, 1] = i
         features['tracking'] = np.vstack((features['tracking'], temp_feat['tracking']))
         features['data'] = np.vstack((features['data'], temp_feat['data']))
@@ -67,7 +79,7 @@ def batchanalyse(text_file, param_file, output_file, ring_flag=False):
 
     features = classifycells.classifycells(features, params['training'])
     tracking_object = trackcells.TrackCells(features=features['tracking'][...],
-                                            track_param=params['track_param'][...], frames=frames)
+                                            track_param=params['track_param'][...], frames=movie.frames)
 
     print('Tracking cells')
     counter = 0
@@ -77,13 +89,14 @@ def batchanalyse(text_file, param_file, output_file, ring_flag=False):
         print(counter)
 
     print('Optimising tracks')
+
     for i in range(2):
         counter = 0
         while tracking_object.optimisetrack():
             counter += 1
             print(counter)
 
-    print('saving data')
+    print('Saving data')
 
     tracks, features['tracking'][...], count, double = tracking_object.get()
     tracks_stored = np.zeros(int(max(tracks[:, 4])))
@@ -97,5 +110,5 @@ def batchanalyse(text_file, param_file, output_file, ring_flag=False):
 
     trackcells.save_csv(features, tracks, output_file + '.csv')
 
-    print('done')
+    print('Finished')
 

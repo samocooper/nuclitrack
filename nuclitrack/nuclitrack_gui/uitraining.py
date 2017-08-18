@@ -13,9 +13,9 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from scipy.spatial import distance
 
-from nuclitrack.kivy_wrappers.imagewidget import IndexedDisplay, ImDisplay
+from nuclitrack.nuclitrack_guitools.imagewidget import IndexedDisplay, ImDisplay
 from nuclitrack.nuclitrack_tools import classifycells
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 
 class ClassifyCells(Widget):
     def __init__(self, features, training, **kwargs):

@@ -12,7 +12,7 @@ from nuclitrack.nuclitrack_gui.uifeatures import FeatureExtract
 from nuclitrack.nuclitrack_gui.uiloading import LoadingUI
 from nuclitrack.nuclitrack_gui.uisegmentation import SegmentationUI, ViewSegment, BatchSegment
 from nuclitrack.nuclitrack_gui.uitraining import TrainingUI, ClassifyCells
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 
 class UserInterface(Widget):
 

@@ -19,9 +19,9 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from skimage.external import tifffile
 
-from nuclitrack.kivy_wrappers.imagewidget import ImDisplay
+from nuclitrack.nuclitrack_guitools.imagewidget import ImDisplay
 from nuclitrack.nuclitrack_tools import segmentimages
-from nuclitrack.kivy_wrappers import guitools
+from nuclitrack.nuclitrack_guitools import guitools
 from nuclitrack.nuclitrack_tools import classifypixels
 
 

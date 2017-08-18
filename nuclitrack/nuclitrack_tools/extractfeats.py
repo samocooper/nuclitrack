@@ -3,7 +3,7 @@ from skimage.measure import regionprops
 from skimage.morphology import dilation
 from skimage.morphology import square
 
-def framefeatures(movie, frame, labels, counter, ring_flag):
+def framefeats(movie, frame, labels, counter, ring_flag):
 
     labels = labels.astype(int)
     labels_bin = labels == 0
