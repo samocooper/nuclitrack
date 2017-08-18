@@ -1,5 +1,7 @@
 import numpy as np
 from PIL import Image
+from functools import partial
+
 from kivy.core.window import Window
 from kivy.uix.button import Button
 from kivy.uix.dropdown import DropDown
@@ -38,45 +40,14 @@ class ClassifyCells(Widget):
         self.height = height
 
 class TrainingData(Widget):
+
     cell_type = 0
 
-    def assign_no_cell(self, instance):
+    def cell_type(self, val, instance):
 
         if instance.state == 'down':
 
-            self.cell_type = 1
-        else:
-            self.cell_type = 0
-
-    def assign_1_cell(self, instance):
-
-        if instance.state == 'down':
-
-            self.cell_type = 2
-        else:
-            self.cell_type = 0
-
-    def assign_2_cell(self, instance):
-
-        if instance.state == 'down':
-
-            self.cell_type = 3
-        else:
-            self.cell_type = 0
-
-    def assign_mit_cell(self, instance):
-
-        if instance.state == 'down':
-
-            self.cell_type = 4
-        else:
-            self.cell_type = 0
-
-    def assign_mitex_cell(self, instance):
-
-        if instance.state == 'down':
-
-            self.cell_type = 5
+            self.cell_type = val + 1
         else:
             self.cell_type = 0
 
@@ -160,31 +131,20 @@ class TrainingUI(Widget):
 
         self.channel_choice = DropDown()
 
-        btn1 = ToggleButton(text='0 Cell', group='type', size_hint_y=None)
-        btn2 = ToggleButton(text='1 Cell', group='type', size_hint_y=None)
-        btn3 = ToggleButton(text='2 Cell', group='type', size_hint_y=None)
-        btn4 = ToggleButton(text='Mit Cell', group='type', size_hint_y=None)
-        btn5 = ToggleButton(text='Mitex Cell', group='type', size_hint_y=None)
+        labels = ['No Cell', '1 Cell', '2 Cells', 'Mitotic', 'Daughter']
 
-        btn6 = Button(text='Save Training')
-        self.data_message = Label(text='[color=000000][/color]', markup=True)
-
-        btn1.bind(on_press=self.training_window.assign_no_cell)
-        btn2.bind(on_press=self.training_window.assign_1_cell)
-        btn3.bind(on_press=self.training_window.assign_2_cell)
-        btn4.bind(on_press=self.training_window.assign_mit_cell)
-        btn5.bind(on_press=self.training_window.assign_mitex_cell)
-        btn6.bind(on_press=self.save_training)
-
-        self.channel_choice.add_widget(btn1)
-        self.channel_choice.add_widget(btn2)
-        self.channel_choice.add_widget(btn3)
-        self.channel_choice.add_widget(btn4)
-        self.channel_choice.add_widget(btn5)
+        for i in range(5):
+            btn = ToggleButton(text=labels[i], group='type', size_hint_y=None)
+            btn.bind(on_press=partial(self.training_window.cell_type, i))
+            self.channel_choice.add_widget(btn)
 
         self.main_button = Button(text='Training Class', size_hint=(.27, .04), pos_hint={'x': .01, 'y': .82})
         self.main_button.bind(on_release=self.channel_choice.open)
         self.channel_choice.bind(on_select=lambda instance, x: setattr(self.main_button, 'text', x))
+
+        btn6 = Button(text='Save Training')
+        self.data_message = Label(text='[color=000000][/color]', markup=True)
+        btn6.bind(on_press=self.save_training)
 
         self.layout3.add_widget(self.track_dist)
         self.layout3.add_widget(self.max_gap)
@@ -197,7 +157,6 @@ class TrainingUI(Widget):
 
         if stored:
             self.data_message.text = '[color=000000]Data Stored[/color]'
-
 
         with self.canvas:
 
@@ -224,7 +183,6 @@ class TrainingUI(Widget):
         mask = inds == self.current_frame
         if np.count_nonzero(mask):
             self.frame_inds = np.where(mask)[0]
-
 
     def update_training(self, pos, val):
 
@@ -266,9 +224,8 @@ class TrainingUI(Widget):
 
             # Delete if features already exists otherwise store extracted features
 
-            for g in self.parent.params:
-                if g == 'training':
-                    del self.parent.params['training']
+            if 'training' in self.parent.params:
+                del self.parent.params['training']
 
             self.training_hdf5 = self.parent.params.create_group('training')
             self.training_hdf5.create_dataset("data", data=self.training['data'])
