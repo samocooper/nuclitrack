@@ -16,6 +16,7 @@ from nuclitrack.nuclitrack_guitools.imagewidget import ImDisplay, IndexedDisplay
 from nuclitrack.nuclitrack_gui.graph import Graph, SmoothLinePlot
 from nuclitrack.nuclitrack_tools import trackcells
 from nuclitrack.nuclitrack_guitools import guitools
+from nuclitrack.nuclitrack_tools import extractfeats
 
 class RunTracking(Widget):
 
@@ -218,7 +219,7 @@ class GraphTrack(Widget):
 
         self.graph = Graph(background_color=[1., 1., 1., 1.], draw_border=False,
                            xmax=frames, ymin=0,
-                           ymax=1, size_hint=self.size, pos_hint=self.pos)
+                           ymax=1)
 
         colors = [[1, 0, 0, 1], [1, 1, 0, 1], [0, 1, 0, 1], [0, 1, 1, 1], [0, 0, 1, 1], [1, 0, 1, 1]]
 
@@ -232,8 +233,16 @@ class GraphTrack(Widget):
         self.plotT.points = [(0, -1), (0, 1), (0, -1)]
         self.graph.add_plot(self.plotT)
 
+        self.feat_names = extractfeats.features_labels()
+        self.colours = ['Red: ', 'Green: ', 'Blue: ']
+
+        self.key_layout = GridLayout(cols=3, spacing=[2, 2])
+        self.feat_labels = [guitools.ntlabel(text='', style=1) for _ in range(3)]
+        [self.key_layout.add_widget(label) for label in self.feat_labels]
+
         with self.canvas:
             self.add_widget(self.graph)
+            self.add_widget(self.key_layout)
 
         self.bind(pos=self.update_size, size=self.update_size)
 
@@ -250,8 +259,10 @@ class GraphTrack(Widget):
         events_feat = features['tracking'][track_ids, 12]
 
         points = []
+
         for i in range(3):
 
+            guitools.ntchange(label=self.feat_labels[i], text=self.colours[i] + self.feat_names[feat_inds[i]], style=1)
             points.append(zip(t_temp, feats[i]))
             points.append([[t, -1] + [t, -1] + [t, -1] for t, event, in zip(t_temp, events_feat) if event == i+1])
 
@@ -266,6 +277,12 @@ class GraphTrack(Widget):
 
         self.graph.pos = self.pos
         self.graph.size = self.size
+
+        self.key_layout.pos[0] = self.pos[0] + 2
+        self.key_layout.pos[1] = self.pos[1] + 2
+
+        self.key_layout.width = self.width
+        self.key_layout.height = self.height/10
 
 
 class TrackingUI(Widget):

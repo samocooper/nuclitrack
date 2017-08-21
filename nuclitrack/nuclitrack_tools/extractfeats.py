@@ -87,3 +87,21 @@ def framefeats(movie, frame, labels, counter, ring_flag):
         counter += 1
 
     return features, new_label, counter
+
+
+def features_labels():
+
+    return ['Area', 'Eccentricity', 'Major Axis Length', 'Perimeter', 'CH1 Mean Intensity', 'CH1 Median Intensity',
+            'CH1 StdDev Intensity', 'CH1 Floored Mean', 'CH1 Ring Region Mean', 'CH1 Ring Region Median',
+            'CH2 Mean Intensity', 'CH2 Median Intensity', 'CH2 StdDev Intensity',  'CH2 Floored Mean',
+            'CH2 Ring Region Mean', 'CH2 Ring Region Median', 'CH3 Mean Intensity', 'CH3 Median Intensity',
+            'CH3 StdDev Intensity', 'CH3 Floored Mean', 'CH3 Ring Region Mean', 'CH3 Ring Region Median']
+
+
+def bfeatures_labels():
+
+    return [b'Area, Eccentricity, Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, '
+            b'CH1 StdDev Intensity, CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, '
+            b'CH2 Mean Intensity, CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, '
+            b'CH2 Ring Region Mean, CH2 Ring Region Median, CH3 Mean Intensity, CH3 Median Intensity, '
+            b'CH3 StdDev Intensity, CH3 Floored Mean, CH3 Ring Region Mean, CH3 Ring Region Median ']

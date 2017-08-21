@@ -204,6 +204,7 @@ def segment_image(movie, params, clf, frame):
     image3 = blur(image2, params[2])
 
     if clf is not 0:
+
         image3 = im_probs(image3, clf, int(params[13]), int(params[14]))
 
         if params[12] > 0:
