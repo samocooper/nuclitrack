@@ -1,3 +1,3 @@
-from nuclitrack.nuclitrack_gui import trackapp
+from nuclitrack.nuclitrack_gui.trackapp import CellTrackApp
 
-trackapp.CellTrackApp().run()
+CellTrackApp().run()
