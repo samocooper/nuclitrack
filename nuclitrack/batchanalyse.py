@@ -5,14 +5,13 @@ from multiprocessing import Pool
 import h5py
 import numpy as np
 
-from nuclitrack.nuclitrack_tools import classifycells
-from nuclitrack.nuclitrack_tools import classifypixels
-from nuclitrack.nuclitrack_tools import extractfeats
-from nuclitrack.nuclitrack_tools import loadimages
-from nuclitrack.nuclitrack_tools import movieobj
-from nuclitrack.nuclitrack_tools import trackcells
-from nuclitrack.nuclitrack_tools import segmentimages
-
+from .nuclitrack_tools import classifycells
+from .nuclitrack_tools import classifypixels
+from .nuclitrack_tools import extractfeats
+from .nuclitrack_tools import loadimages
+from .nuclitrack_tools import movieobj
+from .nuclitrack_tools import trackcells
+from .nuclitrack_tools import segmentimages
 
 def batch_analyse(text_file, param_file, output_file, parallel_flag=False, ring_flag=False):
 

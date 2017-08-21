@@ -1,8 +1,6 @@
 from PIL import Image
 import numpy as np
 
-from ..nuclitrack_guitools import guitools
-
 
 class MovieObj(object):
 
@@ -56,7 +54,7 @@ class MovieObj(object):
 
         except FileNotFoundError:
 
-            guitools.error_msg('File not found: ' + file_list[0][0] + '\nDirectory may have changed')
+            print('File not found: ' + file_list[0][0] + '\nDirectory may have changed')
 
     def read_im(self, channel, frame):
 
