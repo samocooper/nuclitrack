@@ -4,7 +4,7 @@ from kivy.graphics import Rectangle
 from kivy.graphics.texture import Texture
 from kivy.uix.widget import Widget
 
-from nuclitrack.nuclitrack_guitools.cmaps import color_map
+from ..nuclitrack_guitools.cmaps import color_map
 
 
 class ImDisplay(Widget):
