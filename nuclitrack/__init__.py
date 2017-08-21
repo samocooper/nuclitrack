@@ -1,2 +1,2 @@
-from nuclitrack.nuclitrack_gui.trackapp import CellTrackApp
-from nuclitrack.nuclitrack_gui.trackapp import CellTrackApp as App
+from .nuclitrack_gui.trackapp import CellTrackApp
+from .nuclitrack_gui.trackapp import CellTrackApp as App
