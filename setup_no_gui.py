@@ -8,8 +8,7 @@ setup(
     author='Sam Cooper',
     author_email='sam@socooper.com',
     license='MIT',
-    packages=['nuclitrack', 'nuclitrack.nuclitrack_gui', 'nuclitrack.nuclitrack_guitools',
-              'nuclitrack.nuclitrack_tools', 'nuclitrack.nuclitrack_ctools'],
+    packages=['nuclitrack', 'nuclitrack.nuclitrack_tools', 'nuclitrack.nuclitrack_ctools'],
     ext_modules=[
         Extension("ctooltracking", ["nuclitrack/nuclitrack_ctools/ctooltracking.c"], include_dirs=[numpy.get_include()]),
         Extension("classifyim", ["nuclitrack/nuclitrack_ctools/classifyim.c"], include_dirs=[numpy.get_include()]),
