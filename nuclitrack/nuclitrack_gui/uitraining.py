@@ -1,5 +1,4 @@
 import numpy as np
-from PIL import Image
 from functools import partial
 
 from kivy.core.window import Window
@@ -13,9 +12,9 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from scipy.spatial import distance
 
-from nuclitrack.nuclitrack_guitools.imagewidget import IndexedDisplay, ImDisplay
-from nuclitrack.nuclitrack_tools import classifycells
-from nuclitrack.nuclitrack_guitools import guitools
+from ..nuclitrack_guitools.imagewidget import IndexedDisplay, ImDisplay
+from ..nuclitrack_tools import classifycells
+from ..nuclitrack_guitools import guitools
 
 class ClassifyCells(Widget):
     def __init__(self, features, training, **kwargs):

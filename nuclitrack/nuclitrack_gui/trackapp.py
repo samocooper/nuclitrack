@@ -7,12 +7,12 @@ from kivy.core.window import Window
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.widget import Widget
 
-from nuclitrack.nuclitrack_gui.uitracking import TrackingUI, RunTracking
-from nuclitrack.nuclitrack_gui.uifeatures import FeatureExtract
-from nuclitrack.nuclitrack_gui.uiloading import LoadingUI
-from nuclitrack.nuclitrack_gui.uisegmentation import SegmentationUI, ViewSegment, BatchSegment
-from nuclitrack.nuclitrack_gui.uitraining import TrainingUI, ClassifyCells
-from nuclitrack.nuclitrack_guitools import guitools
+from .uitracking import TrackingUI, RunTracking
+from .uifeatures import FeatureExtract
+from .uiloading import LoadingUI
+from .uisegmentation import SegmentationUI, ViewSegment, BatchSegment
+from .uitraining import TrainingUI, ClassifyCells
+from ..nuclitrack_guitools import guitools
 
 class UserInterface(Widget):
 

@@ -6,7 +6,7 @@ from kivy.uix.label import Label
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 
-from nuclitrack.nuclitrack_tools import extractfeats
+from ..nuclitrack_tools import extractfeats
 
 
 class FeatureExtract(Widget):

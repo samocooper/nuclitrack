@@ -19,10 +19,10 @@ from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 from skimage.external import tifffile
 
-from nuclitrack.nuclitrack_guitools.imagewidget import ImDisplay
-from nuclitrack.nuclitrack_tools import segmentimages
-from nuclitrack.nuclitrack_guitools import guitools
-from nuclitrack.nuclitrack_tools import classifypixels
+from ..nuclitrack_guitools.imagewidget import ImDisplay
+from ..nuclitrack_tools import segmentimages
+from ..nuclitrack_guitools import guitools
+from ..nuclitrack_tools import classifypixels
 
 
 class BatchSegment(Widget):
