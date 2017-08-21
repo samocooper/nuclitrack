@@ -35,7 +35,7 @@ class BatchSegment(Widget):
         # Classifier is used if training data is present
         self.clf = 0
         if 'seg_training' in params:
-            self.clf = segmentimages.train_clf(params['seg_training'])
+            self.clf = classifypixels.train_clf(params['seg_training'])
 
         self.movie = movie
         self.labels = labels
@@ -233,6 +233,10 @@ class SegmentationUI(Widget):
 
         for i in range(self.movie.channels):
             channel_btn = ToggleButton(text='Channel ' + str(i + 1), size_hint_y=None)
+
+            if self.params[15+i] == 1:
+                channel_btn.state = 'down'
+
             channel_btn.bind(on_press=partial(self.change_channel, i))
             self.channel_choice.add_widget(channel_btn)
 

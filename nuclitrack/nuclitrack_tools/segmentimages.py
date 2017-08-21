@@ -215,4 +215,16 @@ def segment_image(movie, params, clf, frame):
     markers = fg_markers(cell_center, im_bin, params[6], params[9])
     im_edge = sobel_edges(image, params[7])
 
-    return watershed(markers, im_bin, im_edge, d_mat, params[8], params[9])
+    im = watershed(markers, im_bin, im_edge, d_mat, params[8], params[9])
+
+    if params[9] == 1:
+
+        vals = np.unique(np.concatenate((im[0, :].flatten(),
+                                        im[:, 0].flatten(),
+                                        im[-1, :].flatten(),
+                                        im[:, -1].flatten())))
+        for val in vals:
+            if val > 0:
+                im[im == val] = 0
+
+    return im

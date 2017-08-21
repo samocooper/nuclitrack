@@ -53,9 +53,13 @@ def batch_analyse(text_file, param_file, output_file, parallel_flag=False, ring_
 
         else:
 
+            print('Segmenting Cells...')
+
             labels = np.zeros((movie.frames, movie.dims[0], movie.dims[1]))
 
             for i in range(movie.frames):
+
+                print('Images segmented: ', i, end='\r')
                 labels[i, :, :] = segmentimages.segment_image(movie, s_params, clf, i)
 
     print('Extracting features')
