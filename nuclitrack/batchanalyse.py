@@ -82,6 +82,7 @@ def batch_analyse(text_file, param_file, output_file, parallel_flag=False, ring_
     features['tracking'][1:, 5] = 1.
 
     features = classifycells.classifycells(features, params['training'])
+
     tracking_object = trackcells.TrackCells(features=features['tracking'][...],
                                             track_param=params['track_param'][...], frames=movie.frames)
 
