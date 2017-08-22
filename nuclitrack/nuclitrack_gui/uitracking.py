@@ -264,11 +264,22 @@ class GraphTrack(Widget):
 
             guitools.ntchange(label=self.feat_labels[i], text=self.colours[i] + self.feat_names[feat_inds[i]], style=1)
             points.append(zip(t_temp, feats[i]))
-            points.append([[t, -1] + [t, -1] + [t, -1] for t, event, in zip(t_temp, events_feat) if event == i+1])
+
+            event_points = []
+
+            for j in range(len(events_feat)):
+                if events_feat[j] == i+1:
+                    event_points.append([t_temp[j], -1])
+                    event_points.append([t_temp[j], 1])
+                    event_points.append([t_temp[j], -1])
+
+            points.append(event_points)
 
         if any(track_ids):
             for i in range(6):
-                self.plots[i].points = points[i]
+                print(points[i])
+                if points[i]:
+                    self.plots[i].points = points[i]
         else:
             for i in range(6):
                 self.plots[i].points = []

@@ -197,10 +197,8 @@ class LoadingUI(Widget):
                                           'Invalid data format or permission may be denied')
                 return
 
-            if len(input_text) < 20:
-                guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text, style=1)
-            else:
-                guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text[-30:], style=1)
+            input_text = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
+            guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text, style=1)
 
             # Set path for saving csv files in future
 
@@ -218,10 +216,8 @@ class LoadingUI(Widget):
                 guitools.error_msg('File could not be created, permission may be denied')
                 return
 
-            if len(input_text) < 20:
-                guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text, style=1)
-            else:
-                guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text[-30:], style=1)
+            input_text = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
+            guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text, style=1)
 
             self.file_loaded[1] = True
 
@@ -461,10 +457,10 @@ class LoadingUI(Widget):
         self.text_input.text = most_recent_text
 
         first_name = self.file_names[self.channel*2]
-        first_name = (first_name[-28:] + '...') if len(first_name) > 75 else first_name
+        first_name = ('...' + first_name[-24:]) if len(first_name) > 25 else first_name
 
         last_name = self.file_names[self.channel*2+1]
-        last_name = (last_name[-28:] + '...') if len(last_name) > 75 else last_name
+        last_name = ('...' + last_name[-24:]) if len(last_name) > 25 else last_name
 
         guitools.ntchange(label=self.first_img_name, text=first_name, style=1)
         guitools.ntchange(label=self.last_img_name, text=last_name, style=1)
