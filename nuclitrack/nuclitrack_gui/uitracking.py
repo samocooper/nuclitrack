@@ -134,7 +134,7 @@ class CellMark(Widget):
 
         self.cell_center = cell_center
 
-        ds = (self.d / self.height)*100
+        ds = (self.height/self.d)
         xpos = (cell_center[0] * self.width) + self.pos[0] - ds / 2
         ypos = (cell_center[1] * self.height) + self.pos[1] - ds / 2
 
@@ -146,7 +146,7 @@ class CellMark(Widget):
 
     def update_im(self, *args):
 
-        ds = (self.d / self.height)*100
+        ds = (self.height/self.d)
         xpos = (self.cell_center[0] * self.width) + self.pos[0] - ds / 2
         ypos = (self.cell_center[1] * self.height) + self.pos[1] - ds / 2
 
@@ -470,8 +470,8 @@ class TrackingUI(Widget):
 
                 cell_center = self.frame_feats[self.frame_feats[:, 0] == mask[0], [2, 3]]
 
-                self.cell_mark.draw_dot(cell_center.copy(), self.movie.dims, 1., 1., 1., 15)
-                self.cell_mark_2.draw_dot(cell_center.copy(), self.movie.dims, 1., 0., 0., 12)
+                self.cell_mark.draw_dot(cell_center.copy(), self.movie.dims, 1., 1., 1., 50)
+                self.cell_mark_2.draw_dot(cell_center.copy(), self.movie.dims, 1., 0., 0., 70)
 
         for i in range(len(self.parent.fov['tracks_stored'])):
             self.store_layout.children[i].remove_dot()
@@ -484,7 +484,7 @@ class TrackingUI(Widget):
             if len(mask2) > 0:
                 for i in mask2:
                     cell_center = self.frame_feats[self.frame_feats[:, 0] == i, [2, 3]]
-                    self.store_layout.children[count].draw_dot(cell_center, self.movie.dims, 0., 0., 0., 12)
+                    self.store_layout.children[count].draw_dot(cell_center, self.movie.dims, 0., 0., 0., 70)
                     count += 1
 
     def change_frame(self, val):

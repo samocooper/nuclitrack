@@ -197,8 +197,8 @@ class LoadingUI(Widget):
                                           'Invalid data format or permission may be denied')
                 return
 
-            input_text = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
-            guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text, style=1)
+            input_text_short = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
+            guitools.ntchange(label=self.ld_widgets['loaded_fov'], text='File Loaded: ' + input_text_short, style=1)
 
             # Set path for saving csv files in future
 
@@ -216,8 +216,8 @@ class LoadingUI(Widget):
                 guitools.error_msg('File could not be created, permission may be denied')
                 return
 
-            input_text = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
-            guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text, style=1)
+            input_text_short = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
+            guitools.ntchange(label=self.ld_widgets['loaded_param'], text='File Loaded: ' + input_text_short, style=1)
 
             self.file_loaded[1] = True
 

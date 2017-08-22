@@ -3,7 +3,7 @@ import numpy
 
 setup(
     name='nuclitrack',
-    version='2.0.2',
+    version='2.03',
     description='Nuclei tracking program',
     author='Sam Cooper',
     author_email='sam@socooper.com',
