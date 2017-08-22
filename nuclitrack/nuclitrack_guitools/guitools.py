@@ -55,7 +55,6 @@ def ntlabel(text, style, size_hint=None, pos_hint=None):
         return Label(text=style_on + text + style_off, markup=True,
               size_hint=size_hint, pos_hint=pos_hint)
 
-
 def ntchange(label, style, text):
 
     style_on = ''

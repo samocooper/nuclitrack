@@ -13,9 +13,9 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.widget import Widget
 
-from nuclitrack.nuclitrack_tools import loadimages
-from nuclitrack.kivy_wrappers import guitools
-from nuclitrack.nuclitrack_tools.movieobj import MovieObj
+from ..nuclitrack_tools import loadimages
+from ..nuclitrack_guitools import guitools
+from ..nuclitrack_tools.movieobj import MovieObj
 
 class LoadingUI(Widget):
 
@@ -547,7 +547,7 @@ class LoadingUI(Widget):
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
 
-        guitools.ntchange(label=self.ui_message, text='Movie Loaded', style=1)
+        guitools.ntchange(label=self.ld_widgets['ui_message'], text='Movie Loaded', style=1)
 
         return True
 
@@ -582,7 +582,7 @@ class LoadingUI(Widget):
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
-            guitools.ntchange(label=self.ui_message, text='Movie and Labels Loaded', style=1)
+            guitools.ntchange(label=self.ld_widgets['ui_message'], text='Movie and Labels Loaded', style=1)
 
     def update_size(self, window, width, height):
 

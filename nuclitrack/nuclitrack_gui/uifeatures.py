@@ -6,7 +6,7 @@ from kivy.uix.label import Label
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.widget import Widget
 
-from nuclitrack.nuclitrack_tools import extractfeatures
+from ..nuclitrack_tools import extractfeats
 
 
 class FeatureExtract(Widget):
@@ -42,8 +42,8 @@ class FeatureExtract(Widget):
 
     def frame_features(self, frame, dt):
 
-        features_temp, new_labels, self.counter = extractfeatures.framefeatures(self.movie, frame, self.labels[frame, :, :],
-                                                                                self.counter, ring_flag=self.ring_flag)
+        features_temp, new_labels, self.counter = extractfeats.framefeats(self.movie, frame, self.labels[frame, :, :],
+                                                                          self.counter, ring_flag=self.ring_flag)
         features_temp['tracking'][:, 1] = frame
 
         self.features['tracking'] = np.vstack((self.features['tracking'], features_temp['tracking']))

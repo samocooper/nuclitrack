@@ -1,6 +1,8 @@
 import ctooltracking
 import numpy as np
 
+from . import extractfeats
+
 ''' Create matrix tracks, Col0 = ID from feature matrix; Col1 = Score difference; Col2 = total Score;
     Col3 = mitosis; Col4 = Track_id; Col5 = frame.
 
@@ -255,16 +257,10 @@ def save_csv(features, tracks, file_name):
                         except ValueError:
                             pass
 
-    print(feat_mat.shape)
-
     with open(file_name, 'wb') as f:
 
-        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, Area, Eccentricity, '
-                b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, CH1 StdDev Intensity, '
-                b'CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, CH2 Mean Intensity, '
-                b'CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, CH2 Ring Region Mean, '
-                b'CH2 Ring Region Median, CH3 Mean Intensity, CH3 Median Intensity, CH3 StdDev Intensity, '
-                b'CH3 Floored Mean, CH3 Ring Region Mean, CH3 Ring Region Median \n')
+        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, '
+                + extractfeats.bfeatures_labels()[0] + b'\n')
 
         feat_mat2 = np.delete(feat_mat, [4, 5], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
@@ -293,9 +289,6 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
                     v = np.hstack(([i, track_temp[j, 5], t_v[0, 2], t_v[0, 3], track_temp[j, 3],
                                     track_temp[j, 0], 0, t_v[0, 12], i, i], f_v[0, :]))
                     feat_mat = np.vstack((feat_mat, v))
-
-    feat_mat = np.delete(feat_mat, 0, 0)
-
 
     feat_mat = np.delete(feat_mat, 0, 0)
 
@@ -335,12 +328,8 @@ def save_sel_csv(features, tracks, tracks_stored, file_name):
 
     with open(file_name, 'wb') as f:
 
-        f.write( b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, Area, Eccentricity, '
-            b'Major Axis Length, Perimeter, CH1 Mean Intensity, CH1 Median Intensity, CH1 StdDev Intensity, '
-            b'CH1 Floored Mean, CH1 Ring Region Mean, CH1 Ring Region Median, CH2 Mean Intensity, '
-            b'CH2 Median Intensity, CH2 StdDev Intensity,  CH2 Floored Mean, CH2 Ring Region Mean, '
-            b'CH2 Ring Region Median, CH3 Mean Intensity, CH3 Median Intensity, CH3 StdDev Intensity, '
-            b'CH3 Floored Mean, CH3 Ring Region Mean, CH3 Ring Region Median \n')
+        f.write(b'Track ID, Frame, X center, Y center, Parent Track ID, Event Flag, Tree Label, Unique Track ID, '
+                + extractfeats.bfeatures_labels()[0] + b'\n')
 
         feat_mat2 = np.delete(feat_mat, [4, 5], 1)
         np.savetxt(f, feat_mat2, delimiter=",", fmt='%10.4f')
@@ -374,8 +363,6 @@ def save_iscb(features, tracks, file_name, labels, frames):
 
     track_num = int(np.max(tracks[:, 4])) + 1
 
-    print(tracks.shape[0])
-
     for i in range(1, track_num):
 
         mask = tracks[:, 4] == i
@@ -387,8 +374,6 @@ def save_iscb(features, tracks, file_name, labels, frames):
             tracks[tracks[:, 3] == ind, 3] = 0
             tracks = tracks[np.logical_not(mask), :]
             tracks[tracks[:, 4] > val, 4] -= 1
-
-    print(tracks.shape[0])
 
     if features.shape[1] == 21:
         features = np.insert(features, [-1], np.zeros((features.shape[0], 6)), 1)
