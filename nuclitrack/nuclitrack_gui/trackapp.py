@@ -209,6 +209,8 @@ class UserInterface(Widget):
                 self.flags['track'] = False
                 cancel = self.current_widget.test_cancel()
 
+                # Collect results and save to DHF5 file if tracking has not been cancelled
+
                 if not cancel:
                     self.tracks, self.fov['features']['tracking'][...] = self.current_widget.get()
 
