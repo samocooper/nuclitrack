@@ -414,6 +414,7 @@ class SegmentationUI(Widget):
             del self.parent.params['seg_training']
 
         self.train_count.text = '[color=000000]Train pxls ' + str(0) + '[/color]'
+        self.clf = None
         self.im_disp.update_im(self.im)
 
     def continue_seg(self, instance):
