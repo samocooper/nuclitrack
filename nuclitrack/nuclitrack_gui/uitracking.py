@@ -277,7 +277,6 @@ class GraphTrack(Widget):
 
         if any(track_ids):
             for i in range(6):
-                print(points[i])
                 if points[i]:
                     self.plots[i].points = points[i]
         else:

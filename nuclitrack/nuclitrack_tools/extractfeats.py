@@ -86,6 +86,10 @@ def framefeats(movie, frame, labels, counter, ring_flag):
         new_label[labels == cell_temp.label] = counter
         counter += 1
 
+    features['data'][np.isinf(features['data'])] = 0
+    features['data'][np.isnan(features['data'])] = 0
+
+
     return features, new_label, counter
 
 
