@@ -2,6 +2,7 @@ from PIL import Image
 import numpy as np
 import os
 
+
 def loadlabels(file_list):
 
     im_temp = Image.open(file_list[0])
@@ -15,6 +16,7 @@ def loadlabels(file_list):
         labels[i, :, :] = np.asarray(im_temp, dtype='float')
 
     return labels
+
 
 def savefilelist(file_list, fov):
 

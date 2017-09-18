@@ -185,38 +185,42 @@ class TrainingUI(Widget):
 
     def update_training(self, pos, val):
 
-        pos = np.asarray([pos[0] * self.dims[1], pos[1] * self.dims[0]])
-        d = distance.cdist(self.features['tracking'][self.frame_inds, 2:4], [pos])
+        try:
+            pos = np.asarray([pos[0] * self.dims[1], pos[1] * self.dims[0]])
+            d = distance.cdist(self.features['tracking'][self.frame_inds, 2:4], [pos])
 
-        selected_loc = self.frame_inds[np.argmin(d)]
-        selected_ind = self.features['tracking'][selected_loc, 0]
+            selected_loc = self.frame_inds[np.argmin(d)]
+            selected_ind = self.features['tracking'][selected_loc, 0]
 
-        if min(d) < 50:
+            if min(d) < 50:
 
-            mask = self.training['tracking'][:, 0] == selected_ind
+                mask = self.training['tracking'][:, 0] == selected_ind
 
-            if np.any(mask):
+                if np.any(mask):
 
-                ind = np.nonzero(mask)
-                self.training['data'] = np.delete(self.training['data'], ind, 0)
-                self.training['tracking'] = np.delete(self.training['tracking'], ind, 0)
-                self.features['tracking'][int(selected_ind), 5] = 1.
+                    ind = np.nonzero(mask)
+                    self.training['data'] = np.delete(self.training['data'], ind, 0)
+                    self.training['tracking'] = np.delete(self.training['tracking'], ind, 0)
+                    self.features['tracking'][int(selected_ind), 5] = 1.
 
-            else:
-                sel_data = self.features['data'][int(selected_ind), :].copy()
-                sel_tracking = self.features['tracking'][int(selected_ind), :].copy()
-                sel_tracking[6:11] = 0
-                sel_tracking[5 + val] = 1
+                else:
+                    sel_data = self.features['data'][int(selected_ind), :].copy()
+                    sel_tracking = self.features['tracking'][int(selected_ind), :].copy()
+                    sel_tracking[6:11] = 0
+                    sel_tracking[5 + val] = 1
 
-                self.training['data'] = np.vstack((self.training['data'], sel_data))
-                self.training['tracking'] = np.vstack((self.training['tracking'], sel_tracking))
+                    self.training['data'] = np.vstack((self.training['data'], sel_data))
+                    self.training['tracking'] = np.vstack((self.training['tracking'], sel_tracking))
 
-                self.features['tracking'][int(selected_ind), 5] = 1.0 + val
+                    self.features['tracking'][int(selected_ind), 5] = 1.0 + val
 
-        im_temp = self.labels[self.current_frame, :, :]
-        mapping = self.features['tracking'][:, 5].astype(int)
-        self.im_disp.update_im(im_temp, mapping)
-        self.canvas.ask_update()
+            im_temp = self.labels[self.current_frame, :, :]
+            mapping = self.features['tracking'][:, 5].astype(int)
+            self.im_disp.update_im(im_temp, mapping)
+            self.canvas.ask_update()
+
+        except TypeError:
+            pass
 
     def save_training(self, instance):
         if self.training['data'].shape[0] > 1:

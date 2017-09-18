@@ -358,7 +358,7 @@ class UserInterface(Widget):
                 Clock.schedule_once(self.update_count, 0)
 
         except AttributeError:
-            guitools.error_msg('Please allow process to finish')
+            guitools.notify_msg('Please allow process to finish')
 
     def update_size(self, window, width, height):
 

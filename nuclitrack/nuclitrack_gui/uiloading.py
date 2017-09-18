@@ -49,6 +49,11 @@ class LoadingUI(Widget):
         self.ld_widgets['file_chooser'] = FileChooserListView(path=home,
                                                               size_hint=(.98, .5), pos_hint={'x': .01, 'y': .22})
 
+        self.path_input = TextInput(text='Change Path', multiline=False,
+                                    size_hint=(.38, .05), pos_hint={'x': .61, 'y': .14})
+        self.path_input.bind(on_text_validate=self.change_path)
+        self.img_layout.add_widget(self.path_input)
+
         # Bind functions for when file is clicked or path changes
 
         self.ld_widgets['file_chooser'].bind(on_entries_cleared=self.dir_change)
@@ -76,11 +81,6 @@ class LoadingUI(Widget):
 
         self.ld_widgets['loaded_fov'] = guitools.ntlabel(text='', style=1,
                                                          size_hint=(.4, .05), pos_hint={'x': .01, 'y': .85})
-
-        # Info on file loading
-
-        self.ld_widgets['ui_message'] = guitools.ntlabel(text='', style=1,
-                                                         size_hint=(.19, .05), pos_hint={'x': .75, 'y': .14})
 
         # HDF5 PARAMETER FILE
         # Label
@@ -111,6 +111,16 @@ class LoadingUI(Widget):
         self.ld_widgets['reload'].bind(on_release=self.reload)
 
         [self.ld_layout.add_widget(w) for _, w in self.ld_widgets.items()]
+
+    def change_path(self, obj):
+        try:
+            self.ld_widgets['file_chooser'].path = obj.text
+
+        except FileNotFoundError:
+            guitools.notify_msg('Directory not found')
+
+        except NotADirectoryError:
+            guitools.notify_msg('Selection not a directory')
 
     def toggle_fov(self, instance):
 
@@ -193,7 +203,7 @@ class LoadingUI(Widget):
                 self.parent.fov = h5py.File(input_text, "a")
 
             except OSError:
-                guitools.error_msg('File could not be created or opened\n'
+                guitools.notify_msg('File could not be created or opened\n'
                                           'Invalid data format or permission may be denied')
                 return
 
@@ -213,7 +223,7 @@ class LoadingUI(Widget):
                 self.parent.params = h5py.File(input_text, "a")
 
             except OSError:
-                guitools.error_msg('File could not be created, permission may be denied')
+                guitools.notify_msg('File could not be created, permission may be denied')
                 return
 
             input_text_short = ('...' + input_text[-24:]) if len(input_text) > 25 else input_text
@@ -352,7 +362,7 @@ class LoadingUI(Widget):
             # Text input for selecting image location
 
             self.text_input = TextInput(text='File location', multiline=False,
-                                        size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+                                        size_hint=(.6, .05), pos_hint={'x': .01, 'y': .14})
             self.text_input.bind(on_text_validate=self.record_filename)
             self.img_layout.add_widget(self.text_input)
 
@@ -369,7 +379,7 @@ class LoadingUI(Widget):
             # Text input for selecting image location
 
             self.text_file_input = TextInput(text='File location', multiline=False,
-                                             size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+                                             size_hint=(.6, .05), pos_hint={'x': .01, 'y': .14})
             self.text_file_input.bind(on_text_validate=self.record_text_file)
             self.img_layout.add_widget(self.text_file_input)
 
@@ -384,7 +394,7 @@ class LoadingUI(Widget):
             # Text input for selecting image location
 
             self.dir_input = TextInput(text='File location', multiline=False,
-                                       size_hint=(.7, .05), pos_hint={'x': .01, 'y': .14})
+                                       size_hint=(.6, .05), pos_hint={'x': .01, 'y': .14})
             self.dir_input.bind(on_text_validate=self.record_dir)
             self.img_layout.add_widget(self.dir_input)
 
@@ -401,11 +411,11 @@ class LoadingUI(Widget):
             self.load_movie(file_list)
 
         except ValueError:
-            guitools.error_msg('File selected is invalid')
+            guitools.notify_msg('File selected is invalid')
         except FileNotFoundError:
-            guitools.error_msg('File not found')
+            guitools.notify_msg('File not found')
         except IndexError:
-            guitools.error_msg('No images found')
+            guitools.notify_msg('No images found')
 
 
     ############################
@@ -426,13 +436,13 @@ class LoadingUI(Widget):
                 self.load_labels(label_list)
 
         except UnicodeDecodeError:
-            guitools.error_msg('File is not a text file')
+            guitools.notify_msg('File is not a text file')
         except ValueError:
-            guitools.error_msg('File is incorrect format')
+            guitools.notify_msg('File is incorrect format')
         except FileNotFoundError:
-            guitools.error_msg('File not found')
+            guitools.notify_msg('File not found')
         except IndexError:
-            guitools.error_msg('No images found')
+            guitools.notify_msg('No images found')
 
     #######################
     # AUTO LOAD FUNCTIONS #
@@ -472,15 +482,15 @@ class LoadingUI(Widget):
         # Handle errors in file loading
 
         if self.file_names[0] == '' or self.file_names[1] == '':
-            guitools.error_msg('Select two files')
+            guitools.notify_msg('Select two files')
             return
 
         if self.file_names[0] == self.file_names[1]:
-            guitools.error_msg('Select two different files')
+            guitools.notify_msg('Select two different files')
             return
 
         if not(len(self.file_names[0]) == len(self.file_names[1])):
-            guitools.error_msg('Names must be of equal length')
+            guitools.notify_msg('Names must be of equal length')
             return
 
         images = []
@@ -505,9 +515,9 @@ class LoadingUI(Widget):
                         self.load_labels(labels)
 
         except ValueError:
-            guitools.error_msg('Invalid time series naming format')
+            guitools.notify_msg('Invalid time series naming format')
         except IndexError:
-            guitools.error_msg('No images found')
+            guitools.notify_msg('No images found')
 
     ##############################
     # LOAD IMAGES FROM FILE LIST #
@@ -522,12 +532,12 @@ class LoadingUI(Widget):
         for channel in file_list:
 
             if not (frames == len(channel)):
-                guitools.error_msg('Channels not same length')
+                guitools.notify_msg('Channels not same length')
                 return False
 
             for f in channel:
                 if not os.path.isfile(f):
-                    guitools.error_msg('Missing File: ' + f)
+                    guitools.notify_msg('Missing File: ' + f)
                     return False
 
         # Load images save list of file names into hdf5 file
@@ -543,7 +553,7 @@ class LoadingUI(Widget):
         self.parent.progression[1] = 1
         self.parent.progression_state(2)
 
-        guitools.ntchange(label=self.ld_widgets['ui_message'], text='Movie Loaded', style=1)
+        guitools.notify_msg('Movie Loaded')
 
         return True
 
@@ -554,12 +564,12 @@ class LoadingUI(Widget):
             frames = self.parent.frames
 
             if not (frames == len(file_list)):
-                guitools.error_msg('Labels not same length')
+                guitools.notify_msg('Labels not same length')
                 return
 
             for f in file_list:
                 if not os.path.isfile(f):
-                    guitools.error_msg('Missing label file: ' + f)
+                    guitools.notify_msg('Missing label file: ' + f)
                     return
 
             # Load and save label images
@@ -578,7 +588,6 @@ class LoadingUI(Widget):
 
             self.parent.progression[2] = 1
             self.parent.progression_state(3)
-            guitools.ntchange(label=self.ld_widgets['ui_message'], text='Movie and Labels Loaded', style=1)
 
     def update_size(self, window, width, height):
 

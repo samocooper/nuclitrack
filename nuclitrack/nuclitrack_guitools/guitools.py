@@ -28,12 +28,12 @@ def add_btn(layout, text, func, group=None):
     return
 
 
-def error_msg(message):
+def notify_msg(message):
 
-    error_msg = Popup(title='Error message',
+    msg = Popup(title='Message',
                       content=Label(text=message),
                       size_hint=(0.6, 0.3))
-    error_msg.open()
+    msg.open()
 
 
 def ntlabel(text, style, size_hint=None, pos_hint=None):

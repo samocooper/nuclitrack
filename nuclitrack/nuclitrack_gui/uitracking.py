@@ -279,6 +279,8 @@ class GraphTrack(Widget):
             for i in range(6):
                 if points[i]:
                     self.plots[i].points = points[i]
+                else:
+                    self.plots[i].points = []
         else:
             for i in range(6):
                 self.plots[i].points = []
