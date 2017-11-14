@@ -315,8 +315,11 @@ Enter your password on request, then launch the NucliTrack Application which sho
 Nuclitrack tries to open closes with no warning, potential issue with codsigning solve as below, if this doesn't work email me / raise bug:
 
 	> sudo codesign -f -s - Path_to_app_folder/NucliTrack.app/Contents/MacOS/SDL2
+	
 	> sudo codesign -f -s - Path_to_app_folder/NucliTrack.app/Contents/MacOS/SDL2_ttf
+	
 	> sudo codesign -f -s - Path_to_app_folder/NucliTrack.app/Contents/MacOS/SDL2_mixer
+	
 	> sudo codesign -f -s - Path_to_app_folder/NucliTrack.app/Contents/MacOS/SDL2_image
 	
 Linux: We have had issues with graphics drivers, either update these otherwise please install and locally build the Python package. We also built the package on EL7, we're working on releasing linux versions built on other distributions, for the moment please use the Python package if the pre-built version does not work.
