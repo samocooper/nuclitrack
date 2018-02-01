@@ -47,7 +47,7 @@ def batch_analyse(text_file, param_file, output_file, parallel_flag=False, ring_
 
             labels = np.zeros((movie.frames, movie.dims[0], movie.dims[1]))
 
-            for i in movie.frames:
+            for i in range(movie.frames):
                 labels[i, :, :] = labels_list[i]
 
         else:
